@@ -12,8 +12,7 @@ import {
   connectionsClient,
   storageClient,
   terminalClient,
-  updateClient,
-  whaleMonitorClient
+  updateClient
 } from '@renderer/clients'
 import { ChangePlanReview } from '@renderer/components/ChangePlanReview'
 import { useAgentController } from '@renderer/hooks/useAgentController'
@@ -95,9 +94,9 @@ import { OnboardingModal } from '@renderer/components/OnboardingModal'
 import { ProductLogo } from '@renderer/components/ProductLogo'
 import { type SkillManageMessage } from '@renderer/components/StatusIndicators'
 import { TerminalPane } from '@renderer/components/TerminalPane'
-import { ThemeSwitcher } from '@renderer/components/ThemeSwitcher'
+import { AppUtilityToolbar } from '@renderer/components/AppUtilityToolbar'
+import { usePetVisibility } from '@renderer/hooks/usePetVisibility'
 import { Button } from '@renderer/components/ui/button'
-import { WhalePetPortrait } from '@renderer/components/WhalePetPortrait'
 import { useAgentRuns } from '@renderer/hooks/useAgentRuns'
 import {
   connectionToForm,
@@ -489,7 +488,7 @@ function App({
   const [instructionContent, setInstructionContent] = useState('')
   const [instructionSaved, setInstructionSaved] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [whaleEnabled, setWhaleEnabled] = useState(false)
+  const [petVisible, togglePetVisible] = usePetVisibility()
 
   const [onboardingOpen, setOnboardingOpen] = useState(() => shouldShowOnboarding())
   const [mcpOpen, setMcpOpen] = useState(false)
@@ -2841,17 +2840,6 @@ function App({
       (nextConfig.mcpServers ?? [])[0]
     setSettingsMcpServerId(nextMcpServer?.id ?? '')
     return nextConfig
-  }
-
-  async function toggleWhaleMonitor(): Promise<void> {
-    try {
-      const current = await whaleMonitorClient.getSnapshot()
-      const enabled = !whaleEnabled
-      await whaleMonitorClient.saveSettings({ ...current.settings, enabled })
-      setWhaleEnabled(enabled)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    }
   }
 
   async function selectWhaleModel(modelId: string): Promise<void> {
@@ -5575,33 +5563,6 @@ function App({
             </span>
           </Button>
           <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={
-              whaleEnabled
-                ? locale === 'en'
-                  ? 'Hide whale pet'
-                  : '隐藏桌宠'
-                : locale === 'en'
-                  ? 'Show whale pet'
-                  : '显示桌宠'
-            }
-            title={
-              whaleEnabled
-                ? locale === 'en'
-                  ? 'Hide whale pet'
-                  : '隐藏桌宠'
-                : locale === 'en'
-                  ? 'Show whale pet'
-                  : '显示桌宠'
-            }
-            onClick={() => void toggleWhaleMonitor()}
-          >
-            <WhalePetPortrait />
-          </Button>
-          <ThemeSwitcher t={t} />
-          <Button
             id="settings-trigger"
             variant="ghost"
             size="icon"
@@ -6175,6 +6136,12 @@ function App({
           />
         )}
       </section>
+      <AppUtilityToolbar
+        t={t}
+        locale={locale}
+        petVisible={petVisible}
+        onTogglePet={togglePetVisible}
+      />
       <ConnectionManagerModal
         open={connectionModalOpen}
         connections={displayConnections}
@@ -6268,15 +6235,20 @@ function App({
           setSkillOpen(true)
         }}
       />
-      {whaleEnabled && (
-        <Suspense fallback={null}>
+      {petVisible && (
+        <Suspense
+          fallback={
+            <div className="fixed bottom-16 right-4" role="status">
+              {locale === 'en' ? 'Loading pet…' : '桌宠加载中…'}
+            </div>
+          }
+        >
           <WhaleMonitor
             locale={locale}
             agentBusy={
               sessionChatTab.agentBusy || Boolean(contextCompactingByTabId[sessionChatTab.id])
             }
             selectedModel={activeTabModelId}
-            onEnabledChange={setWhaleEnabled}
             onSelectModel={selectWhaleModel}
           />
         </Suspense>

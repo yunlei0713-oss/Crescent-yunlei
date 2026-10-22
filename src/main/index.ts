@@ -8,7 +8,11 @@ import { mkdirSync } from 'fs'
 import { traceStartup } from './startup-trace'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { registerTerminalIpc, stopAllTerminalSessions } from './terminal/ipc'
+import {
+  registerTerminalIpc,
+  stopAllTerminalSessions,
+  waitForPtySessionsToExit
+} from './terminal/ipc'
 import {
   appendRendererDiagnostic,
   attachRendererCrashRecovery,
@@ -334,11 +338,22 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('before-quit', () => {
+let terminalShutdownStarted = false
+let terminalShutdownComplete = false
+app.on('before-quit', (event) => {
+  if (terminalShutdownComplete) return
+  event.preventDefault()
+  if (terminalShutdownStarted) return
+  terminalShutdownStarted = true
   stopAllTerminalSessions()
   stopAttachmentCleanup?.()
   stopAttachmentCleanup = undefined
   stopWhaleMonitorScheduler()
+  void waitForPtySessionsToExit().then((drained) => {
+    if (!drained) console.error('Native terminal shutdown exceeded the drain deadline.')
+    terminalShutdownComplete = true
+    app.quit()
+  })
 })
 
 // In this file you can include the rest of your app's specific main process

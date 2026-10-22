@@ -136,6 +136,10 @@
   box-shadow: none;
 }
 
+.app-utilitybar {
+  background: var(--app-chrome);
+}
+
 .app-frame {
   padding: 0;
   gap: 0;
@@ -930,7 +934,7 @@
     padding-block: 0.5rem;
   }
 
-  .app-commandbar {
+  .app-titlebar .app-commandbar {
     max-width: 58vw;
     flex-wrap: wrap;
     justify-content: flex-end;

@@ -13,7 +13,13 @@ const THEME_LABEL_KEYS = {
   'ink-signal': 'themeInkSignal'
 } as const satisfies Record<AppThemeId, keyof Dictionary['app']>
 
-export function ThemeSwitcher({ t }: { t: Dictionary }): ReactElement {
+export function ThemeSwitcher({
+  t,
+  placement = 'bottom-end'
+}: {
+  t: Dictionary
+  placement?: 'bottom-end' | 'top-start'
+}): ReactElement {
   const selectedTheme = useAppTheme()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -70,7 +76,7 @@ export function ThemeSwitcher({ t }: { t: Dictionary }): ReactElement {
       <div
         id="app-theme-menu"
         hidden={!open}
-        className="absolute top-full right-0 z-50 mt-2 w-[284px] rounded-md border border-border bg-popover p-1.5 text-popover-foreground shadow-xl"
+        className={`absolute z-50 w-[min(284px,calc(100vw-64px))] max-h-[calc(100dvh-100px)] overflow-y-auto rounded-md border border-border bg-popover p-1.5 text-popover-foreground shadow-xl ${placement === 'top-start' ? 'bottom-full left-0 mb-2' : 'top-full right-0 mt-2'}`}
         role="dialog"
         aria-label={themeLabel}
       >

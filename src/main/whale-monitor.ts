@@ -17,6 +17,7 @@ let modelsSnapshot: WhaleModelsSnapshot = { models: [] }
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 const inFlightSpend = new Map<string, Promise<WhaleUsageSnapshot>>()
 let usageRequestSequence = 0
+let configGeneration = 0
 let inFlightModels: Promise<WhaleModelsSnapshot> | undefined
 const activeControllers = new Set<AbortController>()
 
@@ -30,6 +31,10 @@ export function registerWhaleMonitorIpc(): void {
       apiKey: validated.apiKey?.trim() || current.apiKey,
       clearApiKey: validated.clearApiKey
     })
+    if (current.apiKey !== next.apiKey || current.spendBaseUrl !== next.spendBaseUrl)
+      usageSnapshot = undefined
+    if (current.apiKey !== next.apiKey || current.modelsBaseUrl !== next.modelsBaseUrl)
+      modelsSnapshot = { models: [] }
     restartWhaleMonitorScheduler()
     broadcastSnapshot()
     return toSettings(next)
@@ -119,7 +124,7 @@ function validateEndpoint(value: unknown, label: string): string {
     throw new Error(`The ${label} endpoint URL is invalid.`)
   }
   if (!value.trim()) {
-    throw new Error(`Enter the ${label} endpoint URL in whale monitor settings.`)
+    return ''
   }
   try {
     const url = new URL(value.trim())
@@ -132,19 +137,38 @@ function validateEndpoint(value: unknown, label: string): string {
   }
 }
 
-export function startWhaleMonitorScheduler(): void {
-  restartWhaleMonitorScheduler()
+function endpointReady(value: string, label: string): boolean {
+  try {
+    return Boolean(validateEndpoint(value, label))
+  } catch {
+    return false
+  }
+}
+
+function pollConfiguredEndpoints(): void {
   const settings = readWhaleMonitorConfig()
-  if (settings.enabled && settings.apiKey && settings.spendBaseUrl && settings.modelsBaseUrl) {
+  if (!settings.enabled || !settings.apiKey) return
+  if (endpointReady(settings.spendBaseUrl, 'spend')) {
     const range = defaultDateRange(settings)
     void fetchUsage(range.startDate, range.endDate).then(broadcastSnapshot)
+  }
+  if (endpointReady(settings.modelsBaseUrl, 'models')) {
     void fetchModels().then(broadcastSnapshot)
   }
+}
+
+export function startWhaleMonitorScheduler(): void {
+  restartWhaleMonitorScheduler()
+  pollConfiguredEndpoints()
 }
 
 export function stopWhaleMonitorScheduler(): void {
   if (refreshTimer) clearInterval(refreshTimer)
   refreshTimer = undefined
+  configGeneration += 1
+  usageRequestSequence += 1
+  inFlightSpend.clear()
+  inFlightModels = undefined
   for (const controller of activeControllers) controller.abort()
   activeControllers.clear()
 }
@@ -155,16 +179,24 @@ function restartWhaleMonitorScheduler(): void {
   if (
     !settings.enabled ||
     !settings.apiKey ||
-    !settings.spendBaseUrl ||
-    !settings.modelsBaseUrl
-  ) {
+    !(
+      endpointReady(settings.spendBaseUrl, 'spend') ||
+      endpointReady(settings.modelsBaseUrl, 'models')
+    )
+  )
     return
-  }
-  refreshTimer = setInterval(() => {
-    const range = defaultDateRange(readWhaleMonitorConfig())
-    void fetchUsage(range.startDate, range.endDate).then(broadcastSnapshot)
-    void fetchModels().then(broadcastSnapshot)
-  }, settings.refreshIntervalSeconds * 1000)
+  refreshTimer = setInterval(pollConfiguredEndpoints, settings.refreshIntervalSeconds * 1000)
+}
+
+function requiredEndpoint(value: string, label: 'spend' | 'models'): URL {
+  const endpoint = validateEndpoint(value, label)
+  if (!endpoint)
+    throw new Error(
+      label === 'spend'
+        ? '请先在额度监控设置中填写用量端点并保存。'
+        : '请先在额度监控设置中填写模型端点并保存。'
+    )
+  return new URL(endpoint)
 }
 
 function getWhaleMonitorSnapshot(): WhaleMonitorSnapshot {
@@ -190,7 +222,8 @@ function broadcastSnapshot(): void {
 }
 
 async function fetchUsage(startDate: string, endDate: string): Promise<WhaleUsageSnapshot> {
-  const key = `${startDate}:${endDate}`
+  const generation = configGeneration
+  const key = `${generation}:${startDate}:${endDate}`
   const existing = inFlightSpend.get(key)
   if (existing) return existing
   const requestSequence = ++usageRequestSequence
@@ -198,8 +231,8 @@ async function fetchUsage(startDate: string, endDate: string): Promise<WhaleUsag
     const config = readWhaleMonitorConfig()
     let result: WhaleUsageSnapshot
     try {
-      if (!config.apiKey) throw new Error('Add a LiteLLM API key in whale monitor settings.')
-      const url = new URL(config.spendBaseUrl)
+      const url = requiredEndpoint(config.spendBaseUrl, 'spend')
+      if (!config.apiKey) throw new Error('请先在额度监控设置中添加 API Key 并保存。')
       url.searchParams.set('start_date', startDate)
       url.searchParams.set('end_date', endDate)
       url.searchParams.set('timezone', 'Asia/Shanghai')
@@ -225,7 +258,8 @@ async function fetchUsage(startDate: string, endDate: string): Promise<WhaleUsag
         error: safeError(error)
       }
     }
-    if (requestSequence === usageRequestSequence) usageSnapshot = result
+    if (generation === configGeneration && requestSequence === usageRequestSequence)
+      usageSnapshot = result
     return result
   })().finally(() => {
     inFlightSpend.delete(key)
@@ -236,30 +270,35 @@ async function fetchUsage(startDate: string, endDate: string): Promise<WhaleUsag
 
 async function fetchModels(): Promise<WhaleModelsSnapshot> {
   if (inFlightModels) return inFlightModels
-  inFlightModels = (async () => {
+  const generation = configGeneration
+  const request = (async () => {
     const config = readWhaleMonitorConfig()
+    let result: WhaleModelsSnapshot
     try {
-      if (!config.apiKey) throw new Error('Add a LiteLLM API key in whale monitor settings.')
-      const payload = await fetchJson(new URL(config.modelsBaseUrl), config.apiKey)
+      const url = requiredEndpoint(config.modelsBaseUrl, 'models')
+      if (!config.apiKey) throw new Error('请先在额度监控设置中添加 API Key 并保存。')
+      const payload = await fetchJson(url, config.apiKey)
       const data = isRecord(payload) && Array.isArray(payload.data) ? payload.data : undefined
       if (!data) throw new Error('The model response did not include a data list.')
       const models = data
         .map((item) => (isRecord(item) && typeof item.id === 'string' ? item.id : ''))
         .filter(Boolean)
         .sort((left, right) => left.localeCompare(right))
-      modelsSnapshot = { models, updatedAt: new Date().toISOString() }
+      result = { models, updatedAt: new Date().toISOString() }
     } catch (error) {
-      modelsSnapshot = {
+      result = {
         ...modelsSnapshot,
         stale: true,
         error: safeError(error)
       }
     }
-    return modelsSnapshot
+    if (generation === configGeneration) modelsSnapshot = result
+    return result
   })().finally(() => {
-    inFlightModels = undefined
+    if (inFlightModels === request) inFlightModels = undefined
   })
-  return inFlightModels
+  inFlightModels = request
+  return request
 }
 
 async function fetchJson(url: URL, apiKey: string): Promise<unknown> {
@@ -361,6 +400,7 @@ function emptyUsage(startDate: string, endDate: string): WhaleUsageSnapshot {
 }
 
 function finiteNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined
   const number = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(number) ? number : undefined
 }

@@ -2,7 +2,11 @@ import { CopyIcon, RefreshCwIcon, Settings2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import whaleIdlePoster from '@renderer/assets/whale-idle-poster.png'
 import { WhalePetPortrait } from '@renderer/components/WhalePetPortrait'
-import type { WhaleMonitorConfigInput, WhaleMonitorSnapshot } from '../../../shared/whale-monitor'
+import {
+  DEFAULT_WHALE_MONITOR_CONFIG,
+  type WhaleMonitorConfigInput,
+  type WhaleMonitorSnapshot
+} from '../../../shared/whale-monitor'
 
 import {
   whaleMotionAssets,
@@ -42,7 +46,6 @@ interface WhaleMonitorProps {
   agentBusy?: boolean
   onSelectModel?: (modelId: string) => Promise<void> | void
   selectedModel?: string
-  onEnabledChange?: (enabled: boolean) => void
 }
 
 type DateRange = { startDate: string; endDate: string }
@@ -108,11 +111,17 @@ export function WhaleMonitor({
   locale,
   agentBusy = false,
   onSelectModel,
-  selectedModel,
-  onEnabledChange
+  selectedModel
 }: WhaleMonitorProps): React.JSX.Element | null {
   const en = locale === 'en'
-  const [snapshot, setSnapshot] = useState<WhaleMonitorSnapshot | null>(null)
+  const [snapshot, setSnapshot] = useState<WhaleMonitorSnapshot>({
+    settings: { ...DEFAULT_WHALE_MONITOR_CONFIG, apiKeyConfigured: false },
+    models: { models: [] }
+  })
+  const [snapshotReady, setSnapshotReady] = useState(false)
+  const [monitorEnabled, setMonitorEnabled] = useState(true)
+  const initializedRef = useRef(false)
+  const snapshotVersionRef = useRef(0)
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -126,14 +135,18 @@ export function WhaleMonitor({
   }))
   const [error, setError] = useState('')
   const [apiKey, setApiKey] = useState('')
-  const [bounds, setBounds] = useState({ x: 0, y: 0 })
-  const [positionReady, setPositionReady] = useState(false)
+  const [bounds, setBounds] = useState(() => ({
+    x: Math.max(12, window.innerWidth - 316),
+    y: Math.max(55, window.innerHeight - 230)
+  }))
   const [budgetText, setBudgetText] = useState('200')
   const [refreshIntervalText, setRefreshIntervalText] = useState('120')
   const [endpointSpend, setEndpointSpend] = useState('')
   const [endpointModels, setEndpointModels] = useState('')
   const [clearApiKey, setClearApiKey] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const panelTriggerRef = useRef<HTMLButtonElement>(null)
+  const suppressClickTimerRef = useRef<number | null>(null)
   const dragRef = useRef<{
     pointerId: number
     pointerX: number
@@ -153,6 +166,9 @@ export function WhaleMonitor({
 
   useEffect(
     () => () => {
+      if (dragRef.current?.frameId !== undefined)
+        window.cancelAnimationFrame(dragRef.current.frameId)
+      if (suppressClickTimerRef.current !== null) window.clearTimeout(suppressClickTimerRef.current)
       if (petClickTimerRef.current !== null) {
         window.clearTimeout(petClickTimerRef.current)
       }
@@ -238,88 +254,120 @@ export function WhaleMonitor({
     return () => window.clearTimeout(timer)
   }, [activeMotion, agentBusy, dragging, playRandomMotion])
 
-  const applySnapshot = useCallback(
-    (next: WhaleMonitorSnapshot) => {
-      setSnapshot(next)
-      onEnabledChange?.(next.settings.enabled)
-      setBudgetText(String(next.settings.totalBudget))
-      setRefreshIntervalText(String(next.settings.refreshIntervalSeconds))
-      setEndpointSpend(next.settings.spendBaseUrl)
-      setEndpointModels(next.settings.modelsBaseUrl)
+  const applySnapshot = useCallback((next: WhaleMonitorSnapshot) => {
+    setSnapshot(next)
+    setSnapshotReady(true)
+    if (!initializedRef.current) {
+      initializedRef.current = true
+      if (next.settings.position) setBounds(next.settings.position)
       if (
         next.settings.defaultDateRange === 'custom' &&
         next.settings.startDate &&
         next.settings.endDate
       ) {
         setRange({ startDate: next.settings.startDate, endDate: next.settings.endDate })
+      } else if (next.settings.defaultDateRange === 'current-day') {
+        const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(
+          new Date()
+        )
+        setRange({ startDate: today, endDate: today })
       }
-      setBounds((current) => {
-        if (next.settings.position) return next.settings.position
-        if (current.x || current.y) return current
-        return {
-          x: Math.max(16, window.innerWidth - 316),
-          y: Math.max(70, window.innerHeight - 190)
-        }
+    }
+  }, [])
+
+  const loadSnapshot = useCallback((): Promise<void> => {
+    const version = ++snapshotVersionRef.current
+    return Promise.resolve()
+      .then(() => window.api.whaleMonitor.getSnapshot())
+      .then((next) => {
+        if (version !== snapshotVersionRef.current) return
+        applySnapshot(next)
+        setError('')
       })
-      setPositionReady(true)
-    },
-    [onEnabledChange]
-  )
+      .catch(() => {
+        if (version === snapshotVersionRef.current)
+          setError(
+            en ? 'Could not load monitor settings. Please retry.' : '额度监控设置加载失败，请重试。'
+          )
+      })
+  }, [applySnapshot, en])
 
   useEffect(() => {
-    let active = true
     const unsubscribe = window.api.whaleMonitor.onSnapshot((next) => {
-      if (active) applySnapshot(next)
+      snapshotVersionRef.current += 1
+      applySnapshot(next)
     })
-    void window.api.whaleMonitor
-      .getSnapshot()
-      .then((next) => {
-        if (active) applySnapshot(next)
-      })
-      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))
+    void loadSnapshot()
     return () => {
-      active = false
+      snapshotVersionRef.current += 1
       unsubscribe()
     }
-  }, [applySnapshot])
+  }, [applySnapshot, loadSnapshot])
+
+  // Initialize the form only when opened: poll broadcasts must not discard unsaved edits.
+  const openSettings = (): void => {
+    if (settingsOpen) {
+      setSettingsOpen(false)
+      return
+    }
+    setBudgetText(String(snapshot.settings.totalBudget))
+    setRefreshIntervalText(String(snapshot.settings.refreshIntervalSeconds))
+    setEndpointSpend(snapshot.settings.spendBaseUrl)
+    setEndpointModels(snapshot.settings.modelsBaseUrl)
+    setMonitorEnabled(snapshot.settings.enabled)
+    setSettingsOpen(true)
+  }
 
   useEffect(() => {
-    if (!positionReady) return
-    const node = rootRef.current
-    if (!node) return
-    const maxX = Math.max(12, window.innerWidth - node.offsetWidth - 12)
-    const maxY = Math.max(55, window.innerHeight - node.offsetHeight - 12)
-    setBounds((current) => ({
-      x: Math.min(maxX, Math.max(12, current.x)),
-      y: Math.min(maxY, Math.max(55, current.y))
-    }))
-  }, [positionReady, snapshot])
-
-  useEffect(() => {
-    if (!positionReady) return
     const clampToViewport = (): void => {
       const node = rootRef.current
       if (!node) return
       const maxX = Math.max(12, window.innerWidth - node.offsetWidth - 12)
-      const maxY = Math.max(55, window.innerHeight - node.offsetHeight - 12)
+      const maxY = Math.max(55, window.innerHeight - node.offsetHeight - 52)
       setBounds((current) => ({
         x: Math.min(maxX, Math.max(12, current.x)),
         y: Math.min(maxY, Math.max(55, current.y))
       }))
     }
+    clampToViewport()
     window.addEventListener('resize', clampToViewport)
     return () => window.removeEventListener('resize', clampToViewport)
-  }, [positionReady])
+  }, [snapshotReady])
+
+  useEffect(() => {
+    if (!detailsOpen) return
+    const escape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      if (settingsOpen) setSettingsOpen(false)
+      else {
+        setDetailsOpen(false)
+        panelTriggerRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [detailsOpen, settingsOpen])
 
   const usage = snapshot?.usage
   const remaining =
     usage?.spend === undefined ? undefined : (snapshot?.settings.totalBudget ?? 200) - usage.spend
-  const balanceLabel =
-    remaining !== undefined
-      ? `${en ? 'Left' : '剩余'} ${formatAmount(remaining)} / ${formatAmount(snapshot?.settings.totalBudget ?? 200)}`
-      : en
-        ? 'Set up Whale monitor'
-        : '鲸鱼监控'
+  const balanceLabel = !snapshotReady
+    ? en
+      ? 'Loading monitor…'
+      : '正在加载额度监控…'
+    : !snapshot.settings.apiKeyConfigured || !snapshot.settings.spendBaseUrl
+      ? en
+        ? 'Quota monitor not configured'
+        : '额度监控未配置'
+      : !snapshot.settings.enabled
+        ? en
+          ? 'Quota monitor paused'
+          : '额度监控已暂停'
+        : remaining !== undefined
+          ? `${en ? 'Left' : '剩余'} ${formatAmount(remaining)} / ${formatAmount(snapshot?.settings.totalBudget ?? 200)}`
+          : en
+            ? 'Set up Whale monitor'
+            : '额度监控未配置'
   const columns = useMemo(() => {
     const models = snapshot?.models.models ?? []
     return [0, 1, 2].map((column) => models.filter((_, index) => index % 3 === column))
@@ -387,14 +435,6 @@ export function WhaleMonitor({
   }
 
   const saveSettings = async (): Promise<void> => {
-    if (!endpointSpend.trim() || !endpointModels.trim()) {
-      setError(
-        en
-          ? 'Enter both endpoint URLs before saving.'
-          : '请先填写用量端点和模型端点，再保存设置。'
-      )
-      return
-    }
     const amount = Number(budgetText)
     if (!Number.isFinite(amount) || amount < 0) {
       setError(en ? 'Budget must be zero or greater.' : '额度必须是大于或等于 0 的数字。')
@@ -419,7 +459,7 @@ export function WhaleMonitor({
     setError('')
     try {
       const input: WhaleMonitorConfigInput = {
-        enabled: settings.enabled,
+        enabled: monitorEnabled,
         spendBaseUrl: endpointSpend,
         modelsBaseUrl: endpointModels,
         totalBudget: amount,
@@ -437,12 +477,6 @@ export function WhaleMonitor({
       setApiKey('')
       setClearApiKey(false)
       setSettingsOpen(false)
-      if (!settings.apiKeyConfigured && saved.apiKeyConfigured) {
-        await Promise.all([
-          window.api.whaleMonitor.refreshUsage(range),
-          window.api.whaleMonitor.refreshModels()
-        ])
-      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -476,6 +510,10 @@ export function WhaleMonitor({
     const dy = event.clientY - drag.pointerY
     if (!drag.moved && Math.hypot(dx, dy) <= 8) return
     if (!drag.moved) {
+      if (petClickTimerRef.current !== null) {
+        window.clearTimeout(petClickTimerRef.current)
+        petClickTimerRef.current = null
+      }
       drag.moved = true
       setDragging(true)
       if (detailsOpen) {
@@ -485,7 +523,7 @@ export function WhaleMonitor({
     }
     const node = rootRef.current
     const maxX = Math.max(12, window.innerWidth - (node?.offsetWidth ?? 280) - 12)
-    const maxY = Math.max(55, window.innerHeight - (node?.offsetHeight ?? 90) - 12)
+    const maxY = Math.max(55, window.innerHeight - (node?.offsetHeight ?? 136) - 52)
     drag.lastX = Math.min(maxX, Math.max(12, drag.x + dx))
     drag.lastY = Math.min(maxY, Math.max(55, drag.y + dy))
     if (drag.frameId !== undefined) return
@@ -508,10 +546,15 @@ export function WhaleMonitor({
       }
       setBounds(next)
       suppressClickRef.current = true
-      window.setTimeout(() => {
+      suppressClickTimerRef.current = window.setTimeout(() => {
         suppressClickRef.current = false
       }, 0)
-      void window.api.whaleMonitor.setPosition(next)
+      void window.api.whaleMonitor
+        .setPosition(next)
+        .then((result) => {
+          if (!result.ok) setError(en ? 'Could not save pet position.' : '桌宠位置保存失败。')
+        })
+        .catch(() => setError(en ? 'Could not save pet position.' : '桌宠位置保存失败。'))
     }
     dragRef.current = null
     setDragging(false)
@@ -543,15 +586,12 @@ export function WhaleMonitor({
       setError(result.error || (en ? 'Could not copy model ID.' : '复制模型 ID 失败。'))
   }
 
-  if (!snapshot || !snapshot.settings.enabled) return null
-
   return (
     <div
       ref={rootRef}
       className={`whale-widget fixed left-0 top-0 z-40 select-none will-change-transform ${dragging ? 'whale-widget-dragging cursor-grabbing' : 'cursor-grab'}`}
       style={{
-        transform: `translate3d(${bounds.x}px, ${bounds.y}px, 0)`,
-        visibility: positionReady ? 'visible' : 'hidden'
+        transform: `translate3d(${bounds.x}px, ${bounds.y}px, 0)`
       }}
     >
       {detailsOpen ? (
@@ -571,7 +611,8 @@ export function WhaleMonitor({
               <button
                 className="rounded p-1.5 text-muted-foreground hover:bg-muted"
                 aria-label={en ? 'Settings' : '设置'}
-                onClick={() => setSettingsOpen((value) => !value)}
+                onClick={openSettings}
+                disabled={!snapshotReady}
               >
                 <Settings2Icon size={15} />
               </button>
@@ -586,6 +627,14 @@ export function WhaleMonitor({
           </header>
           {settingsOpen ? (
             <div className="min-h-0 space-y-3 overflow-x-hidden overflow-y-auto p-3">
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={monitorEnabled}
+                  onChange={(event) => setMonitorEnabled(event.target.checked)}
+                />
+                {en ? 'Enable quota polling' : '启用额度轮询'}
+              </label>
               <label className="block space-y-1 text-xs">
                 <span>{en ? 'Total budget' : '总额度'}</span>
                 <input
@@ -608,7 +657,9 @@ export function WhaleMonitor({
                 />
               </label>
               <label className="block space-y-1 text-xs">
-                <span>{en ? 'Spend endpoint (required)' : '用量端点（必填）'}</span>
+                <span>
+                  {en ? 'Spend endpoint (required to query usage)' : '用量端点（查询用量时必填）'}
+                </span>
                 <input
                   className="h-8 w-full rounded border border-input bg-background px-2 text-xs"
                   placeholder={en ? 'Enter the usage endpoint URL' : '请填写用量接口地址'}
@@ -627,7 +678,9 @@ export function WhaleMonitor({
                 </label>
               )}
               <label className="block space-y-1 text-xs">
-                <span>{en ? 'Models endpoint (required)' : '模型端点（必填）'}</span>
+                <span>
+                  {en ? 'Models endpoint (required to query models)' : '模型端点（查询模型时必填）'}
+                </span>
                 <input
                   className="h-8 w-full rounded border border-input bg-background px-2 text-xs"
                   placeholder={en ? 'Enter the models endpoint URL' : '请填写模型列表接口地址'}
@@ -808,15 +861,20 @@ export function WhaleMonitor({
                   </div>
                 )}
               </div>
-              {error && (
-                <div
-                  role="status"
-                  className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive"
-                >
-                  {error}
-                </div>
-              )}
             </div>
+          )}
+          {error && (
+            <div
+              role="alert"
+              className="shrink-0 border-t border-destructive/30 px-3 py-2 text-xs text-destructive"
+            >
+              {error}
+            </div>
+          )}
+          {!snapshotReady && (
+            <button className="p-2 text-xs text-primary" onClick={() => void loadSnapshot()}>
+              {en ? 'Retry loading settings' : '重试加载设置'}
+            </button>
           )}
         </section>
       ) : null}
@@ -836,16 +894,30 @@ export function WhaleMonitor({
           </span>
         ) : (
           <button
+            ref={panelTriggerRef}
             data-whale-drag-handle
+            aria-expanded={detailsOpen}
             className="rounded-full border border-primary/50 bg-card/90 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-lg backdrop-blur hover:bg-card"
-            onClick={handlePetClick}
+            onClick={() => {
+              if (!suppressClickRef.current) setDetailsOpen(true)
+            }}
           >
-            {balanceLabel}
+            {error && !snapshotReady
+              ? en
+                ? 'Monitor unavailable · retry'
+                : '监控加载失败 · 重试'
+              : balanceLabel}
           </button>
         )}
         <button
           data-whale-drag-handle
-          aria-label={en ? 'Open whale monitor' : '打开鲸鱼额度面板'}
+          aria-label={en ? 'Whale pet: double click for monitor' : '桌宠互动，双击打开额度面板'}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setDetailsOpen(true)
+            }
+          }}
           className="rounded-full p-0.5 outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           onClick={handlePetClick}
         >

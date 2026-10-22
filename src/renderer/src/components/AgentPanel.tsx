@@ -608,8 +608,8 @@ export function AgentPanel({
               onKeyDown={onAgentInputKeyDown}
               onPaste={onAgentInputPaste}
             />
-            <div className="app-composer-toolbar flex items-center gap-1.5 text-xs text-muted-foreground">
-              <div className="flex min-w-0 flex-1 items-center">
+            <div className="app-composer-toolbar flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-y-1">
                 <Select
                   value={activeModelSelectionValue}
                   onValueChange={onModelChange}

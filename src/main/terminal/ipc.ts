@@ -29,6 +29,7 @@ import { createPtyScriptRunner, writePtyScript } from './script-runner'
 import { TerminalSessionManager } from './session/manager'
 import { createPipeSession } from './session/pipe-session'
 import { createPtySession } from './session/pty-session'
+export { waitForPtySessionsToExit } from './session/pty-session'
 import { TerminalRendererEvents } from './session/renderer-events'
 import type {
   TerminalSessionEvents,
