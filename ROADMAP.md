@@ -8,7 +8,7 @@ Current direction (2026-11-01): **chat-first analysis, manual external iTerm ope
 - Users operate local/SSH sessions in iTerm. Observation starts off and requires Main's native confirmation.
 - Local changes require full Diff review, per-file decisions, one-time authorization and write verification.
 - OpenAPI is legacy configuration only. Agent MCP is disabled because the reviewed implementation allowlist is empty; explicit settings-side discovery is separate.
-- Mac delivery is one Universal app/DMG/ZIP. Windows adaptation is outside the current development scope; scripts are not evidence of platform acceptance.
+- Delivery targets macOS Intel (x64) only: `墨巡.app` and `moxun` DMG/ZIP filenames. No other architecture/platform packaging entries remain.
 
 ## Quality convergence
 
@@ -17,7 +17,7 @@ Current direction (2026-11-01): **chat-first analysis, manual external iTerm ope
 - Reuse existing Dialog/Menu primitives; simplify iTerm entry and observation explanations.
 - Extract App, terminal IPC and Settings responsibilities incrementally with explicit state ownership.
 - Measure 100/500/1000-message rendering and lifecycle behavior before introducing virtualization.
-- Verify real iTerm, focus/keyboard behavior, both Mac architectures and release signing separately.
+- Verify real iTerm, focus/keyboard behavior, Intel Mac runtime and release signing separately.
 
 Full staged scope and acceptance checklist: [cleanup plan](Document/new3/MOXUN_PROJECT_CLEANUP_AND_QUALITY_REFACTOR_PLAN_20261101.md). Current contracts: [architecture](Document/ARCHITECTURE.md), [security](Document/SECURITY_MODEL.md), [testing](Document/TESTING.md).
 

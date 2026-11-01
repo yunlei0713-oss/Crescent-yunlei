@@ -2,7 +2,7 @@
 
 <LatestDownloads locale="en" />
 
-The current Mac delivery standard is one Universal package containing Intel x64 and Apple Silicon arm64. Downloads come from historical releases: asset availability is not this round's acceptance or proof of signing. Windows adaptation is outside the current development scope.
+Current delivery is macOS Intel (x64) only: `墨巡.app`, `moxun-<version>-x64.dmg` and `moxun-<version>-x64-mac.zip`. No Universal, arm64 or other-platform packages are built. Downloads may come from historical releases: asset availability is not this round's acceptance or proof of signing.
 
 ## macOS security warnings
 

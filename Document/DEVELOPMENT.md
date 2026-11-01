@@ -1,6 +1,6 @@
 # 开发与 Mac 打包规范
 
-本规范落实 2026-10-11 的用户要求，后续版本持续遵守：**Mac 只交付 Universal 包**。同一个 `墨巡.app` 同时包含 Intel x64（Mach-O 名称 `x86_64`）和 Apple Silicon arm64；DMG 和 ZIP 均装载这一份 Universal 应用。不得把两个独立架构安装包放进同一目录冒充 Universal。Windows 适配、构建与验收不列入当前开发范围。
+按 2026-11-01 最新用户要求，**仅交付 Mac Intel（x64）包**，替代此前的 Universal 规则。应用名称为 `墨巡.app`，新安装包文件名前缀为 `moxun`；主程序为 Intel x64（Mach-O 名称 `x86_64`）。不生成 arm64、Universal、Windows 或 Linux 安装包。
 
 ## 开发门禁
 
@@ -28,40 +28,40 @@ npm run build:mac:local
 此入口先运行完整 CI 和本地测试，再串行构建和打包，只生成：
 
 ```text
-dist/local-macos/universal/mac-universal/墨巡.app
-dist/local-macos/universal/crescent-<version>-universal.dmg
-dist/local-macos/universal/墨巡-<version>-universal-mac.zip
+dist/local-macos/x64/mac/墨巡.app
+dist/local-macos/x64/moxun-<version>-x64.dmg
+dist/local-macos/x64/moxun-<version>-x64-mac.zip
 ```
 
-`build:mac:unsigned`、`build:mac:local:universal` 以及旧的 `build:mac:local:x64` / `:arm64` 都转到这一入口。旧 `build:mac:x64` / `:arm64` 则转到 `build:mac`，同样只生成 Universal。本地脚本的旧架构参数也统一映射为 Universal；`electron-builder.yml` 的 Mac DMG/ZIP 目标都明确设置 `arch: [universal]`。发布 workflow 也仅保留一个 Mac Universal 构建行，固定 `--mac --universal`；本轮不触发远程 workflow 或发布。
+`build:mac:unsigned` 和 `build:mac:local:x64` 转到这一入口，`build:mac:x64` 转到 `build:mac`。arm64 / Universal alias 及 Windows / Linux 打包脚本已移除；本地脚本仅接受默认或 `x64` 参数，其他架构直接失败。`electron-builder.yml` 的 Mac DMG/ZIP 目标明确设置 `arch: [x64]`。发布 workflow 只保留 Mac Intel 构建行，固定 `--mac --x64`；修改规则不触发远程 workflow 或发布。
 
-`build:unpack` 固定为 Mac Universal 应用目录构建，并先运行完整本地门禁。`npm run build:mac` 是需要预先配置签名身份与公证凭据的打包入口，固定 `--universal --publish never`。它也先运行 `npm run verify:local`，通过完整门禁后才打包。签名和公证需要联网且需另行安排；不会因打包而自动发布。
+`build:unpack` 固定为 Mac Intel 应用目录构建，并先运行完整本地门禁。`npm run build:mac` 是需要预先配置签名身份与公证凭据的打包入口，固定 `--x64 --publish never`。它也先运行 `npm run verify:local`，通过完整门禁后才打包。签名和公证需要联网且需另行安排；不会因打包而自动发布。
 
-本地入口剔除继承的 Apple/签名凭据、禁用 signing / notarization / hardened runtime，并显式使用 `--publish never`。本地包供开发验证，不能据此宣称发行签名、公证或 Gatekeeper 验收成功。可用 `CRESCENT_LOCAL_BUILD_DIR` 指定 `dist/` 内的独立输出根目录，其下仍只有 `universal/`。
+本地入口剔除继承的 Apple/签名凭据、禁用 signing / notarization / hardened runtime，并显式使用 `--publish never`。本地包供开发验证，不能据此宣称发行签名、公证或 Gatekeeper 验收成功。可用 `CRESCENT_LOCAL_BUILD_DIR` 指定 `dist/` 内的独立输出根目录，其下只有 `x64/`。正式 appId `com.crescent.app`、内部 npm 包标识和用户数据目录不因安装包更名而改变。
 
-## Universal 原生依赖约束
+## Intel 原生依赖约束
 
-保留 `asarUnpack` 对 node-pty、Pi、MCP SDK、Pi WASM 等运行资源的规则；保留 `mergeASARs: false` 和精确 `x64ArchFiles`，不要通过删除原生模块或粗放扩大 unpack 范围解决合并问题。
+保留 `asarUnpack` 对 node-pty、Pi、MCP SDK、Pi WASM 等运行资源的规则。移除已不适用的 Universal 合并配置，不删除运行时原生依赖或粗放扩大 unpack 范围。
 
-node-pty 和 Pi native prebuilds 必须包含两架构；通用 esbuild 可执行文件由原生准备脚本合并。Electron 主可执行文件和通用 esbuild 都必须可通过 `lipo -archs` 检查出 `x86_64 arm64`。PDF.js 预览和 worker 打入 renderer；Main 文本提取另需保留 legacy 模块及 worker。可选 native canvas 不进入运行包，必须验证该条件下的文本提取。
+node-pty 和 Pi 必须保留 x64 native prebuilds；依赖自带的其他平台 prebuild 不代表交付其他架构应用。原生准备脚本只准备锁定的 x64 esbuild，并拒绝其他 Mac 架构；即使在 Apple Silicon 主机打包，也不得误用宿主 arm64 可执行文件。Electron 主程序和 esbuild 的 `lipo -archs` 都应仅为 `x86_64`。PDF.js 预览和 worker 打入 renderer；Main 文本提取另需保留 legacy 模块及 worker。可选 native canvas 不进入运行包，必须验证该条件下的文本提取。
 
 打包开始后必须冻结 `out/`，不得同时运行 CI/build 或另一个打包任务去重写输入。Mac 入口不自动清空整个 `dist/`；需要清理时只清理自己确认不再使用的输出目录。
 
 ## 离线构建
 
-在可信联网准备机完成锁定依赖安装及 postinstall，预热当前锁定 Electron 的 **darwin-x64 和 darwin-arm64 两份 ZIP**、electron-builder DMG 工具和锁定 esbuild Darwin tarball 缓存。默认缓存在 `~/Library/Caches/electron`、`~/Library/Caches/electron-builder`；可通过 `ELECTRON_CACHE` / `ELECTRON_BUILDER_CACHE` 指定。还需携带兼容的 Node、源码/lockfile、node_modules 和 native prebuilds。esbuild 缓存优先使用 `node_modules/.cache/crescent-native/` 已校验 tarball；本地脚本的 npm 缓存位于 `out/implementation/npm-cache`，也应一起准备。不得携带个人配置、凭据或生产日志。
+在可信联网准备机完成锁定依赖安装及 postinstall，预热当前锁定 Electron 的 **darwin-x64 ZIP**、electron-builder DMG 工具和锁定 esbuild Darwin x64 tarball 缓存。默认缓存在 `~/Library/Caches/electron`、`~/Library/Caches/electron-builder`；可通过 `ELECTRON_CACHE` / `ELECTRON_BUILDER_CACHE` 指定。还需携带兼容的 Node、源码/lockfile、node_modules 和 x64 native prebuilds。esbuild 缓存优先使用 `node_modules/.cache/crescent-native/` 已校验 tarball；本地脚本的 npm 缓存位于 `out/implementation/npm-cache`，也应一起准备。项目整理会归档这些本地缓存，离线打包前须恢复所需缓存。不得携带个人配置、凭据或生产日志。
 
 ```sh
 CRESCENT_OFFLINE_BUILD=1 npm run build:mac:local
 ```
 
-离线入口检查两架构 Electron、DMG 工具和 native 缓存；缺少资源直接失败。esbuild tarball 以 lockfile SRI 校验，离线时不回退网络下载。使用已经安装好的依赖与本地资源；离线机不能以缺依赖的 `npm ci` 代替缓存准备。依赖或 Electron 版本升级后必须重新预热缓存。
+离线入口检查 x64 Electron、DMG 工具和 native 缓存；缺少资源直接失败，不再要求 arm64 缓存。esbuild tarball 以 lockfile SRI 校验，离线时不回退网络下载。使用已经安装好的依赖与本地资源；离线机不能以缺依赖的 `npm ci` 代替缓存准备。依赖或 Electron 版本升级后必须重新预热缓存。
 
 ## 产物验收
 
-1. 确认只交付一套 Universal `.app` / DMG / ZIP，主程序和 esbuild 含两架构，node-pty / Pi native prebuilds 齐全。
+1. 确认只交付一套 Intel `.app` / DMG / ZIP，应用名为“墨巡”、安装包前缀为 `moxun`，主程序和 esbuild 仅含 x64，node-pty / Pi x64 native prebuilds 齐全。
 2. 执行 `hdiutil verify <dmg>` 与 `unzip -tq <zip>`，记录 DMG/ZIP 的 SHA-256；确认包内 Pi/MCP 可以从 unpacked 路径加载、PDF lazy chunk 和本地 worker 存在。
 3. 从实际打包应用用隔离的 `CRESCENT_DATA_DIR` / `CRESCENT_USER_DATA_DIR` 验证 Pi runtime、人工原生 PTY、Agent 执行拒绝、文件审批与多模态流程；禁止使用生产连接和真实敏感日志做夹具。
-4. Intel 与 Apple Silicon 的实际运行分别记录。单台 Intel Mac 的静态 arm64 检查不能替代 Apple Silicon 真机验收。正式分发另需签名、公证与 Gatekeeper 验证。
+4. 在 Intel Mac 上记录实际运行；不宣称 Apple Silicon 原生支持或 Rosetta 验收。正式分发另需签名、公证与 Gatekeeper 验证。
 
 2026-10-10 的 A～H 专项修复和验收记录已移入桌面 test，原名 `Crescent_v1.0.11_专项改造验收记录_20261010.md`，见 [归档映射](archive/README.md)。历史执行验收不是当前 Agent 执行授权，也不是本轮重新验收结果。

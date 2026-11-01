@@ -89,7 +89,7 @@ async function prepareEsbuildPackage(projectDir, version, arch) {
 module.exports = async function prepareMacosNative(context) {
   if (context.electronPlatformName !== 'darwin') return
   const arch = Arch[context.arch]
-  if (!['x64', 'arm64', 'universal'].includes(arch)) return
+  if (arch !== 'x64') throw new Error('Only macOS Intel (x64) packaging is supported')
   const modules = path.join(
     context.appOutDir,
     `${context.packager.appInfo.productFilename}.app`,
@@ -101,35 +101,14 @@ module.exports = async function prepareMacosNative(context) {
   const esbuild = path.join(modules, 'esbuild')
   const version = JSON.parse(await fs.readFile(path.join(esbuild, 'package.json'), 'utf8')).version
   const binary = path.join(esbuild, 'bin', 'esbuild')
-  if (arch === 'arm64' && context.appOutDir.endsWith('-arm64-temp')) {
-    const armAsar = path.resolve(modules, '..', '..', 'app.asar')
-    const x64Asar = armAsar.replace('-arm64-temp', '-x64-temp')
-    const digest = async (file) =>
-      crypto
-        .createHash('sha256')
-        .update(await fs.readFile(file))
-        .digest('hex')
-    if ((await digest(armAsar)) !== (await digest(x64Asar))) {
-      throw new Error('Universal requires identical JS archives to preserve Pi unpacked paths')
-    }
-  }
-  if (arch === 'universal') {
-    const result = await run('lipo', ['-archs', binary])
-    if (!['x86_64', 'arm64'].every((value) => result.stdout.split(/\s+/).includes(value))) {
-      throw new Error('Universal esbuild is missing an architecture')
-    }
-    return
-  }
-  // Pi loads from app.asar.unpacked. Its esbuild runtime must resolve both
-  // optional platform packages on disk, even when npm ci ran on an Intel Mac.
-  for (const platformArch of ['x64', 'arm64']) {
-    const source = await prepareEsbuildPackage(context.packager.projectDir, version, platformArch)
-    await fs.cp(source, path.join(modules, '@esbuild', `darwin-${platformArch}`), {
-      recursive: true
-    })
-  }
-  // Give universal's lipo pass one genuinely different executable per build.
+  // Pi loads from app.asar.unpacked. Select the target prebuild rather than the
+  // packaging host's binary, including when an Apple Silicon runner builds x64.
+  const source = await prepareEsbuildPackage(context.packager.projectDir, version, arch)
+  await fs.cp(source, path.join(modules, '@esbuild', `darwin-${arch}`), { recursive: true })
   await fs.copyFile(path.join(modules, '@esbuild', `darwin-${arch}`, 'bin', 'esbuild'), binary)
   await fs.chmod(binary, 0o755)
-  console.log(`[mac-native] esbuild ${version}: ${arch} executable and both Darwin prebuilds ready`)
+  const result = await run('lipo', ['-archs', binary])
+  if (result.stdout.trim() !== 'x86_64')
+    throw new Error('Expected an Intel-only esbuild executable')
+  console.log(`[mac-native] esbuild ${version}: Intel x64 executable and Darwin prebuild ready`)
 }

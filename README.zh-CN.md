@@ -40,7 +40,7 @@ flowchart TD
 
 ## 安装与构建
 
-从 [GitHub Releases](https://github.com/aide-family/Crescent/releases) 核对实际可下载资产，并验证发布的 SHA-256。当前 Mac 交付是 **一份包含 x64 + arm64 的 Universal app、DMG 和 ZIP**，不是按架构拆包。签名/公证依赖发布凭据，不把历史包都视为已签名或已验收。Windows/Linux workflow 目标保留，但当前本地适配及验收聚焦 macOS。
+从 [GitHub Releases](https://github.com/aide-family/Crescent/releases) 核对实际可下载资产，并验证发布的 SHA-256。当前 **仅交付 Mac Intel（x64）**：`墨巡.app`、`moxun-<version>-x64.dmg` 和 `moxun-<version>-x64-mac.zip`。不生成 arm64、Universal、Windows 或 Linux 包。签名/公证依赖发布凭据，不把历史包都视为已签名或已验收。
 
 需要 Node.js **22.19+**：
 
@@ -51,11 +51,11 @@ npm run dev
 # 完整本地门禁；单测只留本机
 npm run verify:local
 
-# 未签名 Universal 交付，不发布
+# 未签名 Mac Intel 交付，不发布
 npm run build:mac:local
 ```
 
-`npm run build` 类型检查并编译，不打包；`npm run build:mac` 需要单独配置签名/公证。旧 Mac `:x64`/`:arm64` 命令都是 Universal alias。打包读取 `out/` 时禁止同时重建。node-pty prebuild、Pi/Photon WASM、PDF worker、代码索引资源必须保留。
+`npm run build` 类型检查并编译，不打包；`npm run build:mac` 需要单独配置签名/公证。Mac `:x64` 命令保留为 alias；arm64／Universal 及 Windows／Linux 打包入口已移除。打包读取 `out/` 时禁止同时重建。node-pty prebuild、Pi/Photon WASM、PDF worker、代码索引资源必须保留。
 
 ## 文档
 

@@ -7,7 +7,7 @@ Crescent releases are tag-driven product releases, not ad-hoc CI artifacts.
 - Only tags matching `v*` publish GitHub Releases.
 - Release tags must point to commits contained in `main`.
 - CI validates typecheck, lint, tests, and build before regular changes are merged.
-- Release workflow builds macOS, Windows, and Linux downloadable artifacts and publishes checksums.
+- Release workflow builds macOS Intel (x64) downloadable artifacts only and publishes checksums.
 
 ## Preflight
 
@@ -15,10 +15,7 @@ Crescent releases are tag-driven product releases, not ad-hoc CI artifacts.
 2. Run:
 
    ```bash
-   npm run typecheck
-   npm run lint
-   npm run test
-   npm run build
+    npm run verify:local
    ```
 
    macOS native branding: `postinstall`, `predev` and `prestart` run `scripts/prepare-development-icons.cjs` before Electron launches. It regenerates edge-to-edge approved mountain/river artwork without an extra inset (macOS 26 supplies its own Dock tile), and updates the development bundle name to `墨巡`, identity to `com.crescent.moxun.dev`, and a content-addressed ICNS filename. Main does not swap in a runtime PNG; launch and minimized-window icons share the native ICNS. Validate the system-rendered artwork scale, not just source PNG dimensions. Data paths and the packaged app id stay unchanged. Fully quit old processes before restarting; old pinned installed apps need rebuilding and re-pinning, not a global Dock/cache reset. See [DEVELOPMENT.md](DEVELOPMENT.md).
@@ -34,16 +31,15 @@ Crescent releases are tag-driven product releases, not ad-hoc CI artifacts.
 
 ## Artifact Expectations
 
-- macOS: `dmg` and `zip` artifacts for supported architectures.
-- Windows: installer artifacts from electron-builder.
-- Linux: `AppImage` and `deb` artifacts from the release workflow.
+- macOS Intel only: `moxun-<version>-x64.dmg` and `moxun-<version>-x64-mac.zip`, containing `墨巡.app`.
+- No arm64, Universal, Windows or Linux packages. The original appId and data directories are preserved.
 - `SHA256SUMS.txt` must be attached to the release.
 
 ## Code signing
 
 Signed / notarized builds are optional until certificate secrets are configured. See [CODE_SIGNING.md](./CODE_SIGNING.md) for macOS Developer ID, notarization, and Windows Authenticode setup.
 
-When secrets are present, the release workflow signs macOS (with notarization) and Windows installers automatically. Without secrets, unsigned artifacts are still published; macOS users may need the quarantine workaround documented in the README.
+When secrets are present, the release workflow signs macOS (with notarization). Without secrets, unsigned Intel artifacts are still published; review the macOS security guidance in the README before installing.
 
 ## Auto-update feed
 
@@ -66,7 +62,7 @@ npm run smoke:packaging -- ./release-assets
 ## Follow-up
 
 - Check the GitHub Release assets are present and named by platform/architecture.
-- Confirm `latest-mac.yml` / `latest.yml` / `latest-linux.yml` (as applicable) and `SHA256SUMS.txt` are attached.
+- Confirm `latest-mac.yml` and `SHA256SUMS.txt` are attached.
 - Run `npm run smoke:packaging` against the downloaded assets or `dist/`.
 - Download at least one artifact for the target platform and confirm it starts.
 - If publishing a prerelease, include a hyphen in the tag, for example `v1.2.0-beta.1`.

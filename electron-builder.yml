@@ -49,13 +49,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
-  # Both builds use identical JS archives. Preserve one archive and merge the
-  # unpacked native files without universal's oversized per-file unpack glob.
-  mergeASARs: false
-  # Both architectures intentionally retain these platform-selected prebuilds.
-  # The generic esbuild executable is selected in afterPack and merged by lipo.
-  x64ArchFiles: >-
-    Contents/Resources/app.asar.unpacked/node_modules/{@earendil-works/pi-tui/native/darwin/prebuilds/darwin-{x64,arm64}/darwin-platform.node,node-pty/prebuilds/darwin-{x64,arm64}/{pty.node,spawn-helper},@esbuild/darwin-{x64,arm64}/bin/esbuild}
+  artifactName: moxun-${version}-${arch}-mac.${ext}
   category: public.app-category.developer-tools
   icon: build/icon.icns
   hardenedRuntime: true
@@ -64,9 +58,9 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   target:
     - target: dmg
-      arch: [universal]
+      arch: [x64]
     - target: zip
-      arch: [universal]
+      arch: [x64]
   extendInfo:
     - NSAppleEventsUsageDescription: 墨巡需要连接您选择的 iTerm 会话，以同步终端内容并转发您的输入。
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -74,7 +68,7 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: true
 dmg:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: moxun-${version}-${arch}.${ext}
 linux:
   icon: build/icon.png
   target:

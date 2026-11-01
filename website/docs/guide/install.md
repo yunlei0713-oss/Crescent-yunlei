@@ -2,7 +2,7 @@
 
 <LatestDownloads locale="zh" />
 
-当前 Mac 交付标准是一份包含 Intel x64 和 Apple Silicon arm64 的 Universal 包。下载列表来自历史 Release，文件存在不代表本轮已验收或已签名；Windows 适配不在当前开发范围。
+当前仅交付 Mac Intel（x64）包：`墨巡.app`、`moxun-<version>-x64.dmg` 和 `moxun-<version>-x64-mac.zip`。不再生成 Universal、arm64 或其他平台包。下载列表可能来自历史 Release，文件存在不代表本轮已验收或已签名。
 
 ## macOS 安全提示
 

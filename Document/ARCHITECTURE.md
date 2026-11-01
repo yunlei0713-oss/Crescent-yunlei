@@ -63,4 +63,4 @@ Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通�
 
 `electron.vite.config.ts` 分别构建 Main/Preload/Renderer；`electron-builder.yml` 仅打包当前输出/资源，排除 Document、experiments 与验收输出。Pi、MCP、Photon WASM、node-pty prebuild、PDF legacy worker/fonts/cmaps 维持 external/asarUnpack 规则；Renderer PDF worker、Mermaid、Tree-sitter 和 XYFlow 不能作为垃圾删掉。
 
-Mac 交付一份 Universal app/DMG/ZIP（x64 + arm64）；历史架构脚本为 alias。签名、公证和 Windows/Linux 真实验收不由源码构建通过推定。`experiments/agent-runtime/` 保留独立 package/lockfile、源码和评估，不进入产品依赖或打包。具体参见 [开发规范](DEVELOPMENT.md)、[安全模型](SECURITY_MODEL.md)、[外部终端](EXTERNAL_TERMINALS.md) 与 [本地测试](TESTING.md)。
+当前仅交付 Mac Intel（x64）app/DMG/ZIP，应用名“墨巡”、安装包前缀 `moxun`；仅保留 x64 打包入口。签名、公证和真机验收不由源码构建通过推定。`experiments/agent-runtime/` 保留独立 package/lockfile、源码和评估，不进入产品依赖或打包。具体参见 [开发规范](DEVELOPMENT.md)、[安全模型](SECURITY_MODEL.md)、[外部终端](EXTERNAL_TERMINALS.md) 与 [本地测试](TESTING.md)。

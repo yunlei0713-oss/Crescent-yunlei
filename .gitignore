@@ -8,6 +8,7 @@ website/docs/.vitepress/cache
 *.tsbuildinfo
 build/icons/preview/
 build/icons/Crescent.iconset/
+build/icons/MoXun.iconset/
 
 # Test files are not allowed in the repository
 **/*.test.ts

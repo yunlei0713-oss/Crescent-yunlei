@@ -18,7 +18,7 @@ npm run build:mac:local
 
 `verify:local` runs CI (lint, static security and build including typecheck), then local behavior tests. Test files stay local-only. Pre-commit runs CI automatically; when local tests exist, run the complete gate yourself before committing.
 
-Local Mac packaging creates one x64 + arm64 Universal app/DMG/ZIP, with signing, notarization and publishing disabled. `build:mac` is the Universal entry for preconfigured signing; old architecture commands are aliases. Freeze `out/` while packaging. Retained Windows/Linux scripts are not this round's platform acceptance.
+Packaging targets macOS Intel (x64) only: `墨巡.app` and `moxun` DMG/ZIP filenames. Local builds disable signing, notarization and publishing; `build:mac` uses preconfigured signing. Only `:x64` aliases remain; arm64/Universal and Windows/Linux packaging entries have been removed. Freeze `out/` while packaging.
 
 ## Documentation site
 

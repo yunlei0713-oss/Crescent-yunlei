@@ -1,20 +1,17 @@
-# Crescent {{VERSION}}
+# 墨巡 MoXun {{VERSION}}
 
 Released on {{DATE}}.
 
-Thank you for trying Crescent. This release includes desktop packages for macOS, Windows, and Linux so users can pick the installer that matches their environment.
+Thank you for trying MoXun. This release includes macOS Intel (x64) packages only.
 
-> Crescent is an AI operations workbench for real terminal sessions, SSH workflows, Skills, Wiki SOPs, OpenAPI tools, and MCP integrations.
+> MoXun is an AI operations workbench for real terminal sessions, SSH workflows, Skills, Wiki SOPs, and MCP integrations.
 
 ## Downloads
 
-| Platform            | Asset                                       | Notes                                                |
-| ------------------- | ------------------------------------------- | ---------------------------------------------------- |
-| macOS Apple Silicon | `crescent-{{VERSION}}-arm64.dmg`, `.zip`    | Native build for M-series Macs.                      |
-| macOS Intel         | `crescent-{{VERSION}}-x64.dmg`, `.zip`      | Native build for Intel Macs.                         |
-| Windows             | `crescent-{{VERSION}}-x64-setup.exe`        | NSIS installer.                                      |
-| Linux               | `crescent-{{VERSION}}-x64.AppImage`, `.deb` | Choose the package format used by your distribution. |
-| Integrity           | `SHA256SUMS.txt`                            | Verify downloaded files before installing.           |
+| Platform    | Asset                                                        | Notes                                      |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------ |
+| macOS Intel | `moxun-{{VERSION}}-x64.dmg`, `moxun-{{VERSION}}-x64-mac.zip` | Intel-only build containing `墨巡.app`.    |
+| Integrity   | `SHA256SUMS.txt`                                             | Verify downloaded files before installing. |
 
 ## Highlights
 
@@ -26,20 +23,20 @@ Thank you for trying Crescent. This release includes desktop packages for macOS,
 
 ## Install Notes
 
-- Close the running Crescent app before installing this version.
+- Close the running MoXun app before installing this version.
 - Verify downloads with `SHA256SUMS.txt` before installing.
 - Keep a copy of important local configuration before upgrading across major versions.
 - Review configured OpenAPI and MCP tools after upgrading, especially tools that can change remote state.
 
 ### macOS: “is damaged and can’t be opened”
 
-Release builds are currently unsigned / not notarized. Gatekeeper may show **“Crescent” is damaged and can’t be opened** after a browser download. This is a quarantine warning, not a corrupt package.
+Signing and notarization depend on configured release credentials. Gatekeeper may show **“墨巡” is damaged and can’t be opened** after a browser download. Verify the source and checksum first; do not assume that the warning proves the package is intact.
 
-1. Move `Crescent.app` into Applications.
+1. Move `墨巡.app` into Applications.
 2. Clear the quarantine attribute:
 
 ```bash
-xattr -cr /Applications/Crescent.app
+xattr -cr /Applications/墨巡.app
 ```
 
 3. Open the app again.
@@ -63,6 +60,6 @@ Security reports should use GitHub Security Advisories rather than public issues
 ## Maintainer Checklist
 
 - Confirm the tag points to the intended `main` commit.
-- Confirm all platform assets are attached to this release.
+- Confirm the Intel DMG/ZIP, update metadata and checksums are attached; no other architecture/platform packages.
 - Confirm `SHA256SUMS.txt` includes every downloadable package.
 - Add highlights, breaking changes, or migration notes above when needed.

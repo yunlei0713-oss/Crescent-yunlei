@@ -38,15 +38,17 @@ export APPLE_API_ISSUER=...
 npm run build:mac
 ```
 
-`electron-builder.yml` already enables `hardenedRuntime`, entitlements, and `notarize: true`. Every Mac entry point builds **Universal** (x64 + arm64 in one application/DMG/ZIP), including the single Mac release-workflow job. Unsigned local builds use `npm run build:mac:unsigned` or `npm run build:mac:local`; neither signs, notarizes nor publishes. See [DEVELOPMENT.md](DEVELOPMENT.md) for the permanent packaging rule and offline procedure. Windows adaptation and acceptance are outside the current scope; the historical Windows signing reference below is not an active validation requirement.
+`electron-builder.yml` already enables `hardenedRuntime`, entitlements, and `notarize: true`. Every packaging entry point and the single release-workflow build job target **macOS Intel (x64) only**. The application is named `墨巡.app`, with `moxun` DMG/ZIP filenames; the existing appId is preserved. Unsigned local builds use `npm run build:mac:unsigned` or `npm run build:mac:local`; neither signs, notarizes nor publishes. See [DEVELOPMENT.md](DEVELOPMENT.md) for the current packaging rule and offline procedure. The historical Windows signing reference below is not an active build or validation requirement.
 
 ### Verification
 
 - Download the DMG/ZIP from GitHub Releases.
 - Open without `xattr -cr` quarantine clearing.
-- `spctl --assess --type execute /Applications/Crescent.app` should report accepted.
+- `spctl --assess --type execute /Applications/墨巡.app` should report accepted.
 
-## Windows — Authenticode
+## Historical reference: Windows — Authenticode
+
+Windows packaging is not enabled in the current npm entries or release workflow. The certificate notes below are historical reference only.
 
 ### Certificate
 
@@ -61,12 +63,12 @@ Use an EV or standard code-signing certificate from a trusted CA. Export as `.pf
 
 When only one cert is used across platforms, `CSC_LINK` / `CSC_KEY_PASSWORD` on the Windows job is enough.
 
-### Local signed build
+### Historical local signing environment
 
 ```bash
 export CSC_LINK=...
 export CSC_KEY_PASSWORD=...
-npm run build:win
+# The former build:win command has been removed; do not use this as a current build flow.
 ```
 
 ### Verification
@@ -74,7 +76,7 @@ npm run build:win
 - Installer should show a trusted publisher.
 - `Get-AuthenticodeSignature .\crescent-*-setup.exe` should be `Valid`.
 
-## Linux
+## Historical reference: Linux
 
 AppImage / deb builds are not code-signed with Apple/Microsoft tooling. Rely on `SHA256SUMS.txt` on the GitHub Release and, where applicable, distribution package signing outside this repo.
 
@@ -85,7 +87,7 @@ AppImage / deb builds are not code-signed with Apple/Microsoft tooling. Rely on 
 - Signing secrets are staged as `*_RAW` env vars and only promoted to `CSC_LINK` / `APPLE_*` when non-empty. An empty `CSC_LINK=""` must never reach electron-builder (it treats that as a cert path and fails with `<repo> not a file`).
 - If macOS signing secrets are set: build with notarization and hardened runtime enabled; do not force `CSC_IDENTITY_AUTO_DISCOVERY=false`.
 - Otherwise: keep the current unsigned path (`notarize=false`, `hardenedRuntime=false`, `CSC_IDENTITY_AUTO_DISCOVERY=false`, CSC\_\* unset).
-- Windows uses `CSC_LINK` / `WIN_CSC_LINK` when present; otherwise produces unsigned NSIS installers.
+- The build matrix contains only macOS Intel (x64); Windows/Linux assets are not generated.
 
 ## Auto-update dependency
 

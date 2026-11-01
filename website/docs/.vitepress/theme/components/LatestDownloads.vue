@@ -43,19 +43,15 @@ const copy = {
     releases: 'GitHub Releases',
     checksumNote: '同一 Release 里的 SHA256SUMS.txt 可以用来校验下载文件。',
     platforms: {
-      macUniversal: 'macOS Universal（Intel + Apple Silicon）',
+      macUniversal: 'macOS Universal（历史包）',
       macArm: 'macOS Apple Silicon（历史独立架构）',
-      macIntel: 'macOS Intel（历史独立架构）',
-      windows: 'Windows',
-      appImage: 'Linux AppImage',
-      deb: 'Linux deb',
+      macIntel: 'macOS Intel（x64）',
+      windows: 'Windows（历史包）',
+      appImage: 'Linux AppImage（历史包）',
+      deb: 'Linux deb（历史包）',
       sums: '校验文件'
     },
-    patterns: [
-      ['macOS Universal（Intel + Apple Silicon）', 'crescent-*-universal.dmg'],
-      ['Windows', 'crescent-*-x64-setup.exe'],
-      ['Linux', '.AppImage 或 .deb']
-    ]
+    patterns: [['macOS Intel（x64）', 'moxun-*-x64.dmg / moxun-*-x64-mac.zip']]
   },
   en: {
     latest: 'Latest release',
@@ -67,19 +63,15 @@ const copy = {
     releases: 'GitHub Releases',
     checksumNote: 'Use SHA256SUMS.txt from the same release to verify the download when you can.',
     platforms: {
-      macUniversal: 'macOS Universal (Intel + Apple Silicon)',
+      macUniversal: 'macOS Universal (historical package)',
       macArm: 'macOS Apple Silicon (legacy separate build)',
-      macIntel: 'macOS Intel (legacy separate build)',
-      windows: 'Windows',
-      appImage: 'Linux AppImage',
-      deb: 'Linux deb',
+      macIntel: 'macOS Intel (x64)',
+      windows: 'Windows (historical package)',
+      appImage: 'Linux AppImage (historical package)',
+      deb: 'Linux deb (historical package)',
       sums: 'Checksums'
     },
-    patterns: [
-      ['macOS Universal (Intel + Apple Silicon)', 'crescent-*-universal.dmg'],
-      ['Windows', 'crescent-*-x64-setup.exe'],
-      ['Linux', '.AppImage or .deb']
-    ]
+    patterns: [['macOS Intel (x64)', 'moxun-*-x64.dmg / moxun-*-x64-mac.zip']]
   }
 } as const
 
@@ -90,9 +82,9 @@ const releaseUrl = ref(RELEASES_URL)
 const rows = ref<Row[]>([])
 
 const KIND_ORDER: AssetKind[] = [
+  'macIntel',
   'macUniversal',
   'macArm',
-  'macIntel',
   'windows',
   'appImage',
   'deb',

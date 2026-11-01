@@ -18,7 +18,7 @@ npm run build:mac:local
 
 `verify:local` 是 CI（lint、静态安全、含类型检查的 build）加本地行为测试。测试文件仅本地保留，不提交。pre-commit 自动运行 CI；有本地测试时提交前须自行运行完整门禁。
 
-本地 Mac 打包只生成一份 x64 + arm64 Universal app/DMG/ZIP，禁用签名、公证和发布。`build:mac` 是预配置签名身份的 Universal 入口；旧架构命令为 alias。打包期间冻结 `out/`，不能并发构建。Windows/Linux 脚本保留，但不代表本轮平台验收成功。
+当前只生成 Mac Intel（x64）app/DMG/ZIP，应用名“墨巡”、安装包前缀 `moxun`。本地入口禁用签名、公证和发布；`build:mac` 用于预配置签名身份。仅 `:x64` alias 保留，arm64／Universal 和 Windows／Linux 打包入口已移除。打包期间冻结 `out/`，不能并发构建。
 
 ## 文档站
 

@@ -28,11 +28,11 @@ npm run build
 # 完整本地门禁：CI（含类型检查和构建）+ 本地行为测试
 npm run verify:local
 
-# 本地无签名 Mac Universal 安装包（不发布）
+# 本地无签名 Mac Intel 安装包（不发布）
 npm run build:mac:local
 ```
 
-桌面安装包输出到 `dist/`。Mac 只交付一份包含 x64 与 arm64 的 Universal app/DMG/ZIP，旧架构命令是 alias。`npm run build:mac` 用于已配置 Apple 签名与公证的场景；源码构建不能代替真机、签名和 Gatekeeper 验收。Windows/Linux 脚本保留，不代表本轮完成平台适配。打包期间冻结 `out/`，详情见 [开发规范](Document/DEVELOPMENT.md)。
+本地安装包输出到 `dist/local-macos/x64/`。仅交付 Mac Intel（x64）的 `墨巡.app`、`moxun-<version>-x64.dmg` 和 `moxun-<version>-x64-mac.zip`，不生成 arm64、Universal 或其他平台包。`:x64` 命令是 alias；其他架构／平台打包入口已移除。`npm run build:mac` 用于已配置 Apple 签名与公证的场景；源码构建不能代替真机、签名和 Gatekeeper 验收。打包期间冻结 `out/`，详情见 [开发规范](Document/DEVELOPMENT.md)。
 
 ## 常见问题
 

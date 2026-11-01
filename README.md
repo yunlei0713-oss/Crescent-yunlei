@@ -40,7 +40,7 @@ flowchart TD
 
 ## Install and build
 
-Check [GitHub Releases](https://github.com/aide-family/Crescent/releases) for actually available assets and verify their published SHA-256 checksums. Current Mac delivery uses **one Universal app, DMG and ZIP containing x64 and arm64**, not separate architecture packages. Signing/notarization depends on configured release credentials; do not assume every historical download is signed or validated. Windows/Linux workflow targets remain, but current local adaptation and acceptance focus on macOS.
+Check [GitHub Releases](https://github.com/aide-family/Crescent/releases) for actually available assets and verify their published SHA-256 checksums. Current delivery is **macOS Intel (x64) only**: `墨巡.app`, `moxun-<version>-x64.dmg` and `moxun-<version>-x64-mac.zip`. No arm64, Universal, Windows or Linux packages are built. Signing/notarization depends on configured release credentials; do not assume every historical download is signed or validated.
 
 Node.js **22.19+** is required:
 
@@ -51,11 +51,11 @@ npm run dev
 # Full local verification; tests stay local-only
 npm run verify:local
 
-# Unsigned Universal delivery, no publishing
+# Unsigned Mac Intel delivery, no publishing
 npm run build:mac:local
 ```
 
-`npm run build` typechecks and compiles without packaging. `npm run build:mac` uses separately configured signing/notarization. Legacy Mac `:x64`/`:arm64` scripts are Universal aliases. Never rebuild `out/` while packaging is reading it. Keep required node-pty prebuilds, Pi/Photon WASM, PDF worker and code-index resources.
+`npm run build` typechecks and compiles without packaging. `npm run build:mac` uses separately configured signing/notarization. Mac `:x64` scripts are aliases; arm64/Universal and Windows/Linux packaging entries have been removed. Never rebuild `out/` while packaging is reading it. Keep required node-pty prebuilds, Pi/Photon WASM, PDF worker and code-index resources.
 
 ## Documentation
 
