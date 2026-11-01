@@ -2,8 +2,8 @@ import en from './en'
 import zhCN from './zh-CN'
 
 export const dictionaries = {
-  en,
-  'zh-CN': zhCN
+  en: { ...en, locale: 'en' as const },
+  'zh-CN': { ...zhCN, locale: 'zh-CN' as const }
 }
 
 export type Locale = keyof typeof dictionaries

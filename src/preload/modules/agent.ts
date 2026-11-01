@@ -51,7 +51,36 @@ import type {
   PlanProgress
 } from '../../shared/execution-plan'
 
+import type {
+  FileChangeDecision,
+  FileChangeRequest,
+  FileChangeResult
+} from '../../shared/file-approval-types'
+import type { GuidedOpsAction, GuidedOpsSnapshot } from '../../shared/guided-ops-types'
+
 export const agentApi = {
+  guidedSnapshot: (chatId: string, terminalId: string): Promise<GuidedOpsSnapshot | undefined> =>
+    ipcRenderer.invoke('agent:guided-snapshot', { chatId, terminalId }),
+  guidedAction: (
+    chatId: string,
+    action: GuidedOpsAction,
+    runId?: string
+  ): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('agent:guided-action', { chatId, action, runId }),
+  resolveFileChange: (decision: FileChangeDecision): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('agent:resolve-file-change', decision),
+  onFileChangeRequest: (callback: (request: FileChangeRequest) => void): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, request: FileChangeRequest): void =>
+      callback(request)
+    ipcRenderer.on('agent:file-change-request', listener)
+    return () => ipcRenderer.removeListener('agent:file-change-request', listener)
+  },
+  onFileChangeResult: (callback: (result: FileChangeResult) => void): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, result: FileChangeResult): void =>
+      callback(result)
+    ipcRenderer.on('agent:file-change-result', listener)
+    return () => ipcRenderer.removeListener('agent:file-change-result', listener)
+  },
   revisePlan: (value: {
     requestId: string
     digest: string
@@ -279,31 +308,6 @@ export const agentApi = {
 
     ipcRenderer.on('agent:subterminal-opened', listener)
     return () => ipcRenderer.removeListener('agent:subterminal-opened', listener)
-  },
-  onSubagentStatus: (
-    callback: (payload: {
-      parentTabId: string
-      tabId: string
-      name: string
-      agentName: string
-      agentStatus: 'running' | 'done' | 'error'
-      close?: boolean
-    }) => void
-  ): (() => void) => {
-    const listener = (
-      _: Electron.IpcRendererEvent,
-      payload: {
-        parentTabId: string
-        tabId: string
-        name: string
-        agentName: string
-        agentStatus: 'running' | 'done' | 'error'
-        close?: boolean
-      }
-    ): void => callback(payload)
-
-    ipcRenderer.on('agent:subagent-status', listener)
-    return () => ipcRenderer.removeListener('agent:subagent-status', listener)
   },
   onCaptureRequested: (callback: (payload: AgentCaptureRequestedPayload) => void): (() => void) => {
     const listener = (_: Electron.IpcRendererEvent, payload: AgentCaptureRequestedPayload): void =>

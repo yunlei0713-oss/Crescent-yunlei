@@ -1,15 +1,11 @@
 import { localDocumentError } from '../local-document-errors'
-import { normalizeCommandTimeoutPolicy } from '../../shared/command-timeouts'
-import { Type, type TSchema } from 'typebox'
-import { resolve, dirname, basename } from 'node:path'
-import { readFile, lstat } from 'node:fs/promises'
-import { createHash } from 'node:crypto'
-import type { PiSdkFacade, ToolDefinition } from './pi-sdk'
+import { Type } from 'typebox'
+import { lstat } from 'node:fs/promises'
+import type { PiSdkFacade } from './pi-sdk'
 import { getPtyBashExecContext } from './pi-terminal-bash'
 import { localDocumentReaderForOwner } from '../local-document-ipc'
-import { requestCommandApproval } from './command-approval'
-import { redactSensitiveText } from '../../shared/secret-redaction'
-import { sensitiveDocumentPath } from '../local-document-reader'
+import { fileChangeApprovals } from './file-approval-service'
+import { safeWebContentsSend } from '../safe-ipc-send'
 
 export function createLocalFileTools(pi: PiSdkFacade, cwd: string, sessionKey: string) {
   const read = pi.defineTool({
@@ -60,101 +56,56 @@ export function createLocalFileTools(pi: PiSdkFacade, cwd: string, sessionKey: s
       }
     }
   })
-  function wrapMutation<P extends TSchema, D, S>(
-    tool: ToolDefinition<P, D, S>
-  ): ToolDefinition<P, D, S> {
-    const execute = tool.execute.bind(tool)
-    return pi.defineTool({
-      ...tool,
-      description:
-        tool.description +
-        ' Local client workspace only. Every edit/write needs exact human approval; planned/manual-execution modes cannot mutate through this tool.',
-      executionMode: 'sequential',
-      async execute(id, params, signal, onUpdate, toolContext) {
-        const context = getPtyBashExecContext(sessionKey)
-        if (
-          !context ||
-          context.webContents.isDestroyed() ||
-          context.executionMode === 'planned' ||
-          context.mutationPolicy === 'manual-execution'
-        )
-          throw new Error(
-            'Local mutation unavailable in this execution mode; show a plan/command for human execution'
-          )
-        const requestedPath = resolve(cwd, (params as { path: string }).path)
-        if (sensitiveDocumentPath(requestedPath))
-          throw new Error('Sensitive paths require manual file handling')
-        const reader = await localDocumentReaderForOwner(context.webContents.id, cwd)
-        let path: string
-        try {
-          path = await reader.authorize(requestedPath)
-        } catch (error) {
-          if (tool.name !== 'write' || (error as NodeJS.ErrnoException).code !== 'ENOENT')
-            throw error
-          path = resolve(await reader.authorize(dirname(requestedPath)), basename(requestedPath))
+  const request = pi.defineTool({
+    name: 'request_file_change',
+    label: 'Request exact file review',
+    description:
+      'Request a one-time human review of complete local UTF-8 file changes (64 KiB/file, 16 files). Main generates the full Diff and verifies approved paths and hashes. No terminal access. Existing-file changes require individual confirmation. Parent directories must exist. Never claim success unless the result confirms it.',
+    parameters: Type.Object({
+      reason: Type.String({ minLength: 1, maxLength: 2000 }),
+      changes: Type.Array(
+        Type.Object({
+          path: Type.String({ maxLength: 4096 }),
+          operation: Type.Union(
+            ['create', 'update', 'overwrite', 'delete', 'move', 'mkdir', 'rmdir'].map((value) =>
+              Type.Literal(
+                value as 'create' | 'update' | 'overwrite' | 'delete' | 'move' | 'mkdir' | 'rmdir'
+              )
+            )
+          ),
+          content: Type.Optional(Type.String({ maxLength: 65536 })),
+          destination: Type.Optional(Type.String({ maxLength: 4096 }))
+        }),
+        { minItems: 1, maxItems: 16 }
+      )
+    }),
+    executionMode: 'sequential',
+    async execute(_id, params, signal) {
+      const context = getPtyBashExecContext(sessionKey)
+      if (!context || context.webContents.isDestroyed())
+        throw new Error('No active file review scope')
+      const reader = await localDocumentReaderForOwner(context.webContents.id, cwd)
+      const result = await fileChangeApprovals.request({
+        ...params,
+        cwd,
+        ownerId: context.webContents.id,
+        runId: context.runId,
+        chatTabId: context.chatTabId,
+        authorize: (path) => reader.authorize(path),
+        isCurrent: () =>
+          getPtyBashExecContext(sessionKey)?.runId === context.runId &&
+          !context.webContents.isDestroyed(),
+        signal: AbortSignal.any(
+          [signal, context.signal].filter((value): value is AbortSignal => Boolean(value))
+        ),
+        publish: (request) => {
+          if (!safeWebContentsSend(context.webContents, 'agent:file-change-request', request))
+            throw new Error('File review window is unavailable')
         }
-        const snapshot = async (): Promise<string> => {
-          try {
-            const file = await lstat(path)
-            if (!file.isFile() || file.isSymbolicLink() || file.size > 1024 * 1024)
-              throw new Error('Local mutations require a regular file of at most 1 MiB')
-            await reader.authorize(path)
-            return `${file.dev}:${file.ino}:${createHash('sha256')
-              .update(await readFile(path))
-              .digest('hex')}`
-          } catch (error) {
-            if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'absent'
-            throw error
-          }
-        }
-        const initial = await snapshot()
-        const preview = redactSensitiveText(JSON.stringify({ ...params, path }, null, 2))
-        if (Buffer.byteLength(preview) > 50000)
-          throw new Error('Mutation too large for human review; use manual execution')
-        const payloadDigest = createHash('sha256').update(JSON.stringify(params)).digest('hex')
-        const combinedSignal = AbortSignal.any(
-          [signal, context.signal].filter((s): s is AbortSignal => Boolean(s))
-        )
-        const decision = await requestCommandApproval({
-          webContents: context.webContents,
-          runId: context.runId,
-          tabId: context.executionTabId,
-          chatTabId: context.chatTabId,
-          signal: combinedSignal,
-          timeoutMs: normalizeCommandTimeoutPolicy(context.config.commandTimeouts).approvalMs,
-          command: `LOCAL CLIENT ${tool.name}: ${path}\nPayload SHA256: ${payloadDigest}\n${preview}`,
-          locale: context.locale,
-          config: context.config,
-          audit: {
-            summary: 'Local file mutation requires human approval.',
-            operationReason: 'Review exact edits/content on the client filesystem.',
-            risk: 'high',
-            requiresApproval: true,
-            riskPoints: [],
-            impactAnalysis: '',
-            recommendation: '',
-            source: 'rule',
-            elapsedMs: 0
-          }
-        })
-        if (!decision.approved)
-          throw new Error('Local file mutation rejected/expired; no file was changed')
-        return pi.withFileMutationQueue(`host-approval:${path}`, async () => {
-          combinedSignal.throwIfAborted()
-          if (
-            getPtyBashExecContext(sessionKey)?.runId !== context.runId ||
-            context.webContents.isDestroyed() ||
-            (await snapshot()) !== initial
-          )
-            throw new Error('File or run changed after approval; request a new review')
-          return execute(id, { ...params, path } as never, combinedSignal, onUpdate, toolContext)
-        })
-      }
-    })
-  }
-  return [
-    read,
-    wrapMutation(pi.createEditToolDefinition(cwd)),
-    wrapMutation(pi.createWriteToolDefinition(cwd))
-  ]
+      })
+      safeWebContentsSend(context.webContents, 'agent:file-change-result', result)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }], details: result }
+    }
+  })
+  return [read, request]
 }

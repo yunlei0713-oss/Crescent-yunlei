@@ -21,10 +21,7 @@ function ArchNodeComponent({ data }: NodeProps<Node<ArchNodeData>>): React.JSX.E
         borderRadius: theme.geometry.radius,
         background: tone.fill,
         borderColor: tone.border,
-        boxShadow:
-          data.themeId === 'night-shift' || data.themeId === 'ink-signal'
-            ? 'none'
-            : `0 0 0 1px ${tone.glow}, 0 0 12px ${tone.glow}`
+        boxShadow: 'none'
       }}
     >
       <Handle

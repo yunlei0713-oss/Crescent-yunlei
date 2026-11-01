@@ -140,8 +140,8 @@ export function useProviderController({
       'models',
       parseProviderModels(value).map((model) => ({
         ...model,
-        samplingParamsByThinkingLevel: previous.find((saved) => saved.id === model.id)
-          ?.samplingParamsByThinkingLevel
+        ...previous.find((saved) => saved.id === model.id),
+        imageInput: model.imageInput
       }))
     )
   }

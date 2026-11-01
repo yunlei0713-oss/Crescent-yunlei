@@ -6,7 +6,7 @@ function cardRule(selector: string, fill: string, stroke: string): string {
 
 /** Flowchart shape/cluster/edge rules embedded in the rendered SVG. */
 /** Build a strict config at render time; no DOM or Electron dependency. */
-export function buildMermaidRenderConfig(themeId: AppThemeId = 'crescent') {
+export function buildMermaidRenderConfig(themeId: AppThemeId = 'ink-wash-light') {
   const theme = APP_THEMES[themeId]
   const palette = theme.diagram
   const diagram = {
@@ -45,7 +45,7 @@ export function buildMermaidRenderConfig(themeId: AppThemeId = 'crescent') {
   ].join('')
 
   const themeVariables = {
-    darkMode: true,
+    darkMode: themeId === 'ink-wash-dark',
     background: diagram.canvas,
     mainBkg: diagram.service,
     secondBkg: chart.surfaceRaised,

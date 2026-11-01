@@ -1,4 +1,3 @@
-import { isStaticallyReadonly } from './command-guard'
 export type ApprovalPolicy = 'manual' | 'safe-auto'
 export type MutationPolicy = 'confirm' | 'manual-execution'
 export function normalizeApprovalPolicy(value: unknown): ApprovalPolicy {
@@ -17,14 +16,8 @@ export function requiresElevatedReadonlyAuthorization(command: string): boolean 
   return /\bsudo\b|\bkubectl\b.*\b(?:exec|logs)\b|\bdocker\b.*\b(?:exec|logs)\b/.test(command)
 }
 export function canAutomaticallyApprove(
-  command: string,
-  input: { policy: ApprovalPolicy; grantValid: boolean }
+  _command: string,
+  _input: { policy: ApprovalPolicy; grantValid: boolean }
 ): boolean {
-  return (
-    !/\b(?:ssh|scp|sftp|curl|wget|nc)\b/.test(command) &&
-    isStaticallyReadonly(command) &&
-    !containsSensitiveInspection(command) &&
-    (!requiresElevatedReadonlyAuthorization(command) ||
-      (input.policy === 'safe-auto' && input.grantValid))
-  )
+  return false
 }

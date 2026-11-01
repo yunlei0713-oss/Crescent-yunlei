@@ -1,6 +1,6 @@
+import { registerProjectIpc } from './projects'
 import { registerKnowledgeIpc } from './knowledge-ipc'
 import { registerLocalDocumentIpc } from './local-document-ipc'
-import { registerCommandDirectoryIpc } from './command-directory'
 import { rendererIpc } from './ipc-security'
 import { app, BrowserWindow, clipboard, Notification, screen } from 'electron'
 import { join, resolve } from 'path'
@@ -10,6 +10,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
   registerTerminalIpc,
+  attachTerminalOwnerLifecycle,
   stopAllTerminalSessions,
   waitForPtySessionsToExit
 } from './terminal/ipc'
@@ -18,9 +19,9 @@ import {
   attachRendererCrashRecovery,
   registerRendererRecoveryIpc
 } from './renderer-recovery'
-import { registerWorkbenchLayoutIpc } from './workbench-layout-ipc'
 import { normalizeAttentionNotifyPayload } from '../shared/attention-notify'
 import { initializePrivateFiles } from './private-files'
+import { removeRetiredCommandDirectory } from './retired-data-migration'
 import { initSystemLogging, setSystemLogLevel } from './logging'
 import { readAgentConfig } from './crescent-store'
 import { isKnownNativeLogNoise } from './native-log-filter'
@@ -37,11 +38,14 @@ let stopAttachmentCleanup: (() => void) | undefined
 
 const mainStartup = traceStartup('main:start')
 const userDataOverride = process.env.CRESCENT_USER_DATA_DIR?.trim()
-if (userDataOverride) {
-  mkdirSync(resolve(userDataOverride), { recursive: true })
-  app.setPath('userData', resolve(userDataOverride))
-}
+// Display-name changes must never redirect Chromium, electron-store or safeStorage data.
+const userDataPath = userDataOverride
+  ? resolve(userDataOverride)
+  : join(app.getPath('appData'), app.isPackaged ? 'Crescent' : 'crescent')
+mkdirSync(userDataPath, { recursive: true })
+app.setPath('userData', userDataPath)
 initializePrivateFiles()
+removeRetiredCommandDirectory()
 initSystemLogging()
 installWarningFilter()
 installNativeLogFilter()
@@ -118,6 +122,8 @@ function createWindow(): BrowserWindow {
       nodeIntegration: false
     }
   })
+
+  attachTerminalOwnerLifecycle(mainWindow.webContents)
 
   mainWindow.webContents.once('did-finish-load', () => traceStartup('renderer:loaded', mainStartup))
   mainWindow.on('ready-to-show', () => {
@@ -217,11 +223,12 @@ app.whenReady().then(async () => {
   ])
 
   traceStartup('main:modules-loaded', mainStartup)
-  app.setName('Crescent')
+  app.setName('墨巡')
   configureAboutPanel(icon)
   registerMenuIpc()
   installApplicationMenu()
-  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(icon)
+  // macOS uses the bundle ICNS from first launch through minimize/restore.
+  // Development hooks prepare Electron.app; do not swap in the unpadded UI PNG.
   app.on('child-process-gone', (_event, details) => {
     if (details.type === 'GPU') {
       console.warn('GPU process gone', details)
@@ -283,15 +290,14 @@ app.whenReady().then(async () => {
   })
   initializeCrescentDatabase()
   registerRendererRecoveryIpc(icon)
-  registerWorkbenchLayoutIpc()
   const { ensureDefaultInstructionFiles } = await import('./agent/instruction-files')
   ensureDefaultInstructionFiles()
   registerAgentIpc()
   registerConnectionIpc()
   registerStorageIpc()
   registerTerminalIpc()
-  registerCommandDirectoryIpc()
   registerLocalDocumentIpc()
+  registerProjectIpc()
   registerKnowledgeIpc()
   registerWhaleMonitorIpc()
   registerUpdateIpc()
@@ -305,9 +311,9 @@ app.whenReady().then(async () => {
   }
   attachRendererCrashRecovery(mainWindow, {
     iconPath: icon,
-    notifyTitle: 'Crescent',
+    notifyTitle: '墨巡',
     notifyBody: 'Renderer recovered after a crash. Recent session will be restored when available.',
-    loopTitle: 'Crescent',
+    loopTitle: '墨巡',
     loopBody: 'Renderer crashed repeatedly. Auto-reload stopped; open the diagnostic panel.'
   })
 
@@ -318,10 +324,10 @@ app.whenReady().then(async () => {
       const window = createWindow()
       attachRendererCrashRecovery(window, {
         iconPath: icon,
-        notifyTitle: 'Crescent',
+        notifyTitle: '墨巡',
         notifyBody:
           'Renderer recovered after a crash. Recent session will be restored when available.',
-        loopTitle: 'Crescent',
+        loopTitle: '墨巡',
         loopBody: 'Renderer crashed repeatedly. Auto-reload stopped; open the diagnostic panel.'
       })
     }

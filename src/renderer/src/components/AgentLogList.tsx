@@ -1,29 +1,13 @@
-import { useMemo, type RefObject } from 'react'
-import {
-  CheckIcon,
-  CopyIcon,
-  Loader2Icon,
-  RefreshCwIcon,
-  ServerIcon,
-  TriangleAlertIcon
-} from 'lucide-react'
+import { useMemo, type RefObject, type ReactNode } from 'react'
+import { Loader2Icon, RefreshCwIcon, ServerIcon, TriangleAlertIcon } from 'lucide-react'
 
-import { ActionLogRow, AgentLogContent } from '@renderer/components/AgentLogContent'
-import { CaptureDraftReadyRow } from '@renderer/components/CaptureDraftPin'
+import { AgentLogMessage } from '@renderer/components/AgentLogMessage'
 import { Button } from '@renderer/components/ui/button'
 import type { Dictionary } from '@renderer/i18n'
-import {
-  connectionFailureMarkers,
-  formatLogTime,
-  isConnectionFailureLog,
-  isConnectionStatusText,
-  isConversationLog,
-  logClassName,
-  logListItemSpacingClass,
-  logRoleLabel
-} from '@renderer/lib/agent-log'
+import { isConnectionStatusText, logListItemSpacingClass } from '@renderer/lib/agent-log'
 import type { AgentLogEntry, AgentRunViewState } from '@renderer/lib/terminal-tabs'
 import type { CaptureKind } from '../../../shared/agent-types'
+import { useStableCallback } from '@renderer/hooks/useStableCallback'
 
 export function AgentLogList({
   logRef,
@@ -36,33 +20,32 @@ export function AgentLogList({
   thinkingCollapsedByDefault,
   connectionRecovery,
   t,
-  onCopyEntry,
-  onCopyResult,
-  onExportResult,
-  onExportFull,
-  onExportTrace,
-  onOpsFeedback,
-  onResolveApproval,
+  onCopyEntry: copyEntry,
+  onCopyResult: copyResult,
+  onExportResult: exportResult,
+  onExportFull: exportFull,
+  onExportTrace: exportTrace,
+  onOpsFeedback: opsFeedback,
+  onResolveApproval: resolveApproval,
   feedbackByLogId,
   feedbackBusyLogId,
   savingSopLogId,
   onRetryConnection,
   onReinitTerminal,
   onOpenConnections,
-  onAddCommandToWhitelist,
-  onInjectSuggestions,
-  onOpenModelSettings,
-  onSaveAsSop,
-  onInterruptCommand,
-  onFocusTerminal,
-  fallbackExecutionTabId,
+  onAddCommandToWhitelist: addCommandToWhitelist,
+  onInjectSuggestions: injectSuggestions,
+  onOpenModelSettings: openModelSettings,
+  onSaveAsSop: saveAsSop,
+  onFocusTerminal: focusTerminal,
   captureReadyLogs = [],
   hiddenCaptureReadyLogIds = [],
-  onOpenCaptureDraft,
+  onOpenCaptureDraft: openCaptureDraft,
   hasEarlierLogs,
   loadingEarlier,
   earlierLogsError = null,
-  onLoadEarlier
+  onLoadEarlier,
+  primaryContent
 }: {
   logRef: RefObject<HTMLDivElement | null>
   entries: AgentLogEntry[]
@@ -74,6 +57,7 @@ export function AgentLogList({
   thinkingCollapsedByDefault?: boolean
   connectionRecovery?: {
     visible: boolean
+    dismissed?: boolean
     canRetry: boolean
     connecting?: boolean
     pipeFallback?: boolean
@@ -91,9 +75,7 @@ export function AgentLogList({
   onInjectSuggestions?: (texts: string[]) => void
   onOpenModelSettings?: () => void
   onSaveAsSop?: (entry: AgentLogEntry) => void
-  onInterruptCommand?: (tabId: string) => void
   onFocusTerminal?: (tabId: string) => void
-  fallbackExecutionTabId?: string
   captureReadyLogs?: Array<{ logId: number; kind: CaptureKind }>
   hiddenCaptureReadyLogIds?: number[]
   onOpenCaptureDraft?: (kind: CaptureKind) => void
@@ -107,12 +89,24 @@ export function AgentLogList({
   loadingEarlier?: boolean
   earlierLogsError?: string | null
   onLoadEarlier?: () => void | Promise<void>
+  /** Latest guidance participates in the same scroll flow as analysis and evidence. */
+  primaryContent?: ReactNode
 }): React.JSX.Element {
-  const markers = connectionFailureMarkers(t)
-  const latestFailure = [...entries]
-    .reverse()
-    .find((entry) => entry.kind === 'error' && isConnectionFailureLog(entry.text, markers))
-  const showRecovery = Boolean(connectionRecovery?.visible && latestFailure)
+  const onCopyEntry = useStableCallback(copyEntry)
+  const onOpenCaptureDraft = useStableCallback(openCaptureDraft)
+  const onCopyResult = useStableCallback(copyResult)
+  const onExportResult = useStableCallback(exportResult)
+  const onExportFull = useStableCallback(exportFull)
+  const onExportTrace = useStableCallback(exportTrace)
+  const onOpsFeedback = useStableCallback(opsFeedback)
+  const onResolveApproval = useStableCallback(resolveApproval)
+  const onAddCommandToWhitelist = useStableCallback(addCommandToWhitelist)
+  const onInjectSuggestions = useStableCallback(injectSuggestions)
+  const onOpenModelSettings = useStableCallback(openModelSettings)
+  const onSaveAsSop = useStableCallback(saveAsSop)
+  const onFocusTerminal = useStableCallback(focusTerminal)
+  // Transport exit is authoritative even when there is no matching historical error row.
+  const showRecovery = Boolean(connectionRecovery?.visible && !connectionRecovery.dismissed)
   // Absorb legacy/edge standalone connection status rows into the nearest
   // assistant card so the timeline never renders fragmented system lines.
   const absorbedByAssistantId = useMemo(() => {
@@ -154,208 +148,145 @@ export function AgentLogList({
       ref={logRef}
       className="app-agent-log-list relative z-0 min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-4 pb-4 text-sm select-text"
     >
-      {onLoadEarlier && hasEarlierLogs ? (
-        <div className="mb-3 flex flex-col items-center gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px]"
-            disabled={loadingEarlier}
-            onClick={() => void onLoadEarlier()}
-          >
-            {loadingEarlier ? t.input.loadingEarlierLogs : t.input.loadEarlierLogs}
-          </Button>
-          {earlierLogsError ? (
-            <p className="text-center text-[11px] text-destructive" role="alert">
-              {earlierLogsError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-      {entries.length === 0 && !thinking ? (
-        <div className="mt-10 rounded-xl border border-dashed border-border/60 bg-muted/10 px-5 py-8 text-center">
-          <div className="text-sm font-medium text-pretty text-foreground">
-            {t.input.emptyConversationTitle}
-          </div>
-          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-pretty text-muted-foreground">
-            {t.input.emptyConversationHint}
-          </p>
-        </div>
-      ) : null}
-
-      {entries
-        .filter((entry) => entry.kind !== 'user-supplement')
-        .filter((entry) => !(entry.kind === 'status' && absorbedIds.has(entry.id)))
-        .filter((entry) => !hiddenReadyIds.has(entry.id))
-        .map((entry, entryIndex, visibleEntries) => {
-          const previousKind = entryIndex > 0 ? visibleEntries[entryIndex - 1]?.kind : undefined
-          const conversation = isConversationLog(entry.kind)
-          const spacing = logListItemSpacingClass(entry.kind, previousKind, entryIndex === 0)
-          const readyKind = readyLogById.get(entry.id)
-
-          return (
-            <div
-              key={entry.id}
-              data-agent-log-entry={entry.id}
-              data-log-kind={entry.kind}
-              className={
-                conversation
-                  ? `app-agent-message app-agent-message-${entry.kind} ${logClassName(entry.kind)} min-w-0 ${spacing}`
-                  : `app-agent-activity-row min-w-0 ${spacing}`
-              }
+      <div className="flow-root min-w-0" data-scroll-follow-content>
+        {onLoadEarlier && hasEarlierLogs ? (
+          <div className="mb-3 flex flex-col items-center gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              disabled={loadingEarlier}
+              onClick={() => void onLoadEarlier()}
             >
-              {conversation ? (
-                <>
-                  <div className="app-agent-message-meta mb-1.5 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="font-medium text-foreground/70">
-                        {logRoleLabel(entry.kind, t)}
-                      </span>
-                      <time
-                        className="tabular-nums text-muted-foreground/70"
-                        dateTime={entry.createdAt}
-                      >
-                        {formatLogTime(entry.createdAt)}
-                      </time>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        className="select-none"
-                        aria-label={t.common.copySelectionOrMessage}
-                        title={t.common.copySelectionOrMessage}
-                        onPointerDown={(event) => event.preventDefault()}
-                        onClick={() => onCopyEntry(entry)}
-                      >
-                        {copiedLogId === entry.id ? (
-                          <CheckIcon aria-hidden="true" />
-                        ) : (
-                          <CopyIcon aria-hidden="true" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="app-agent-message-content">
-                    <AgentLogContent
-                      entry={entry}
-                      liveRun={liveRunByLogId?.[entry.id]}
-                      tabId={tabId}
-                      t={t}
-                      copied={copiedLogId === entry.id}
-                      feedbackRating={feedbackByLogId?.[entry.id] ?? null}
-                      feedbackBusy={feedbackBusyLogId === entry.id}
-                      savingSop={savingSopLogId === entry.id}
-                      absorbedStatusEntries={
-                        entry.kind === 'assistant' ? absorbedByAssistantId.get(entry.id) : undefined
-                      }
-                      thinkingCollapsedByDefault={thinkingCollapsedByDefault}
-                      onCopyResult={() => onCopyResult(entry)}
-                      onExportResult={() => onExportResult(entry)}
-                      onExportFull={() => onExportFull(entry)}
-                      onExportTrace={() => onExportTrace(entry)}
-                      onOpsFeedback={(rating) => onOpsFeedback(entry, rating)}
-                      onResolveApproval={onResolveApproval}
-                      onAddCommandToWhitelist={onAddCommandToWhitelist}
-                      onInjectSuggestions={onInjectSuggestions}
-                      onOpenModelSettings={onOpenModelSettings}
-                      onSaveAsSop={onSaveAsSop ? () => onSaveAsSop(entry) : undefined}
-                      onInterruptCommand={onInterruptCommand}
-                      onFocusTerminal={onFocusTerminal}
-                      fallbackExecutionTabId={fallbackExecutionTabId}
-                    />
-                  </div>
-                </>
-              ) : readyKind && onOpenCaptureDraft ? (
-                <CaptureDraftReadyRow
-                  text={entry.text}
-                  createdAt={entry.createdAt}
-                  t={t}
-                  onOpen={() => onOpenCaptureDraft(readyKind)}
-                />
+              {loadingEarlier ? t.input.loadingEarlierLogs : t.input.loadEarlierLogs}
+            </Button>
+            {earlierLogsError ? (
+              <p className="text-center text-[11px] text-destructive" role="alert">
+                {earlierLogsError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {entries
+          .filter((entry) => entry.kind !== 'user-supplement')
+          .filter((entry) => !(entry.kind === 'status' && absorbedIds.has(entry.id)))
+          .filter((entry) => !hiddenReadyIds.has(entry.id))
+          .map((entry, entryIndex, visibleEntries) => {
+            const previousKind = entryIndex > 0 ? visibleEntries[entryIndex - 1]?.kind : undefined
+            const spacing = logListItemSpacingClass(entry.kind, previousKind, entryIndex === 0)
+            const readyKind = readyLogById.get(entry.id)
+
+            return (
+              <AgentLogMessage
+                key={entry.id}
+                spacing={spacing}
+                readyKind={readyKind}
+                onCopyEntry={onCopyEntry}
+                onOpenCaptureDraft={onOpenCaptureDraft}
+                entry={entry}
+                liveRun={liveRunByLogId?.[entry.id]}
+                tabId={tabId}
+                t={t}
+                copied={copiedLogId === entry.id}
+                feedbackRating={feedbackByLogId?.[entry.id] ?? null}
+                feedbackBusy={feedbackBusyLogId === entry.id}
+                savingSop={savingSopLogId === entry.id}
+                absorbedStatusEntries={
+                  entry.kind === 'assistant' ? absorbedByAssistantId.get(entry.id) : undefined
+                }
+                thinkingCollapsedByDefault={thinkingCollapsedByDefault}
+                onCopyResult={onCopyResult}
+                onExportResult={onExportResult}
+                onExportFull={onExportFull}
+                onExportTrace={onExportTrace}
+                onOpsFeedback={onOpsFeedback}
+                onResolveApproval={onResolveApproval}
+                onAddCommandToWhitelist={onAddCommandToWhitelist}
+                onInjectSuggestions={onInjectSuggestions}
+                onOpenModelSettings={onOpenModelSettings}
+                onSaveAsSop={onSaveAsSop}
+                onFocusTerminal={onFocusTerminal}
+              />
+            )
+          })}
+
+        {showRecovery ? (
+          <div className="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              {connectionRecovery?.connecting ? (
+                <Loader2Icon className="size-3.5 animate-spin" aria-hidden="true" />
               ) : (
-                <ActionLogRow entry={entry} t={t} />
+                <TriangleAlertIcon className="size-3.5 text-amber-500" aria-hidden="true" />
               )}
+              <span>{t.input.connectionRecoveryTitle}</span>
             </div>
-          )
-        })}
-
-      {showRecovery ? (
-        <div className="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             {connectionRecovery?.connecting ? (
-              <Loader2Icon className="size-3.5 animate-spin" aria-hidden="true" />
+              <p className="mt-1 text-xs text-muted-foreground">{t.input.retryConnecting}</p>
+            ) : connectionRecovery?.pipeFallback ? (
+              <>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {t.input.reinitTerminalHint}
+                </p>
+                {connectionRecovery.reason ? (
+                  <p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground/80">
+                    {connectionRecovery.reason}
+                  </p>
+                ) : null}
+              </>
             ) : (
-              <TriangleAlertIcon className="size-3.5 text-amber-500" aria-hidden="true" />
+              <>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {t.input.connectionRecoveryHint}
+                </p>
+                {connectionRecovery?.reason ? (
+                  <p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground/80">
+                    {connectionRecovery.reason}
+                  </p>
+                ) : null}
+              </>
             )}
-            <span>{t.input.connectionRecoveryTitle}</span>
-          </div>
-          {connectionRecovery?.connecting ? (
-            <p className="mt-1 text-xs text-muted-foreground">{t.input.retryConnecting}</p>
-          ) : connectionRecovery?.pipeFallback ? (
-            <>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {t.input.reinitTerminalHint}
-              </p>
-              {connectionRecovery.reason ? (
-                <p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground/80">
-                  {connectionRecovery.reason}
-                </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {connectionRecovery?.connecting ? null : connectionRecovery?.pipeFallback ? (
+                <Button type="button" size="sm" onClick={onReinitTerminal}>
+                  <RefreshCwIcon data-icon="inline-start" />
+                  {t.input.reinitTerminal}
+                </Button>
+              ) : connectionRecovery?.canRetry && onRetryConnection ? (
+                <Button type="button" size="sm" onClick={onRetryConnection}>
+                  <RefreshCwIcon data-icon="inline-start" />
+                  {t.input.retryConnection}
+                </Button>
               ) : null}
-            </>
-          ) : (
-            <>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {t.input.connectionRecoveryHint}
-              </p>
-              {connectionRecovery?.reason ? (
-                <p className="mt-1 break-words text-[11px] leading-relaxed text-muted-foreground/80">
-                  {connectionRecovery.reason}
-                </p>
+              {onOpenConnections ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onOpenConnections}
+                  disabled={connectionRecovery?.connecting}
+                >
+                  <ServerIcon data-icon="inline-start" />
+                  {t.input.openConnections}
+                </Button>
               ) : null}
-            </>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {connectionRecovery?.connecting ? null : connectionRecovery?.pipeFallback ? (
-              <Button type="button" size="sm" onClick={onReinitTerminal}>
-                <RefreshCwIcon data-icon="inline-start" />
-                {t.input.reinitTerminal}
-              </Button>
-            ) : connectionRecovery?.canRetry && onRetryConnection ? (
-              <Button type="button" size="sm" onClick={onRetryConnection}>
-                <RefreshCwIcon data-icon="inline-start" />
-                {t.input.retryConnection}
-              </Button>
-            ) : null}
-            {onOpenConnections ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onOpenConnections}
-                disabled={connectionRecovery?.connecting}
-              >
-                <ServerIcon data-icon="inline-start" />
-                {t.input.openConnections}
-              </Button>
-            ) : null}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {thinking ? (
-        <div className="mt-3 flex items-start gap-2 px-0.5 text-xs text-muted-foreground">
-          <span className="mt-1.5 inline-block size-1.5 animate-pulse rounded-full bg-primary" />
-          <div className="min-w-0">
-            <div className="font-medium text-foreground/80">{t.input.thinking}</div>
-            <p className="mt-0.5 leading-relaxed">
-              {thinkingMessage || t.input.thinkingAnalyzingRequest}
-            </p>
+        {thinking ? (
+          <div className="mt-3 flex items-start gap-2 px-0.5 text-xs text-muted-foreground">
+            <span className="mt-1.5 inline-block size-1.5 animate-pulse rounded-full bg-primary" />
+            <div className="min-w-0">
+              <div className="font-medium text-foreground/80">{t.input.thinking}</div>
+              <p className="mt-0.5 leading-relaxed">
+                {thinkingMessage || t.input.thinkingAnalyzingRequest}
+              </p>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+        {primaryContent}
+      </div>
     </div>
   )
 }

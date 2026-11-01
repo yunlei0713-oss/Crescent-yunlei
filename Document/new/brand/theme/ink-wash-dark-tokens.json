@@ -1,0 +1,44 @@
+{
+  "id": "moxun-ink-wash-dark",
+  "name": "水墨山河 · 夜墨",
+  "mode": "dark",
+  "description": "以夜墨、岩灰和月白文字构建的深色主题；不使用月亮图形或冷色霓虹装饰。",
+  "colors": {
+    "background": "#111312",
+    "backgroundSecondary": "#191D1A",
+    "surface": "#202421",
+    "surfaceElevated": "#252A26",
+    "surfaceInput": "#202521",
+    "textPrimary": "#F1F2ED",
+    "textSecondary": "#C0C4BD",
+    "textMuted": "#A5AAA2",
+    "border": "#363C37",
+    "borderStrong": "#505850",
+    "selection": "#303831",
+    "focus": "#C7CCC3",
+    "terminalBackground": "#090B0A",
+    "terminalText": "#D9DED6",
+    "terminalMuted": "#929A91",
+    "success": "#70C493",
+    "warning": "#E4B66B",
+    "danger": "#F07B7B",
+    "info": "#9AB6CB"
+  },
+  "typography": {
+    "ui": "PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
+    "mono": "SFMono-Regular, Menlo, Consolas, monospace"
+  },
+  "radius": {
+    "small": "6px",
+    "medium": "9px",
+    "large": "13px",
+    "panel": "14px"
+  },
+  "effects": {
+    "shadowSubtle": "0 2px 12px rgba(0, 0, 0, 0.18)",
+    "shadowPopover": "0 10px 30px rgba(0, 0, 0, 0.32)",
+    "watermarkOpacity": 0.035,
+    "backgroundTexture": false,
+    "terminalTexture": false
+  }
+}

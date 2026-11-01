@@ -1,0 +1,44 @@
+{
+  "id": "moxun-ink-wash-light",
+  "name": "水墨山河 · 宣纸",
+  "mode": "light",
+  "description": "以宣纸白、墨黑、淡墨灰和岩石灰构建的低干扰运维工作台主题。",
+  "colors": {
+    "background": "#F7F7F3",
+    "backgroundSecondary": "#F0F0EA",
+    "surface": "#FCFCF9",
+    "surfaceElevated": "#FFFFFF",
+    "surfaceInput": "#F3F3ED",
+    "textPrimary": "#171918",
+    "textSecondary": "#626964",
+    "textMuted": "#858B86",
+    "border": "#DADDD6",
+    "borderStrong": "#BFC4BC",
+    "selection": "#E2E4DE",
+    "focus": "#555D57",
+    "terminalBackground": "#171A18",
+    "terminalText": "#E3E7DF",
+    "terminalMuted": "#A7ADA5",
+    "success": "#287A4B",
+    "warning": "#946019",
+    "danger": "#B43B3B",
+    "info": "#4D6478"
+  },
+  "typography": {
+    "ui": "PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
+    "mono": "SFMono-Regular, Menlo, Consolas, monospace"
+  },
+  "radius": {
+    "small": "6px",
+    "medium": "9px",
+    "large": "13px",
+    "panel": "14px"
+  },
+  "effects": {
+    "shadowSubtle": "0 2px 10px rgba(23, 25, 24, 0.045)",
+    "shadowPopover": "0 10px 30px rgba(23, 25, 24, 0.10)",
+    "watermarkOpacity": 0.05,
+    "backgroundTexture": false,
+    "terminalTexture": false
+  }
+}

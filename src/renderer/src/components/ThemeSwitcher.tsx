@@ -7,10 +7,8 @@ import { APP_THEME_OPTIONS, saveAppTheme, type AppThemeId } from '@renderer/lib/
 import type { Dictionary } from '@renderer/i18n'
 
 const THEME_LABEL_KEYS = {
-  crescent: 'themeOriginal',
-  'night-shift': 'themeNightShift',
-  'route-survey': 'themeRouteSurvey',
-  'ink-signal': 'themeInkSignal'
+  'ink-wash-light': 'themeInkWashLight',
+  'ink-wash-dark': 'themeInkWashDark'
 } as const satisfies Record<AppThemeId, keyof Dictionary['app']>
 
 export function ThemeSwitcher({
@@ -112,14 +110,6 @@ export function ThemeSwitcher({
               }}
               onClick={() => chooseTheme(theme.id)}
             >
-              <span className="app-theme-preview" data-crescent-theme={theme.id} aria-hidden="true">
-                <span className="app-theme-preview-terminal">&gt;_</span>
-                <span className="app-theme-preview-panel">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </span>
               <span className="min-w-0 flex-1 truncate">{label}</span>
               {isSelected ? <CheckIcon className="size-4 text-primary" aria-hidden="true" /> : null}
             </button>

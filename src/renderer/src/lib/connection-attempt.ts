@@ -75,6 +75,24 @@ export function markConnectionReady(state: ConnectionAttemptState): ConnectionAt
   }
 }
 
+/** A late login result must not revive a closed or replaced transport. */
+export function canFinalizeConnectionLogin(input: {
+  startedSessionId?: number
+  currentSessionId?: number
+  startedExternalId?: string
+  currentExternalId?: string
+  transportMode: string
+  exited: boolean
+}): boolean {
+  return (
+    input.startedSessionId !== undefined &&
+    input.currentSessionId === input.startedSessionId &&
+    input.currentExternalId === input.startedExternalId &&
+    input.transportMode !== 'none' &&
+    !input.exited
+  )
+}
+
 /**
  * Feasibility gate: SSH/login requires a PTY. In PIPE fallback mode the retry
  * would always fail, so refuse to start the attempt.

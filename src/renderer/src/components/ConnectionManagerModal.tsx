@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useRef } from 'react'
 import {
   ArrowDownIcon,
   ArrowDownToLineIcon,
@@ -7,9 +7,7 @@ import {
   CopyIcon,
   CopyPlusIcon,
   InfoIcon,
-  Layers2Icon,
   Loader2Icon,
-  PanelBottomIcon,
   PencilIcon,
   ServerIcon,
   StarIcon,
@@ -21,6 +19,12 @@ import { ConnectionList } from '@renderer/components/ConnectionList'
 import { ConnectionOpsFeedbackPanel } from '@renderer/components/ConnectionOpsFeedbackPanel'
 import { SkillManageStatus, type SkillManageMessage } from '@renderer/components/StatusIndicators'
 import { Button } from '@renderer/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle
+} from '@renderer/components/ui/dialog'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@renderer/components/ui/field'
 import { Input } from '@renderer/components/ui/input'
 import { Textarea } from '@renderer/components/ui/textarea'
@@ -61,8 +65,6 @@ export function ConnectionManagerModal({
   onQueryChange,
   onSelectConnection,
   onConnect,
-  onConnectInSession,
-  onConnectInSubterminal,
   onCopyConnection,
   onDuplicateConnection,
   onEditConnection,
@@ -103,8 +105,6 @@ export function ConnectionManagerModal({
   onQueryChange: (query: string) => void
   onSelectConnection: (connection: ConnectionConfig) => void
   onConnect: (connection: ConnectionConfig) => void
-  onConnectInSession: (connection: ConnectionConfig) => void
-  onConnectInSubterminal: (connection: ConnectionConfig) => void
   onCopyConnection: (connection: ConnectionConfig) => void
   onDuplicateConnection: (connection: ConnectionConfig) => void
   onEditConnection: (connection: ConnectionConfig) => void
@@ -122,16 +122,7 @@ export function ConnectionManagerModal({
   onRenameNameConflict: () => void
   onOverwriteNameConflict: () => void
 }): React.JSX.Element | null {
-  useEffect(() => {
-    if (!open) return
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
-
-  if (!open) return null
+  const returnFocus = useRef<HTMLElement | null>(null)
 
   const selectedConnection = connections.find(
     (connection) => connection.id === selectedConnectionId
@@ -143,28 +134,41 @@ export function ConnectionManagerModal({
     : t.connections.clusterHostRegexDescription
   const canSaveConnection =
     connectionEditing && connectionFormReady && canEditConnection && !connectionActionBusy
-  const connectDisabled = connectionActionBusy
   const viewableClass = !connectionEditing ? 'cursor-text select-text' : undefined
 
   return (
-    <div
-      className="app-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 overscroll-contain"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="connection-modal-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
-      <div className="app-modal-panel flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border bg-background">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        className="app-modal-panel max-h-[88vh] w-[calc(100%-2rem)] max-w-5xl gap-0 rounded-xl bg-background"
+        onOpenAutoFocus={(event) => {
+          returnFocus.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null
+          const search = (event.currentTarget as HTMLElement).querySelector<HTMLInputElement>(
+            'input'
+          )
+          if (search) {
+            event.preventDefault()
+            search.focus()
+          }
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          // Connecting can open another dialog. Do not steal its focus.
+          if (
+            !document.querySelector('[data-slot="dialog-content"][data-state="open"]') &&
+            returnFocus.current?.isConnected
+          ) {
+            returnFocus.current.focus()
+          }
+        }}
+      >
         <div className="app-modal-header flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2.5">
           <div className="min-w-0">
-            <h2 id="connection-modal-title" className="text-sm font-semibold text-pretty">
+            <DialogTitle className="text-sm font-semibold text-pretty">
               {t.connections.sshConnections}
-            </h2>
-            <p className="text-[11px] leading-snug text-muted-foreground">
-              {t.connections.sshConnectionsDescription}
-            </p>
+            </DialogTitle>
+            <DialogDescription>{t.connections.sshConnectionsDescription}</DialogDescription>
           </div>
           <Button
             type="button"
@@ -193,7 +197,6 @@ export function ConnectionManagerModal({
             t={t}
             showCustomMetadata
             formatConnectionTarget={formatConnectionTarget}
-            autoFocusSearch
             onQueryChange={onQueryChange}
             onSelectConnection={(connection) => {
               if (connectionActionBusy) return
@@ -359,38 +362,6 @@ export function ConnectionManagerModal({
                     <InfoIcon aria-hidden="true" />
                   </Button>
                 ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  aria-label={t.connections.connectInSession}
-                  title={t.connections.connectInSessionDescription}
-                  disabled={connectDisabled}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    if (connectionActionBusy) return
-                    onConnectInSession(connection)
-                    onClose()
-                  }}
-                >
-                  <Layers2Icon aria-hidden="true" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  aria-label={t.terminal.openSubterminalInSession}
-                  title={t.terminal.openSubterminalInSessionDescription}
-                  disabled={connectDisabled}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    if (connectionActionBusy) return
-                    onConnectInSubterminal(connection)
-                    onClose()
-                  }}
-                >
-                  <PanelBottomIcon aria-hidden="true" />
-                </Button>
               </div>
             )}
           />
@@ -681,7 +652,7 @@ export function ConnectionManagerModal({
             </div>
           </div>
         ) : null}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

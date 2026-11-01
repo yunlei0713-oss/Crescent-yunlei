@@ -19,12 +19,6 @@ export const appApi = {
   },
   setLocale: (locale: 'zh-CN' | 'en'): Promise<{ ok: boolean; locale: 'zh-CN' | 'en' }> =>
     ipcRenderer.invoke('app:set-locale', locale),
-  getWorkbenchLayout: (): Promise<{ layout: 'split' | 'chat' | 'terminal' | null }> =>
-    ipcRenderer.invoke('app:get-workbench-layout'),
-  setWorkbenchLayout: (
-    layout: 'split' | 'chat' | 'terminal'
-  ): Promise<{ ok: boolean; layout?: 'split' | 'chat' | 'terminal'; error?: string }> =>
-    ipcRenderer.invoke('app:set-workbench-layout', layout),
   openExternal: (url: string): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('app:open-external', url),
   writeClipboardText: (value: string): Promise<{ ok: boolean; error?: string }> =>

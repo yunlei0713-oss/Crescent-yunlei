@@ -1,4 +1,5 @@
 import type { WebContents } from 'electron'
+import { forgetTerminalEvidence } from '../observer/registry'
 import type { ConnectionState } from '../../../shared/connection-state'
 import type {
   TemporarySubterminalEntry,
@@ -36,6 +37,7 @@ export class TerminalSessionManager {
     }
   }
   stop(key: string): void {
+    forgetTerminalEvidence(key)
     this.flushVisible(key)
     this.notifyExit(key, { exitCode: 130 })
     try {
@@ -53,6 +55,7 @@ export class TerminalSessionManager {
   }
   finish(key: string, id: number): boolean {
     if (this.sessions.get(key)?.id !== id) return false
+    forgetTerminalEvidence(key)
     this.flushVisible(key)
     this.sessions.delete(key)
     this.terminalDataWaiters.delete(key)

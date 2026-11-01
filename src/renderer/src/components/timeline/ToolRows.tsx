@@ -1,5 +1,3 @@
-import { terminalClient } from '@renderer/clients'
-import { Button } from '@renderer/components/ui/button'
 import type { Dictionary } from '@renderer/i18n'
 import { AGENT_RUN_STREAM_MAX_CHARS, clampAgentText } from '@renderer/lib/agent-text-limits'
 import { copyFeedback, copyText } from '@renderer/lib/operation-feedback'
@@ -23,18 +21,15 @@ export function ToolCallRow({
   step,
   t,
   hideCommand = false,
-  onInterruptCommand,
-  onFocusTerminal,
-  fallbackExecutionTabId
+  onFocusTerminal
 }: {
   step: Extract<AgentRunStep, { kind: 'tool' }>
   t: Dictionary
   hideCommand?: boolean
-  onInterruptCommand?: (tabId: string) => void
   onFocusTerminal?: (tabId: string) => void
-  fallbackExecutionTabId?: string
 }): React.JSX.Element {
-  const running = step.phase === 'started'
+  const isPtyCommand = step.name === 'bash' || step.name === 'terminal'
+  const running = !isPtyCommand && step.phase === 'started'
   const command = step.command?.trim()
   const preview = hideCommand ? undefined : command || summarizeArgs(step.argsText)
   const observationRaw = step.resultText?.trim()
@@ -44,7 +39,6 @@ export function ToolCallRow({
   const batchParts = observation ? parseBatchedToolOutput(observation) : null
   const showObservation = Boolean(observation && observation !== command && !batchParts)
   const observationLong = Boolean(showObservation && observation && observation.length > 240)
-  const isPtyCommand = step.name === 'bash' || step.name === 'terminal'
   const toolLabel = isPtyCommand ? t.input.toolCommandLabel : step.name
   const executionTarget = step.executionTarget
   const executionLabel = executionTarget
@@ -52,28 +46,36 @@ export function ToolCallRow({
         executionTarget.paneRole === 'subterminal'
           ? t.terminal.subterminal
           : t.terminal.mainTerminal,
-        executionTarget.executionMode === 'ssh' ? 'SSH' : t.terminal.targetLocal,
+        executionTarget.executionMode === 'ssh'
+          ? 'SSH'
+          : executionTarget.executionMode === 'unknown'
+            ? t.terminal.targetUnknown
+            : t.terminal.targetLocal,
         executionTarget.connectionName,
         executionTarget.expectedTarget
       ]
         .filter(Boolean)
         .join(' · ')
     : undefined
-  const statusLabel = running
-    ? step.dispatchPending
-      ? t.input.toolReviewing
-      : t.input.toolRunning
-    : step.lifecycle === 'blocked-before-dispatch'
-      ? t.input.toolBlocked
-      : step.lifecycle === 'completion-unknown'
-        ? t.input.toolCompletionUnknown
-        : step.interrupted
-          ? t.input.toolInterrupted
-          : step.timedOut
-            ? t.input.toolTimedOut
-            : step.isError
-              ? t.input.toolFailed
-              : t.input.toolFinished
+  const statusLabel = isPtyCommand
+    ? t.locale === 'zh-CN'
+      ? '历史命令审计（只读，不能执行）'
+      : 'Historical command audit (read-only; cannot execute)'
+    : running
+      ? step.dispatchPending
+        ? t.input.toolReviewing
+        : t.input.toolRunning
+      : step.lifecycle === 'blocked-before-dispatch'
+        ? t.input.toolBlocked
+        : step.lifecycle === 'completion-unknown'
+          ? t.input.toolCompletionUnknown
+          : step.interrupted
+            ? t.input.toolInterrupted
+            : step.timedOut
+              ? t.input.toolTimedOut
+              : step.isError
+                ? t.input.toolFailed
+                : t.input.toolFinished
   const warnFinish = Boolean(step.interrupted || step.timedOut)
 
   return (
@@ -111,30 +113,6 @@ export function ToolCallRow({
                 {executionLabel}
               </button>
             )}
-            {running && !step.dispatchPending && isPtyCommand && step.tabId ? (
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => void terminalClient.continueWaiting(step.tabId!)}
-              >
-                继续等待 +120s
-              </Button>
-            ) : null}
-            {running && !step.dispatchPending && isPtyCommand && onInterruptCommand ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                aria-label={t.terminal.interruptCommand}
-                title={t.terminal.interruptCommand}
-                onClick={() => {
-                  const target = step.tabId?.trim() || fallbackExecutionTabId?.trim()
-                  if (target) onInterruptCommand(target)
-                }}
-              >
-                Ctrl+C
-              </Button>
-            ) : null}
           </div>
           {batchParts ? (
             <BatchCommandGroupCard

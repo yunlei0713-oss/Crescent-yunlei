@@ -60,7 +60,7 @@ export function resolveHandoffTarget(input: {
 export function handoffSourceIdentity(
   source: { isSsh?: boolean; connectionId?: string; connectionName?: string },
   context: {
-    executionMode?: 'ssh' | 'local'
+    executionMode?: 'ssh' | 'local' | 'unknown'
     manualSshActive?: boolean
     connectionOrigin?: string
     expectedTarget?: string

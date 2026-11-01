@@ -8,6 +8,31 @@ import { resolveAgentWorkspaceCwd } from './agent/pi-cwd'
 import { localDocumentError } from './local-document-errors'
 const grants = new Map<number, Set<string>>()
 const pending = new Map<string, AbortController>()
+
+/** Capture the initiating document before any chooser or filesystem await. */
+export async function withDocumentOwner<T>(
+  owner: WebContents,
+  action: (assertCurrent: () => void) => Promise<T>
+): Promise<T> {
+  let invalidated = owner.isDestroyed()
+  const invalidate = (): void => {
+    invalidated = true
+  }
+  const assertCurrent = (): void => {
+    if (invalidated || owner.isDestroyed()) throw new Error('Document owner closed or navigated')
+  }
+  owner.once('destroyed', invalidate)
+  owner.once('did-start-navigation', invalidate)
+  try {
+    assertCurrent()
+    const result = await action(assertCurrent)
+    assertCurrent()
+    return result
+  } finally {
+    owner.removeListener('destroyed', invalidate)
+    owner.removeListener('did-start-navigation', invalidate)
+  }
+}
 export async function localDocumentReaderForOwner(
   ownerId: number,
   workspace?: string
@@ -28,42 +53,49 @@ export async function grantLocalDocumentPath(
   owner: WebContents,
   requestedPath: string
 ): Promise<void> {
-  if (owner.isDestroyed()) throw new Error('Document owner window closed')
-  if ((await lstat(requestedPath)).isSymbolicLink())
-    throw new Error('Selected document root cannot be a symlink')
-  const root = await realpath(requestedPath)
-  if (sensitiveDocumentPath(requestedPath) || sensitiveDocumentPath(root))
-    throw new Error('Sensitive paths cannot be granted to document tools')
-  if (owner.isDestroyed()) throw new Error('Document owner window closed')
-  if (!grants.has(owner.id)) {
-    const cleanup = (): void => {
-      grants.delete(owner.id)
-      for (const [key, controller] of pending)
-        if (key.startsWith(`${owner.id}:`)) {
-          controller.abort()
-          pending.delete(key)
-        }
+  return withDocumentOwner(owner, async (assertCurrent) => {
+    if ((await lstat(requestedPath)).isSymbolicLink())
+      throw new Error('Selected document root cannot be a symlink')
+    const root = await realpath(requestedPath)
+    if (sensitiveDocumentPath(requestedPath) || sensitiveDocumentPath(root))
+      throw new Error('Sensitive paths cannot be granted to document tools')
+    assertCurrent()
+    if (!grants.has(owner.id)) {
+      const cleanup = (): void => {
+        owner.removeListener('destroyed', cleanup)
+        owner.removeListener('did-start-navigation', cleanup)
+        grants.delete(owner.id)
+        for (const [key, controller] of pending)
+          if (key.startsWith(`${owner.id}:`)) {
+            controller.abort()
+            pending.delete(key)
+          }
+      }
+      owner.once('destroyed', cleanup)
+      owner.once('did-start-navigation', cleanup)
+      grants.set(owner.id, new Set())
     }
-    owner.once('destroyed', cleanup)
-    owner.once('did-start-navigation', cleanup)
-    grants.set(owner.id, new Set())
-  }
-  if (grants.get(owner.id)!.size >= 64)
-    throw new Error('Too many document grants; reopen the window to reset')
-  grants.get(owner.id)!.add(root)
+    if (grants.get(owner.id)!.size >= 64 && !grants.get(owner.id)!.has(root))
+      throw new Error('Too many document grants; reopen the window to reset')
+    grants.get(owner.id)!.add(root)
+  })
 }
 export function registerLocalDocumentIpc(): void {
   rendererIpc.handle('documents:choose-root', async (event) => {
-    const selection = await dialog.showOpenDialog({
-      title: '授权本次窗口读取本地目录（内容可经明确插入发送给模型）',
-      properties: ['openDirectory']
+    return withDocumentOwner(event.sender, async (assertCurrent) => {
+      const selection = await dialog.showOpenDialog({
+        title: '授权本次窗口读取本地目录（内容可经明确插入发送给模型）',
+        properties: ['openDirectory']
+      })
+      if (selection.canceled || !selection.filePaths[0]) return undefined
+      assertCurrent()
+      const root = await realpath(selection.filePaths[0])
+      if (sensitiveDocumentPath(root) || !(await stat(root)).isDirectory())
+        throw new Error('Sensitive/invalid document root')
+      assertCurrent()
+      await grantLocalDocumentPath(event.sender, selection.filePaths[0])
+      return root
     })
-    if (selection.canceled || !selection.filePaths[0]) return undefined
-    const root = await realpath(selection.filePaths[0])
-    if (sensitiveDocumentPath(root) || !(await stat(root)).isDirectory())
-      throw new Error('Sensitive/invalid document root')
-    await grantLocalDocumentPath(event.sender, selection.filePaths[0])
-    return root
   })
   rendererIpc.handle('documents:pdf', async (event, payload?: { path?: string }) => {
     if (typeof payload?.path !== 'string') throw new Error('Invalid PDF path')

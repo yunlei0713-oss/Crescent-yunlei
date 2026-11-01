@@ -11,7 +11,7 @@ const props = withDefaults(
 const RELEASES_URL = 'https://github.com/aide-family/Crescent/releases'
 const API_URL = 'https://api.github.com/repos/aide-family/Crescent/releases/latest'
 
-type AssetKind = 'macArm' | 'macIntel' | 'windows' | 'appImage' | 'deb' | 'sums'
+type AssetKind = 'macUniversal' | 'macArm' | 'macIntel' | 'windows' | 'appImage' | 'deb' | 'sums'
 
 type Asset = {
   name: string
@@ -43,16 +43,16 @@ const copy = {
     releases: 'GitHub Releases',
     checksumNote: '同一 Release 里的 SHA256SUMS.txt 可以用来校验下载文件。',
     platforms: {
-      macArm: 'macOS Apple Silicon',
-      macIntel: 'macOS Intel',
+      macUniversal: 'macOS Universal（Intel + Apple Silicon）',
+      macArm: 'macOS Apple Silicon（历史独立架构）',
+      macIntel: 'macOS Intel（历史独立架构）',
       windows: 'Windows',
       appImage: 'Linux AppImage',
       deb: 'Linux deb',
       sums: '校验文件'
     },
     patterns: [
-      ['macOS Apple Silicon', 'crescent-*-arm64.dmg'],
-      ['macOS Intel', 'crescent-*-x64.dmg'],
+      ['macOS Universal（Intel + Apple Silicon）', 'crescent-*-universal.dmg'],
       ['Windows', 'crescent-*-x64-setup.exe'],
       ['Linux', '.AppImage 或 .deb']
     ]
@@ -67,16 +67,16 @@ const copy = {
     releases: 'GitHub Releases',
     checksumNote: 'Use SHA256SUMS.txt from the same release to verify the download when you can.',
     platforms: {
-      macArm: 'macOS Apple Silicon',
-      macIntel: 'macOS Intel',
+      macUniversal: 'macOS Universal (Intel + Apple Silicon)',
+      macArm: 'macOS Apple Silicon (legacy separate build)',
+      macIntel: 'macOS Intel (legacy separate build)',
       windows: 'Windows',
       appImage: 'Linux AppImage',
       deb: 'Linux deb',
       sums: 'Checksums'
     },
     patterns: [
-      ['macOS Apple Silicon', 'crescent-*-arm64.dmg'],
-      ['macOS Intel', 'crescent-*-x64.dmg'],
+      ['macOS Universal (Intel + Apple Silicon)', 'crescent-*-universal.dmg'],
       ['Windows', 'crescent-*-x64-setup.exe'],
       ['Linux', '.AppImage or .deb']
     ]
@@ -89,13 +89,22 @@ const version = ref('')
 const releaseUrl = ref(RELEASES_URL)
 const rows = ref<Row[]>([])
 
-const KIND_ORDER: AssetKind[] = ['macArm', 'macIntel', 'windows', 'appImage', 'deb', 'sums']
+const KIND_ORDER: AssetKind[] = [
+  'macUniversal',
+  'macArm',
+  'macIntel',
+  'windows',
+  'appImage',
+  'deb',
+  'sums'
+]
 
 function classify(name: string): AssetKind | null {
   const lower = name.toLowerCase()
   if (lower.endsWith('.blockmap') || lower.endsWith('.yml') || lower.endsWith('.yaml')) return null
   if (lower.endsWith('.zip')) return null
   if (lower === 'sha256sums.txt') return 'sums'
+  if (lower.endsWith('.dmg') && lower.includes('universal')) return 'macUniversal'
   if (lower.endsWith('.dmg') && lower.includes('arm64')) return 'macArm'
   if (lower.endsWith('.dmg') && lower.includes('x64')) return 'macIntel'
   if (lower.endsWith('-setup.exe')) return 'windows'

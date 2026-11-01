@@ -77,9 +77,9 @@ export interface PostConnectionTask {
   activeSkillPaths?: string[]
 }
 
-export const initialTerminalTab = createTerminalTab({ title: 'Terminal' })
+export const initialTerminalTab = createTerminalTab({ title: 'New conversation' })
 
-export const emptyLocalTab = createTerminalTab({ title: 'Terminal' })
+export const emptyLocalTab = createTerminalTab({ title: 'New conversation' })
 
 export const CONNECTION_SPAWN_TIMEOUT_MS = 10_000
 
@@ -158,16 +158,7 @@ export function isComposingInput(event: KeyboardEvent<HTMLElement>): boolean {
 export async function resolvePastedFileReference(
   file: File
 ): Promise<AgentPathReference | undefined> {
-  const path = (file as File & { path?: string }).path
-  if (path) {
-    return {
-      id: `file:${path}`,
-      kind: 'file',
-      path,
-      name: file.name || path.split(/[\\/]/).pop() || path
-    }
-  }
-
+  if (file.size > 5 * 1024 * 1024) throw new Error('Attachment limit is 5 MiB')
   const base64 = await fileToBase64(file)
   return window.api.agent.savePastedAttachment({
     name: file.name || defaultPastedFileName(file.type),

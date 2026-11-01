@@ -1,5 +1,6 @@
 import { appClient } from '@renderer/clients'
 import './assets/main.css'
+import './assets/chat-workspace.css'
 
 import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -8,7 +9,6 @@ import { AppErrorBoundary } from '@renderer/components/AppErrorBoundary'
 import { RendererCrashLoopPanel } from '@renderer/components/RendererCrashLoopPanel'
 import App from './App'
 import { dictionaries, type Locale } from './i18n'
-import { parseWorkbenchLayout, type WorkbenchLayout } from '@renderer/lib/app-shell'
 import { initializeAppTheme } from '@renderer/lib/app-theme'
 
 performance.mark('crescent:renderer-start')
@@ -67,25 +67,21 @@ function BootShell({
 }): React.JSX.Element {
   const [boot, setBoot] = useState<{
     mode: 'none' | 'pending' | 'crash-loop'
-    layout: WorkbenchLayout | null
   } | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    void Promise.all([
-      appClient.getRendererRecoveryMode(),
-      appClient.getWorkbenchLayout().catch(() => ({ layout: null }))
-    ])
-      .then(([recovery, layoutResult]) => {
+    void appClient
+      .getRendererRecoveryMode()
+      .then((recovery) => {
         if (cancelled) return
         performance.mark('crescent:boot-data-ready')
         setBoot({
-          mode: recovery.mode,
-          layout: parseWorkbenchLayout(layoutResult.layout)
+          mode: recovery.mode
         })
       })
       .catch(() => {
-        if (!cancelled) setBoot({ mode: 'none', layout: null })
+        if (!cancelled) setBoot({ mode: 'none' })
       })
     return () => {
       cancelled = true
@@ -109,10 +105,7 @@ function BootShell({
   }
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <App
-        recoveryMode={boot.mode === 'pending' ? 'pending' : 'none'}
-        initialWorkbenchLayout={boot.layout}
-      />
+      <App recoveryMode={boot.mode === 'pending' ? 'pending' : 'none'} />
     </div>
   )
 }

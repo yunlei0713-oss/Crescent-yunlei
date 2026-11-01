@@ -1,6 +1,5 @@
 import {
   ArrowDownIcon,
-  ForwardIcon,
   ArrowUpIcon,
   DatabaseZapIcon,
   FileJsonIcon,
@@ -32,9 +31,7 @@ export function SessionUsageBar({
   compactDisabled,
   t,
   onExportSessionTrace,
-  onCompactContext,
-  onHandoff,
-  handoffDisabledReason
+  onCompactContext
 }: {
   inputTokens: number
   outputTokens: number
@@ -45,8 +42,6 @@ export function SessionUsageBar({
   compactDisabled?: boolean
   t: Dictionary
   onExportSessionTrace: () => void
-  onHandoff?: () => void
-  handoffDisabledReason?: string
   onCompactContext?: () => void
 }): React.JSX.Element {
   const contextLabel = contextPending
@@ -96,26 +91,6 @@ export function SessionUsageBar({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">{t.common.compactContext}</TooltipContent>
-          </Tooltip>
-        ) : null}
-        {onHandoff ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label={t.handoff.title}
-                aria-disabled={Boolean(handoffDisabledReason)}
-                className={handoffDisabledReason ? 'opacity-50' : undefined}
-                onClick={() => {
-                  if (!handoffDisabledReason) onHandoff()
-                }}
-              >
-                <ForwardIcon aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">{handoffDisabledReason || t.handoff.title}</TooltipContent>
           </Tooltip>
         ) : null}
         <Tooltip>

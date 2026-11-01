@@ -1,6 +1,11 @@
 import { grantLocalDocumentPath } from '../local-document-ipc'
+import { redactSensitiveText } from '../../shared/secret-redaction'
+import { fileChangeApprovals } from './file-approval-service'
+import type { FileChangeDecision } from '../../shared/file-approval-types'
+import { guidedOps } from './guided-ops'
+import type { GuidedOpsAction } from '../../shared/guided-ops-types'
 import { getPtyBashExecContext, returnToMainTerminal } from './pi-terminal-bash'
-import { readTerminalExecutionTarget } from '../terminal/ipc'
+import { readTerminalExecutionTarget, readTerminalEvidence } from '../terminal/ipc'
 import { normalizeApprovalPolicy, normalizeMutationPolicy } from '../../shared/approval-policy'
 import { promises as fs } from 'fs'
 import {
@@ -115,6 +120,38 @@ const activeSkillInstalls = new Map<string, { cancel: () => void }>()
 const MAX_COMPACT_INSTRUCTIONS = 2_000
 
 export function registerAgentIpc(): void {
+  rendererIpc.handle(
+    'agent:guided-snapshot',
+    (event, payload: { chatId?: string; terminalId?: string }) => {
+      if (typeof payload?.chatId !== 'string' || typeof payload.terminalId !== 'string')
+        throw new Error('Invalid Guided Ops scope')
+      return guidedOps.read(
+        event.sender.id,
+        payload.chatId,
+        readTerminalEvidence(event.sender.id, payload.terminalId)
+      )
+    }
+  )
+  rendererIpc.handle(
+    'agent:guided-action',
+    async (event, payload: { chatId?: string; action?: GuidedOpsAction; runId?: string }) => {
+      if (
+        typeof payload?.chatId !== 'string' ||
+        !payload.action ||
+        !['wait', 'skip', 'interrupt', 'complete'].includes(payload.action ?? '')
+      )
+        return { ok: false }
+      const scopedRunId = guidedOps.currentRunId(event.sender.id, payload.chatId)
+      if (payload.action !== 'wait' && scopedRunId)
+        await cancelPiAgentRun(scopedRunId, event.sender.id)
+      if (guidedOps.currentRunId(event.sender.id, payload.chatId) !== scopedRunId)
+        return { ok: false }
+      return { ok: guidedOps.action(event.sender.id, payload.chatId, payload.action) }
+    }
+  )
+  rendererIpc.handle('agent:resolve-file-change', (event, decision: FileChangeDecision) =>
+    fileChangeApprovals.decide(event.sender.id, decision)
+  )
   rendererIpc.handle('agent:revise-plan', (event, value: unknown) =>
     revisePendingPlan(event.sender.id, value)
   )
@@ -690,6 +727,11 @@ export function registerAgentIpc(): void {
       model: payload?.model
     })
     const sessionKey = payload?.tabId?.trim() || 'default'
+    if (payload?.projectId !== undefined) {
+      agentConfig.workspaceCwd = (
+        await resolveProjectForOwner(event.sender, payload.projectId)
+      ).root
+    }
     const executionTabId = payload?.executionTabId?.trim() || payload?.tabId?.trim() || ''
     const wikiIds = [
       ...new Set((payload?.activeWikiIds ?? []).map((id) => id.trim()).filter(Boolean))
@@ -724,6 +766,9 @@ export function registerAgentIpc(): void {
     })
 
     const result = await runPiAgent({
+      proactiveToken:
+        typeof payload?.proactiveToken === 'string' ? payload.proactiveToken : undefined,
+      attachments: payload?.attachments,
       runId,
       sessionKey,
       input,
@@ -732,8 +777,9 @@ export function registerAgentIpc(): void {
       conversationContext: payload?.conversationContext,
       webContents: event.sender,
       executionTabId,
+      observationTabIds: payload?.observationTabIds,
       executionConnectionId: payload?.executionConnectionId?.trim() || undefined,
-      terminalContext: payload?.terminalContext,
+      terminalContext: JSON.stringify(readTerminalEvidence(event.sender.id, executionTabId)),
       locale: payload?.locale,
       agentStyle: normalizeAgentStyle(payload?.agentStyle ?? agentConfig.agentStyle),
       executionMode: normalizeExecutionMode(payload?.executionMode),
@@ -752,8 +798,8 @@ export function registerAgentIpc(): void {
 
     appendOperationRecord({
       status: result.ok ? 'success' : 'error',
-      summary: input,
-      output: result.text || result.error
+      summary: redactSensitiveText(input).slice(0, 2000),
+      output: redactSensitiveText(result.text || result.error || '').slice(0, 8000)
     })
 
     return result
@@ -836,3 +882,4 @@ async function validateModel(config: AgentConfig): Promise<void> {
     throw new Error('Model is required.')
   }
 }
+import { resolveProjectForOwner } from '../projects'

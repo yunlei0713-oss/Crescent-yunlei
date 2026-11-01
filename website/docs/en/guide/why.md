@@ -1,24 +1,9 @@
-# Why Crescent
+# Why MoXun
 
-Many AI tools can generate shell commands. In real operations work, the harder problems are different:
+Operations work needs more than generated commands: verify targets, understand risk, retain trustworthy evidence and reuse knowledge.
 
-- The model does not know which host, cluster, directory, or terminal session you are in.
-- Generated commands still need to be copied in, and output copied back.
-- Deletes, restarts, and configuration changes need a clear review before they run.
-- Troubleshooting knowledge disappears after the incident is closed.
-- Suggestions, terminal sessions, and operational notes live in different products.
+MoXun connects chat, manual iTerm collaboration, optional authorized observation, Skills and knowledge. Users retain terminal control; the Agent analyzes authorized redacted evidence and suggests steps, never automatically executing, restarting or changing remote systems. Local file changes need separate human approval.
 
-Crescent keeps the Agent next to the real terminal so each step stays observable, reviewable, and reusable.
+Observation defaults off and needs native confirmation. When evidence is missing, analysis says so instead of presenting suggestions as executed results. SOP/Skill capture produces a draft that is saved only after confirmation.
 
-## How it compares
-
-| Option               | Strength                | Limitation                            | Crescent                                           |
-| -------------------- | ----------------------- | ------------------------------------- | -------------------------------------------------- |
-| Plain terminal       | Direct and controllable | No context understanding              | Continues from real command output                 |
-| General AI chat      | Strong explanation      | Cannot see the live terminal          | Connects execution, observation, and the next step |
-| API testing tools    | Good for endpoints      | Weak for SSH and host troubleshooting | Stays in the terminal workflow                     |
-| Automation platforms | Strong standards        | Less flexible for exploratory work    | Grows Skills and SOPs over time                    |
-
-## Next
-
-After you install the desktop app and configure an OpenAI-compatible model, start from the terminal. See [Install](/en/guide/install) and [Quick start](/en/guide/quick-start).
+See [install](/en/guide/install), [quick start](/en/guide/quick-start) and [observation limitations](/en/guide/terminal).

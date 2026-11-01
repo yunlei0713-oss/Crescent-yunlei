@@ -1,15 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@xterm/xterm/css/xterm.css';
 @import './theme.css';
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-
-  html {
-    color-scheme: dark;
   }
 
   html,
@@ -99,7 +94,12 @@
 }
 
 .app-shell {
+  --app-sidebar-width: 60px;
   background: var(--background);
+}
+
+.app-shell:has(.app-sidebar.is-expanded) {
+  --app-sidebar-width: 244px;
 }
 
 [data-sonner-toaster] {
@@ -116,7 +116,12 @@
 }
 
 .app-titlebar {
-  border-bottom: 1px solid var(--border);
+  /* Continue the conversation canvas through the top chrome without a framed toolbar. */
+  background: var(--app-panel);
+}
+
+.app-titlebar-brand {
+  width: var(--app-sidebar-width);
   background: var(--app-chrome);
 }
 
@@ -145,7 +150,6 @@
   gap: 0;
 }
 
-.app-terminal-pane,
 .app-agent-pane {
   overflow: hidden;
   border: 0;
@@ -153,27 +157,13 @@
   border-radius: 0;
 }
 
-.app-terminal-pane {
-  background: var(--app-terminal);
-}
-
 .app-agent-pane {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--app-panel-strong) 42%, transparent),
-      transparent 22rem
-    ),
-    var(--app-panel);
+  background: var(--app-panel);
 }
 
 .app-agent-log-list {
-  background: radial-gradient(
-    circle at 50% 0%,
-    color-mix(in srgb, var(--primary) 4%, transparent),
-    transparent 34rem
-  );
-  scroll-behavior: smooth;
+  /* Streaming follow must settle immediately; smooth scroll races with new output. */
+  scroll-behavior: auto;
 }
 
 .app-agent-message-meta {
@@ -229,74 +219,9 @@
   opacity: 0.82;
 }
 
-.flex-row-reverse > .app-terminal-pane,
-.flex-row-reverse > .app-agent-pane {
-  border: 0;
-  border-radius: 0;
-}
-
-.app-tabbar {
-  border-bottom: 1px solid rgb(255 255 255 / 6%);
-  background: var(--app-terminal-rail);
-}
-
-.app-tabbar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 18%) transparent;
-}
-
-.app-tabbar-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-
-.app-tabbar-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgb(255 255 255 / 18%);
-}
-
-.terminal-canvas,
-.subterminal-canvas {
-  padding: 12px;
-}
-
-.terminal-canvas {
-  background: var(--app-terminal);
-}
-
-.app-pane-resizer {
-  position: relative;
-  border: 0;
-  background: transparent;
-}
-
-.app-pane-resizer::before {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-  background: var(--border);
-  transition:
-    background-color 160ms ease,
-    width 160ms ease;
-}
-
-.app-pane-resizer:hover::before,
-.app-pane-resizer:focus-visible::before {
-  width: 2px;
-  background: var(--primary);
-}
-
 .app-input-dock {
   border-top: 1px solid var(--border);
   background: var(--app-panel);
-}
-
-@property --composer-flow-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
 }
 
 .app-composer {
@@ -308,51 +233,7 @@
 }
 
 .app-composer-thinking {
-  border-color: transparent;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
-    0 0 14px color-mix(in srgb, #a855f7 16%, transparent),
-    0 0 18px color-mix(in srgb, var(--primary) 14%, transparent);
-}
-
-.app-composer-thinking::before {
-  position: absolute;
-  inset: -1px;
-  z-index: 0;
-  border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--composer-flow-angle),
-    #ff6b6b 0deg,
-    #f59e0b 60deg,
-    var(--primary) 120deg,
-    #3b82f6 180deg,
-    #a855f7 240deg,
-    #ec4899 300deg,
-    #ff6b6b 360deg
-  );
-  content: '';
-  pointer-events: none;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  animation: app-composer-thinking-flow 2s linear infinite;
-}
-
-.app-composer-thinking > * {
-  position: relative;
-  z-index: 1;
-}
-
-@keyframes app-composer-thinking-flow {
-  to {
-    --composer-flow-angle: 360deg;
-  }
+  border-color: var(--ring);
 }
 
 .app-composer:focus-within:not(.app-composer-thinking) {
@@ -497,7 +378,7 @@
   backdrop-filter: blur(10px);
 }
 
-.app-reference-menu button {
+.app-reference-menu [data-slot='dropdown-menu-item'] {
   display: flex;
   width: 100%;
   align-items: center;
@@ -511,8 +392,8 @@
   text-align: left;
 }
 
-.app-reference-menu button:hover,
-.app-reference-menu button:focus-visible {
+.app-reference-menu [data-slot='dropdown-menu-item']:hover,
+.app-reference-menu [data-slot='dropdown-menu-item'][data-highlighted] {
   background: var(--accent);
   outline: none;
 }
@@ -820,31 +701,6 @@
   background: var(--app-terminal-rail);
 }
 
-.app-tabbar button {
-  box-shadow: none;
-}
-
-.app-tabbar button[aria-selected='true'] {
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-}
-
-@keyframes app-tab-attention-pulse {
-  0%,
-  100% {
-    border-color: color-mix(in srgb, var(--primary) 45%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
-  }
-  50% {
-    border-color: color-mix(in srgb, var(--primary) 92%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
-  }
-}
-
-.app-tabbar button.app-tab-attention {
-  border-color: color-mix(in srgb, var(--primary) 70%, transparent);
-  animation: app-tab-attention-pulse 1.1s ease-in-out infinite;
-}
-
 .app-agent-pane details,
 .app-agent-pane section {
   border-color: var(--border);
@@ -905,16 +761,7 @@
   }
 
   .app-composer-thinking {
-    border-color: color-mix(in srgb, var(--primary) 75%, var(--border));
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, #a855f7 28%, transparent),
-      0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent),
-      0 0 10px color-mix(in srgb, var(--primary) 14%, transparent);
-  }
-
-  .app-composer-thinking::before {
-    display: none;
-    animation: none;
+    border-color: var(--ring);
   }
 
   .app-mermaid-panel .edgePaths path.edge-pattern-solid,
@@ -925,19 +772,15 @@
   }
 }
 
+@media (max-width: 860px) {
+  .app-shell:has(.app-sidebar.is-expanded) {
+    --app-sidebar-width: 230px;
+  }
+}
+
 @media (max-width: 760px) {
   .app-titlebar {
-    height: auto;
-    min-height: 3rem;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding-block: 0.5rem;
-  }
-
-  .app-titlebar .app-commandbar {
-    max-width: 58vw;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    min-width: 0;
   }
 
   .app-frame {
@@ -986,40 +829,6 @@
     border-right: 0;
     border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   }
-}
-
-.xterm {
-  height: 100%;
-}
-
-.xterm .xterm-viewport {
-  background-color: transparent !important;
-  scrollbar-color: color-mix(in srgb, var(--primary) 46%, transparent)
-    color-mix(in srgb, var(--muted) 28%, transparent);
-  scrollbar-width: thin;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--muted) 22%, transparent);
-  border-radius: 999px;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--primary) 46%, transparent);
-  border-radius: 999px;
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--primary) 68%, transparent);
-}
-
-.xterm .xterm-viewport::-webkit-scrollbar-corner {
-  background: transparent;
 }
 
 /* Adapted from whale-purse's desktop pet motion and drag styling. */
@@ -1134,7 +943,7 @@
 }
 .app-ref-chip[data-slot='badge'],
 .markdown-body code,
-.app-reference-menu button {
+.app-reference-menu [data-slot='dropdown-menu-item'] {
   border-radius: var(--app-radius-small);
 }
 .markdown-body blockquote {
@@ -1147,9 +956,6 @@
 .app-composer {
   box-shadow: var(--app-shadow);
 }
-.app-tabbar {
-  border-bottom-color: var(--app-border-strong);
-}
 .app-code-panel-header,
 .app-modal-header,
 [data-slot='sheet-header'] {
@@ -1161,83 +967,11 @@
   text-transform: var(--app-label-case);
   letter-spacing: var(--app-label-spacing);
 }
-.dark[data-crescent-theme='route-survey'] .app-empty-state {
-  background-image:
-    linear-gradient(var(--app-grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--app-grid-color) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-.app-command-approval {
-  border-left: 3px solid var(--app-warning);
-}
-.app-command-approval[data-risk='high'] {
-  border-left-color: var(--destructive);
-}
-.dark[data-crescent-theme='ink-signal'] .app-command-approval {
-  background: var(--app-panel-strong);
-  border-radius: var(--app-radius);
-}
-.dark[data-crescent-theme='ink-signal'] .app-command-approval > :first-child {
-  border-bottom: 1px solid var(--app-border-strong);
-}
-.app-theme-preview {
-  display: flex;
-  align-items: stretch;
-  gap: 5px;
-  width: 94px;
-  height: 51px;
-  flex-shrink: 0;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--app-radius);
-  background: var(--background);
-  color: var(--foreground);
-  box-shadow: var(--app-shadow);
-}
-.app-theme-preview-terminal {
-  flex: 1;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--app-radius-small);
-  background: var(--app-terminal);
-  color: var(--primary);
-  font: 10px var(--app-mono);
-}
-.app-theme-preview-panel {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-  padding: 5px;
-  border: 1px solid var(--app-border-strong);
-  border-radius: var(--app-radius-small);
-  background: var(--app-panel-raised);
-}
-.app-theme-preview-panel i {
-  height: 2px;
-  background: var(--muted-foreground);
-  opacity: 0.7;
-}
-.app-theme-preview-panel i:first-child {
-  width: 65%;
-  background: var(--primary);
-  opacity: 1;
-}
-.app-theme-preview-panel i:last-child {
-  width: 75%;
-}
-
 .rounded {
   border-radius: var(--app-radius-small);
 }
 
-:is(
-  button,
-  input:not(.xterm-helper-textarea),
-  textarea:not(.xterm-helper-textarea),
-  [role='combobox'],
-  [role='menuitem']
-):focus-visible {
+:is(button, input, textarea, [role='combobox'], [role='menuitem']):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }

@@ -19,15 +19,26 @@ export function shouldFollowScroll(input: ScrollFollowDecisionInput): boolean {
   return input.force || input.following
 }
 
+/** Keep the recommended step visible instead of scrolling a tall suggestion group to its footer. */
+export function scrollFollowTargetTop(el: HTMLElement): number {
+  const bottom = Math.max(0, el.scrollHeight - el.clientHeight)
+  const anchor = el.querySelector<HTMLElement>('[data-scroll-follow-anchor]')
+  if (!anchor) return bottom
+  const top =
+    anchor.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 12
+  return Math.max(0, Math.min(bottom, top))
+}
+
 /**
- * Scroll to the bottom after layout settles. Uses two animation frames so
+ * Scroll to the latest content after layout settles. Uses two animation frames so
  * markdown/mermaid/async DOM updates can affect scrollHeight first.
  */
-export function scrollToBottom(el: HTMLElement, onSettled?: () => void): void {
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight })
+export function scrollToBottom(el: HTMLElement, onSettled?: () => void): () => void {
+  let frame = window.requestAnimationFrame(() => {
+    frame = window.requestAnimationFrame(() => {
+      el.scrollTo({ top: scrollFollowTargetTop(el), behavior: 'instant' })
       onSettled?.()
     })
   })
+  return () => window.cancelAnimationFrame(frame)
 }

@@ -50,7 +50,7 @@ const PORT_TO_HANDLE: Record<ArchPortSide, string> = {
 /** Layer nodes left-to-right from shared layout; wrap group members in parent frames. */
 export function buildArchitectureFlowGraph(
   spec: ArchitectureSpec,
-  themeId: AppThemeId = 'crescent'
+  themeId: AppThemeId = 'ink-wash-light'
 ): ArchitectureFlowGraph {
   const layout = layoutArchitecture(spec, { titleOffset: 0 })
   const groupById = new Map(layout.groups.map((group) => [group.id, group] as const))

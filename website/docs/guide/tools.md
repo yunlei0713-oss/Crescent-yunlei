@@ -1,21 +1,20 @@
 # Agent 工具
 
-Agent 只使用一组小而可审核的工具：
+Pi 只使用 Main 宿主明确注册的 allowlist，不加载项目 Pi extensions，也不使用内建 bash/write/edit。
 
-| 工具 | 作用 |
+| 工具/能力 | 当前边界 |
 | --- | --- |
-| `read` / `write` / `edit` | 读写 Agent 工作区内的文件。工作区默认是 `~/.crescent/workspace`，可在设置里改 |
-| `bash` | 在主终端执行。`open_subterminal(mode=local)` 可以借走下一条本机命令，然后回到主终端。每条命令都看得到，高风险命令仍要 [审核](/guide/command-review) |
-| `open_subterminal` | 停靠本机或另一台主机的窗格，不把主任务搬走。详见 [子终端与子代理](/guide/subagents) |
-| `subagent` | 在子终端收集旁路信息。主终端继续工作 |
-| `create-skill` / `create-sop` | 把这次会话整理成 Skill 或 SOP 草稿，确认后才写入。详见 [Skills 与知识库](/guide/skills) |
+| `read`、代码索引与资料读取 | 授权的本地范围；路径、类型、大小及敏感文件校验 |
+| `request_file_change` | 提议本地文件变更；完整 Diff、逐文件审批和 Main 一次性授权后才写 |
+| `observe_terminal` | 仅读取当前身份上已授权、脱敏、有界的观察证据 |
+| 诊断建议 | 分析并呈现文字，用户自行在 iTerm 执行；复制只写剪贴板 |
+| `subagent` | 缩小工具集的只读子任务；无终端、SSH 登录或写入 |
+| `create-skill` / `create-sop` | 后台草稿，用户确认后 Main 持久化 |
 
 ## 流程 {#flow}
 
 <ArchitectureDiagram name="tools-zh" />
 
-文件工具只进入 Agent 工作区。`bash` 先经过 [命令审核](/guide/command-review#flow)，再写入可见终端。`open_subterminal` 和 `subagent` 各自占用一个停靠窗格，说明见 [子终端与子代理](/guide/subagents#flow)。沉淀工具只打开确认对话框，确认后才写入，见 [Skills 与知识库](/guide/skills#flow)。
+Agent 终端执行永久禁用，不能通过工具名、低风险标签、MCP 或旧兼容 API 恢复。OpenAPI 只作历史配置兼容。Agent MCP 已审计实现名单为空，因此连接/调用禁用；设置侧用户显式触发的目录发现是独立操作，不是 Agent 授权。
 
-早期版本里的 OpenAPI 和 MCP 工具已经从 Agent 循环中移除。相关设置只保留给配置迁移，不能再被模型当成当前工具调用。
-
-文件写入限制在 Agent 工作区。终端命令走可见会话和命令审核，不会在后台悄悄执行。子代理也不能调用 `subagent`、`open_subterminal`、`create-skill` 或 `create-sop`，这些只留给主会话。
+详见 [观察](/guide/terminal)、[审批](/guide/command-review)、[只读子任务](/guide/subagents) 和 [Skills](/guide/skills)。

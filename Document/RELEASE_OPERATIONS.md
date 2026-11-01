@@ -21,7 +21,7 @@ Crescent releases are tag-driven product releases, not ad-hoc CI artifacts.
    npm run build
    ```
 
-   Dev notification branding (macOS): `postinstall` / `predev` run `scripts/patch-electron-dock-icon.cjs`, which (1) copies `build/icon.icns` over Electron’s `electron.icns`, and (2) rewrites `Electron.app` Info.plist `CFBundleName` / `CFBundleDisplayName` to `Crescent` and `CFBundleIdentifier` to `com.crescent.app` so Notification Center stops serving the cached Electron atom for `com.github.Electron`. Packaged apps are unaffected. After patching, fully quit the app once; if the left-slot icon is still stale, run `killall NotificationCenter` (or reboot) once.
+   macOS native branding: `postinstall`, `predev` and `prestart` run `scripts/prepare-development-icons.cjs` before Electron launches. It regenerates edge-to-edge approved mountain/river artwork without an extra inset (macOS 26 supplies its own Dock tile), and updates the development bundle name to `墨巡`, identity to `com.crescent.moxun.dev`, and a content-addressed ICNS filename. Main does not swap in a runtime PNG; launch and minimized-window icons share the native ICNS. Validate the system-rendered artwork scale, not just source PNG dimensions. Data paths and the packaged app id stay unchanged. Fully quit old processes before restarting; old pinned installed apps need rebuilding and re-pinning, not a global Dock/cache reset. See [DEVELOPMENT.md](DEVELOPMENT.md).
 
 3. Confirm `.github/release-template.md` has any release-specific notes updated.
 4. Confirm `electron-builder.yml` targets match the platforms being announced.

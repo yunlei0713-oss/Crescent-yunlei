@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { AgentRunTimeline } from '@renderer/components/AgentRunTimeline'
 import { MessageInlineContent } from '@renderer/components/AgentReferenceBadges'
 import { MarkdownContent } from '@renderer/components/MarkdownContent'
@@ -46,7 +47,7 @@ export function ActionLogRow({
   )
 }
 
-export function AgentLogContent({
+export const AgentLogContent = memo(function AgentLogContent({
   entry,
   liveRun,
   tabId,
@@ -66,9 +67,7 @@ export function AgentLogContent({
   onInjectSuggestions,
   onOpenModelSettings,
   onSaveAsSop,
-  onInterruptCommand,
   onFocusTerminal,
-  fallbackExecutionTabId,
   thinkingCollapsedByDefault
 }: {
   entry: AgentLogEntry
@@ -81,19 +80,17 @@ export function AgentLogContent({
   savingSop?: boolean
   /** Connection/system status rows absorbed into this assistant card. */
   absorbedStatusEntries?: Array<{ id: number; text: string; createdAt: string }>
-  onCopyResult?: () => void
-  onExportResult?: () => void
-  onExportFull?: () => void
-  onExportTrace?: () => void
-  onOpsFeedback?: (rating: 'like' | 'dislike') => void
+  onCopyResult?: (entry: AgentLogEntry) => void
+  onExportResult?: (entry: AgentLogEntry) => void
+  onExportFull?: (entry: AgentLogEntry) => void
+  onExportTrace?: (entry: AgentLogEntry) => void
+  onOpsFeedback?: (entry: AgentLogEntry, rating: 'like' | 'dislike') => void
   onResolveApproval?: (requestId: string, approved: boolean, note?: string) => void
   onAddCommandToWhitelist?: (command: string) => void
   onInjectSuggestions?: (texts: string[]) => void
   onOpenModelSettings?: () => void
-  onSaveAsSop?: () => void
-  onInterruptCommand?: (tabId: string) => void
+  onSaveAsSop?: (entry: AgentLogEntry) => void
   onFocusTerminal?: (tabId: string) => void
-  fallbackExecutionTabId?: string
   thinkingCollapsedByDefault?: boolean
 }): React.JSX.Element {
   if (isConversationLog(entry.kind)) {
@@ -170,19 +167,17 @@ export function AgentLogContent({
                 }
               : undefined
           }
-          onCopyResult={onCopyResult}
-          onExportResult={onExportResult}
-          onExportFull={onExportFull}
-          onExportTrace={onExportTrace}
-          onOpsFeedback={onOpsFeedback}
+          onCopyResult={onCopyResult ? () => onCopyResult(entry) : undefined}
+          onExportResult={onExportResult ? () => onExportResult(entry) : undefined}
+          onExportFull={onExportFull ? () => onExportFull(entry) : undefined}
+          onExportTrace={onExportTrace ? () => onExportTrace(entry) : undefined}
+          onOpsFeedback={onOpsFeedback ? (rating) => onOpsFeedback(entry, rating) : undefined}
           onResolveApproval={onResolveApproval}
           onAddCommandToWhitelist={onAddCommandToWhitelist}
           onInjectSuggestions={onInjectSuggestions}
           onOpenModelSettings={onOpenModelSettings}
-          onSaveAsSop={onSaveAsSop}
-          onInterruptCommand={onInterruptCommand}
+          onSaveAsSop={onSaveAsSop ? () => onSaveAsSop(entry) : undefined}
           onFocusTerminal={onFocusTerminal}
-          fallbackExecutionTabId={fallbackExecutionTabId}
           thinkingCollapsedByDefault={thinkingCollapsedByDefault}
         />
       )
@@ -214,7 +209,7 @@ export function AgentLogContent({
       </pre>
     </details>
   )
-}
+})
 
 function isConversationLog(kind: AgentLogEntry['kind']): boolean {
   return kind === 'user' || kind === 'assistant' || kind === 'error'

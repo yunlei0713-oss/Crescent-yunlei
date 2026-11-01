@@ -1,54 +1,34 @@
 # Run from source and contribute
 
-The repository overview is [README.md](https://github.com/aide-family/Crescent/blob/main/README.md). Run the commands below from the repository root.
-
-OpenAPI and MCP from earlier versions are no longer part of the Agent loop. If those settings are still visible, they exist only so old configuration can migrate. The model cannot call them as current tools.
-
-## Install dependencies and start
+From the repository root:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-## Package
+Pi versions follow the root lockfile; the website has separate dependencies and a lockfile. Agents cannot execute terminal commands or call OpenAPI tools. Agent MCP is disabled because its reviewed implementation allowlist is empty; explicit settings-side discovery is separately controlled.
+
+## Gates and packaging
 
 ```bash
-# Windows (cross-packaging from macOS or Linux uses node-pty win32 prebuilds)
-npm run build:win
-
-# macOS
-npm run build:mac
-
-# Linux
-npm run build:linux
+npm run verify:local
+npm run build:mac:local
 ```
 
-Packaging uses `node-pty` N-API prebuilds with `npmRebuild` disabled, so macOS does not cross-compile Windows or Linux native modules. Official releases build each platform on its native runner. If a local Windows NSIS build asks for Wine, use CI or install Wine first.
+`verify:local` runs CI (lint, static security and build including typecheck), then local behavior tests. Test files stay local-only. Pre-commit runs CI automatically; when local tests exist, run the complete gate yourself before committing.
 
-## Docs site
+Local Mac packaging creates one x64 + arm64 Universal app/DMG/ZIP, with signing, notarization and publishing disabled. `build:mac` is the Universal entry for preconfigured signing; old architecture commands are aliases. Freeze `out/` while packaging. Retained Windows/Linux scripts are not this round's platform acceptance.
 
-Docs sources live in `website/`. Preview and build locally:
+## Documentation site
 
 ```bash
 npm run docs:dev
 npm run docs:build
 ```
 
-Pushes to `main` that change `website/` deploy the static site with GitHub Actions. In the repository, set Settings → Pages → Source to GitHub Actions.
+Site sources live in `website/`; deployment uses the controlled Pages workflow. This cleanup does not push or publish automatically.
 
-## Engineering docs in the repo
+Engineering contracts: [development](https://github.com/aide-family/Crescent/blob/main/Document/DEVELOPMENT.md), [testing](https://github.com/aide-family/Crescent/blob/main/Document/TESTING.md), [architecture](https://github.com/aide-family/Crescent/blob/main/Document/ARCHITECTURE.md), [signing](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md).
 
-These files stay in the repository. The site links to them instead of copying the text:
-
-- [Code signing](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md)
-- [Roadmap](https://github.com/aide-family/Crescent/blob/main/ROADMAP.md)
-- [Architecture](https://github.com/aide-family/Crescent/blob/main/Document/ARCHITECTURE.md)
-- [Testing](https://github.com/aide-family/Crescent/blob/main/Document/TESTING.md)
-
-## Contribute
-
-- Repository: <https://github.com/aide-family/Crescent>
-- Bugs and requests: <https://github.com/aide-family/Crescent/issues>
-
-Issues, pull requests, and reusable operational Skills are welcome.
+Issues, pull requests and reusable Skills are welcome in the [repository](https://github.com/aide-family/Crescent). Never attach keys, user configuration or sensitive terminal output.

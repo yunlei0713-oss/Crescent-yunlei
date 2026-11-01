@@ -13,6 +13,7 @@ import { getAgentProviders } from './model-provider-config'
 import { getCrescentPiAuthPath, getCrescentPiModelsPath } from './pi-paths'
 import { loadPiModelRuntime } from './pi-sdk'
 import type { AgentConfig, AgentProviderConfig } from './types'
+import { modelCapabilities, type ModelCapabilities } from '../../shared/model-capabilities'
 
 type ModelRuntime = Awaited<
   ReturnType<Awaited<ReturnType<typeof loadPiModelRuntime>>['ModelRuntime']['create']>
@@ -150,6 +151,7 @@ export async function listPiAvailableModels(config: AgentConfig): Promise<
     providerId: string
     providerName: string
     reasoning: boolean
+    capabilities: ModelCapabilities
   }>
 > {
   const runtime = await syncCrescentProvidersToModelRuntime(config)
@@ -165,7 +167,8 @@ export async function listPiAvailableModels(config: AgentConfig): Promise<
       name: model.name || model.id,
       providerId: model.provider,
       providerName: providerNames.get(model.provider) || model.provider,
-      reasoning: Boolean(model.reasoning)
+      reasoning: Boolean(model.reasoning),
+      capabilities: modelCapabilities(model.input.includes('image'))
     }))
   }
 
@@ -177,6 +180,7 @@ export async function listPiAvailableModels(config: AgentConfig): Promise<
       name: model.name || model.id,
       providerId: sanitizeProviderId(provider.id),
       providerName: provider.name || provider.id,
+      capabilities: modelCapabilities(model.imageInput === true),
       reasoning: resolveModelReasoningFlag({
         modelId: model.id,
         configuredReasoning: model.reasoning,
@@ -206,7 +210,9 @@ export function toProviderConfigInput(provider: AgentProviderConfig): ProviderCo
         id: model.id,
         name: model.name || model.id,
         reasoning,
-        input: ['text'] as Array<'text'>,
+        input: (model.imageInput === true ? ['text', 'image'] : ['text']) as Array<
+          'text' | 'image'
+        >,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: deepseek ? 128_000 : 128_000,
         maxTokens: reasoning ? 16_384 : 8_192,

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { denyAgentOperation } from '../security/agent-capability-policy'
 import { requestCommandApproval } from './command-approval'
 import { publicConnection } from '../renderer-secrets'
 import { redactSensitiveText } from '../../shared/secret-redaction'
@@ -273,6 +274,7 @@ export async function openAgentSubterminal(input: {
   hint?: string
   error?: string
 }> {
+  denyAgentOperation('agent.open_subterminal')
   if (input.signal?.aborted) {
     return { ok: false, error: 'Agent run was canceled.' }
   }

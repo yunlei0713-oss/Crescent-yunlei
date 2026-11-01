@@ -1,23 +1,19 @@
-# Terminal and Agent
+# Manual iTerm and Agent observation
 
-Crescent includes a local terminal with PTY support. The Agent executes in the **visible terminal** and reads real output. The terminal is the workspace, not a side pane for pasted commands.
-
-That means:
-
-- You can see the command that is running and its output.
-- The next step is based on that output, not on a guessed environment.
-- For another host or another context, `open_subterminal` docks a dedicated pane instead of mixing every command into one session.
+MoXun is chat-first, without an embedded xterm workspace. **You operate local or SSH terminals in external iTerm; the Agent analyzes and suggests**. It cannot type, execute, interrupt or press Enter for you.
 
 ## Flow {#flow}
 
 <ArchitectureDiagram name="terminal-en" />
 
-A command passes [command review](/en/guide/command-review#flow) before it reaches the terminal. Another host or a separate line of checks should not share the main pane’s PTY. Use [Subterminals and subagents](/en/guide/subagents#flow).
+A connection card opens iTerm and connects to the selected target. The standalone external-terminal entry creates a shared local iTerm or binds an existing iTerm, without implicitly connecting a cluster. Existing bindings are read-only; unbinding sends no exit/Ctrl+C and does not close your shell.
 
-## Tasks that fit
+## Optional observation
 
-- Local checks of disk, memory, and services
-- Pre-deployment checks
-- Narrowing a failure from the previous command’s output
+- **Off**: the default; no terminal screen reads.
+- **Observe from now**: native confirmation permits subsequent evidence, not replay of pre-consent content.
+- **Include current context and continue**: native confirmation permits a bounded accessible-text snapshot and subsequent evidence.
 
-For another machine, select it under [SSH connections](/en/guide/ssh) first, then continue the Agent run on that connection. A parallel line of checks uses [Subterminals and subagents](/en/guide/subagents) instead of sharing the main pane’s PTY.
+Observation never grants input. Snapshots do not guarantee full scrollback, complete output, command boundaries or exit codes. Evidence is redacted, bounded and short-lived in memory. Pause, revocation and identity/session changes stop sampling and clear evidence. Resume needs fresh confirmation and never replays paused content.
+
+Before consent, the Agent may suggest a first step from your problem and target metadata, explicitly stating that no results were observed. Run it yourself, then authorize observation or provide redacted output. See [SSH connections](/en/guide/ssh) and [suggestion risk and approval](/en/guide/command-review).

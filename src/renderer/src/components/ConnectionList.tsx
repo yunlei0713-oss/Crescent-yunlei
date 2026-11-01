@@ -98,7 +98,6 @@ export function ConnectionList({
     const index = filteredConnections.findIndex((item) => item.id === currentId)
     const next = filteredConnections[index + direction]
     if (!next) return
-    onSelectConnection(next)
     focusConnectionIdentity(next.id)
   }
 

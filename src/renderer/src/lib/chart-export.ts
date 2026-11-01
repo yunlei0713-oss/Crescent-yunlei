@@ -25,7 +25,7 @@ export type SerializedChartSvg = {
  */
 export function serializeChartSvgFromHost(
   host: HTMLElement,
-  themeId: AppThemeId = 'crescent'
+  themeId: AppThemeId = 'ink-wash-light'
 ): SerializedChartSvg | null {
   const source =
     host.querySelector<SVGSVGElement>('svg.recharts-surface') ??
@@ -76,11 +76,13 @@ export function replaceCssVarsInSvgMarkup(markup: string, vars: Record<string, s
   return markup.replace(
     /var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)/g,
     (_match, name: string, fallback?: string) =>
-      vars[name] ?? fallback?.trim() ?? APP_THEMES.crescent.diagram.canvas
+      vars[name] ?? fallback?.trim() ?? APP_THEMES['ink-wash-light'].diagram.canvas
   )
 }
 
-export function chartSeriesCssVarMap(themeId: AppThemeId = 'crescent'): Record<string, string> {
+export function chartSeriesCssVarMap(
+  themeId: AppThemeId = 'ink-wash-light'
+): Record<string, string> {
   const map: Record<string, string> = {}
   getChartSeriesColors(themeId).forEach((color, index) => {
     map[`--color-s${index}`] = color

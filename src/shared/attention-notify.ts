@@ -37,10 +37,10 @@ export function normalizeAttentionClickedPayload(input: unknown): AttentionClick
 
 export function normalizeAttentionNotifyPayload(input: unknown): AttentionNotifyPayload {
   if (!input || typeof input !== 'object') {
-    return { title: 'Crescent', body: '' }
+    return { title: '墨巡', body: '' }
   }
   const record = input as Record<string, unknown>
-  const title = trimId(record.title, 120) || 'Crescent'
+  const title = trimId(record.title, 120) || '墨巡'
   const body = typeof record.body === 'string' ? record.body.trim().slice(0, 280) : ''
   return {
     title,

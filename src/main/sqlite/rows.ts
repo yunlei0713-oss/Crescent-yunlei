@@ -6,6 +6,7 @@ import type {
   OpsHistoryRating
 } from '../agent/types'
 export interface SessionHistoryRow {
+  projectId?: string | null
   tabId: string
   title: string
   connectionId?: string | null
@@ -114,6 +115,7 @@ export const opsHistoryRow: RowSchema<OpsHistoryRow> = {
   updatedAt: text
 }
 export const sessionHistoryRow: RowSchema<SessionHistoryRow> = {
+  projectId: optional(text),
   tabId: text,
   title: text,
   connectionId: optional(text),

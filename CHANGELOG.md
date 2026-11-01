@@ -1,5 +1,14 @@
 # Changelog
 
+## Current workspace (unreleased, 2026-11-01)
+
+- MoXun uses a chat-first workspace with manual external iTerm operation and optional native-confirmed observation.
+- Agent terminal execution/input/interrupt is permanently denied, including via subagents and unreviewed MCP implementations. Local file changes require dedicated human approval.
+- OpenAPI remains legacy configuration, not an Agent tool. Mac delivery follows the Universal-only rule.
+- Cleanup and quality convergence are in progress; build/test success does not imply real iTerm, UI, performance, signing or release acceptance.
+
+The dated entries below describe historical releases, not current permission grants. See [current security model](Document/SECURITY_MODEL.md) and [archive map](Document/archive/README.md).
+
 ## v1.0.11 (2026-09-22)
 
 ### Agent

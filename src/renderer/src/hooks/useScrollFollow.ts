@@ -1,21 +1,23 @@
-import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import {
   DEFAULT_SCROLL_FOLLOW_THRESHOLD_PX,
-  isNearScrollBottom,
-  scrollToBottom,
-  shouldFollowScroll
+  scrollFollowTargetTop,
+  scrollToBottom
 } from '@renderer/lib/scroll-follow'
 
 export interface UseScrollFollowOptions {
   thresholdPx?: number
-  /** When true, scroll to bottom regardless of user scroll state. */
-  forceFollow?: boolean
+  enabled?: boolean
+  /** A newly displayed conversation starts at its latest message. */
+  resetKey?: unknown
+  /** A new user submission explicitly resumes following. */
+  followRequest?: unknown
 }
 
 /**
- * Auto-follow scroll for overflow containers. Stays pinned to the bottom while
- * the user is at/near it; scrolling away stays parked until they return (or force).
+ * Auto-follow the latest content (or its recommendation anchor). Scrolling away
+ * stays parked until the reader returns to the target or explicitly resumes.
  */
 export function useScrollFollow(
   containerRef: RefObject<HTMLElement | null>,
@@ -23,93 +25,123 @@ export function useScrollFollow(
   options: UseScrollFollowOptions = {}
 ): {
   followNow: (force?: boolean) => void
-  isFollowing: () => boolean
+  following: boolean
 } {
   const thresholdPx = options.thresholdPx ?? DEFAULT_SCROLL_FOLLOW_THRESHOLD_PX
-  const forceFollow = options.forceFollow ?? false
-
+  const enabled = options.enabled ?? true
+  const { resetKey, followRequest } = options
+  const [following, setFollowing] = useState(true)
   const followingRef = useRef(true)
-  const ignoreScrollRef = useRef(false)
+  const cancelScrollRef = useRef<(() => void) | null>(null)
+
+  const updateFollowing = useCallback((next: boolean): void => {
+    followingRef.current = next
+    setFollowing(next)
+    if (!next) {
+      cancelScrollRef.current?.()
+      cancelScrollRef.current = null
+    }
+  }, [])
 
   const followNow = useCallback(
     (force = false): void => {
       const el = containerRef.current
-      if (!el) return
-      if (
-        shouldFollowScroll({
-          force,
-          following: followingRef.current
-        })
-      ) {
-        followingRef.current = true
-        ignoreScrollRef.current = true
-        scrollToBottom(el, () => {
-          followingRef.current = true
-          ignoreScrollRef.current = false
-        })
-      }
+      if (!enabled || !el || (!force && !followingRef.current)) return
+      if (force) followingRef.current = true
+      // Coalesce streaming/layout updates and allow user input to cancel both frames.
+      if (cancelScrollRef.current) return
+      cancelScrollRef.current = scrollToBottom(el, () => {
+        cancelScrollRef.current = null
+        setFollowing(followingRef.current)
+      })
     },
-    [containerRef]
+    [containerRef, enabled]
   )
-
-  const isFollowing = useCallback((): boolean => followingRef.current, [])
 
   useEffect(() => {
     const el = containerRef.current
-    if (!el) return
+    if (!enabled || !el) return
+    let lastScrollTop = el.scrollTop
+    let touchY: number | undefined
 
-    const observedNodes = new Set<Element>()
-
-    const observeNode = (node: Element): void => {
-      if (observedNodes.has(node)) return
-      observedNodes.add(node)
-      resizeObserver.observe(node)
+    const handleScroll = (): void => {
+      // Collapsing a card or growing the viewport can clamp scrollTop without user input.
+      const maxScrollTop = Math.max(0, el.scrollHeight - el.clientHeight)
+      const movedUp = el.scrollTop < Math.min(lastScrollTop, maxScrollTop) - 1
+      const targetTop = scrollFollowTargetTop(el)
+      const movedPastAnchor = el.scrollTop > lastScrollTop + 1 && el.scrollTop > targetTop + 1
+      lastScrollTop = el.scrollTop
+      // Our own jump may move upward from the footer to the recommendation.
+      if (Math.abs(el.scrollTop - targetTop) < 2) updateFollowing(true)
+      else if (movedUp || movedPastAnchor) updateFollowing(false)
+      else if (Math.abs(el.scrollTop - targetTop) < thresholdPx) updateFollowing(true)
+      // Content growth can generate a scroll event too. Distance alone must not unpin it.
     }
-
-    const observeSubtree = (root: Element): void => {
-      observeNode(root)
-      for (const child of root.children) {
-        observeSubtree(child)
+    const handleWheel = (event: WheelEvent): void => {
+      if (event.deltaY < 0 || (event.deltaY > 0 && el.querySelector('[data-scroll-follow-anchor]')))
+        updateFollowing(false)
+    }
+    const handleTouchStart = (event: TouchEvent): void => {
+      touchY = event.touches[0]?.clientY
+    }
+    const handleTouchMove = (event: TouchEvent): void => {
+      const nextY = event.touches[0]?.clientY
+      if (
+        touchY !== undefined &&
+        nextY !== undefined &&
+        (nextY > touchY || (nextY !== touchY && el.querySelector('[data-scroll-follow-anchor]')))
+      )
+        updateFollowing(false)
+      touchY = nextY
+    }
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement
+      if (target.closest('input, textarea, [contenteditable="true"]')) return
+      if (
+        ['ArrowUp', 'PageUp', 'Home'].includes(event.key) ||
+        (event.key === ' ' && event.shiftKey) ||
+        (el.querySelector('[data-scroll-follow-anchor]') &&
+          ['ArrowDown', 'PageDown', 'End', ' '].includes(event.key))
+      ) {
+        updateFollowing(false)
       }
     }
 
-    const resizeObserver = new ResizeObserver(() => followNow(false))
-    observeSubtree(el)
-
-    let mutationFrame: number | null = null
-    const mutationObserver = new MutationObserver(() => {
-      if (mutationFrame != null) return
-      mutationFrame = window.requestAnimationFrame(() => {
-        mutationFrame = null
-        for (const node of observedNodes) {
-          if (!el.contains(node)) observedNodes.delete(node)
-        }
-        observeSubtree(el)
-        followNow(false)
-      })
-    })
-    mutationObserver.observe(el, { childList: true, subtree: true })
-
-    const handleScroll = (): void => {
-      if (ignoreScrollRef.current) return
-      followingRef.current = isNearScrollBottom(el, thresholdPx)
-    }
-
+    // Observe the viewport and its content wrapper, rather than every markdown node.
+    const resizeObserver = new ResizeObserver(() => followNow())
+    resizeObserver.observe(el)
+    if (el.firstElementChild) resizeObserver.observe(el.firstElementChild)
+    const mutationObserver = new MutationObserver(() => followNow())
+    mutationObserver.observe(el, { childList: true, characterData: true, subtree: true })
     el.addEventListener('scroll', handleScroll, { passive: true })
-    followNow(forceFollow)
+    el.addEventListener('wheel', handleWheel, { passive: true })
+    el.addEventListener('touchstart', handleTouchStart, { passive: true })
+    el.addEventListener('touchmove', handleTouchMove, { passive: true })
+    el.addEventListener('keydown', handleKeyDown)
+    followNow(true)
 
     return () => {
       el.removeEventListener('scroll', handleScroll)
-      if (mutationFrame != null) {
-        window.cancelAnimationFrame(mutationFrame)
-      }
+      el.removeEventListener('wheel', handleWheel)
+      el.removeEventListener('touchstart', handleTouchStart)
+      el.removeEventListener('touchmove', handleTouchMove)
+      el.removeEventListener('keydown', handleKeyDown)
       mutationObserver.disconnect()
       resizeObserver.disconnect()
-      observedNodes.clear()
+      cancelScrollRef.current?.()
+      cancelScrollRef.current = null
     }
-    // followSignals + forceFollow drive re-follow when content or policy changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerRef, followNow, forceFollow, thresholdPx, ...followSignals])
+  }, [containerRef, enabled, followNow, resetKey, thresholdPx, updateFollowing])
 
-  return { followNow, isFollowing }
+  useEffect(() => {
+    followNow()
+    // Signals are supplied by the caller; observers remain attached during streaming.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followNow, ...followSignals])
+
+  useEffect(() => {
+    if (followRequest !== undefined) followNow(true)
+  }, [followNow, followRequest])
+
+  return { followNow, following }
 }

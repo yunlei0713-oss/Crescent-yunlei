@@ -2,24 +2,17 @@
 
 <LatestDownloads locale="en" />
 
-## macOS: “is damaged and can’t be opened”
+The current Mac delivery standard is one Universal package containing Intel x64 and Apple Silicon arm64. Downloads come from historical releases: asset availability is not this round's acceptance or proof of signing. Windows adaptation is outside the current development scope.
 
-Until repository signing secrets are configured, some release builds may still be unsigned. See [Document/CODE_SIGNING.md](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md) in the repository.
+## macOS security warnings
 
-After a browser download, Gatekeeper may say **“Crescent” is damaged and can’t be opened**. The package is not corrupt. Move `Crescent.app` into Applications, then clear the quarantine attribute:
+Verify the source, SHA-256, signing and notarization against release notes. A Gatekeeper “damaged” warning can reflect signing, quarantine or real corruption; do not assume the file is valid or remove quarantine for untrusted software. Unsigned local builds are for development only. See [code signing](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md).
 
-```bash
-xattr -cr /Applications/Crescent.app
-```
-
-You can also check **System Settings → Privacy & Security** for an “Open Anyway” option. If that fails, use the `xattr` command above.
-
-## Install from source
-
-From a clone of the repository:
+## From source
 
 ```bash
-npm install
+npm ci
+npm run dev
 ```
 
-Local development and packaging are covered in [Run from source and contribute](/en/develop/).
+See [development and packaging](/en/develop/). AI requires model configuration; manual terminal operation requires iTerm.

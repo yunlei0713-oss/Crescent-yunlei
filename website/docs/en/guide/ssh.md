@@ -9,17 +9,13 @@ Switch among these in one workbench:
 - Production hosts
 - Other remote machines
 
-The Agent treats the selected connection as the worksite. After you change hosts, later commands run in the new session.
-
-To inspect another host in parallel, use `open_subterminal` from [Subterminals and subagents](/en/guide/subagents) and dock a dedicated local or SSH terminal.
+Users open iTerm from a connection card and operate it manually. After switching hosts, the Agent can only use evidence authorized on the new identity, never old-session evidence. Users explicitly open other targets; no Agent subterminal tool connects for them.
 
 ## Flow {#flow}
 
 <ArchitectureDiagram name="ssh-en" />
 
-After you select a connection, Main opens a local PTY or an SSH session. Login actions on that connection are typed in one line at a time. Later Agent commands run in that session.
-
-To watch another host at the same time, do not open a subterminal for the connection you are already on. `open_subterminal` with `mode=ssh` must use a different saved `connectionId`.
+After explicit selection and confirmation, Main creates shared PTY/iTerm and connects with current saved settings. User-configured login actions are typed line by line by the manual connection workflow, not as an Agent capability. Observation defaults off and needs native confirmation. The standalone external-terminal entry does not implicitly connect a cluster.
 
 ## Login actions
 
@@ -31,4 +27,4 @@ An optional cluster host pattern says whether the terminal’s hostname is alrea
 
 ## Organizing the list
 
-You can favorite a connection, copy it as JSON and import that as a new connection, and move entries up, down, to the top, or to the bottom. The default entry is the local terminal. After you select another connection, the Agent treats that connection as the worksite.
+You can favorite a connection, copy it as JSON and import it, and reorder entries. Main protects passwords and other secrets; still inspect exported settings before sharing. The Agent analyzes only evidence authorized for the current target. See [observation](/en/guide/terminal).

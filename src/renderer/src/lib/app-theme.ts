@@ -8,13 +8,28 @@ export const APP_THEME_OPTIONS = APP_THEME_IDS.map((id) => ({
   accent: APP_THEMES[id].meta.accent
 }))
 let currentTheme: AppThemeId | undefined
+export function migrateAppTheme(stored: unknown): AppThemeId {
+  if (APP_THEME_IDS.includes(stored as AppThemeId)) return stored as AppThemeId
+  // All four retired appearances were dark, including Route Survey.
+  return ['crescent', 'night-shift', 'route-survey', 'ink-signal'].includes(String(stored))
+    ? 'ink-wash-dark'
+    : 'ink-wash-light'
+}
 
 function storedTheme(): AppThemeId {
   try {
     const stored = localStorage.getItem(APP_THEME_STORAGE_KEY)
-    return APP_THEME_IDS.find((id) => id === stored) ?? 'crescent'
+    const theme = migrateAppTheme(stored)
+    if (stored !== theme) {
+      try {
+        localStorage.setItem(APP_THEME_STORAGE_KEY, theme)
+      } catch {
+        /* Keep the migrated preference in memory. */
+      }
+    }
+    return theme
   } catch {
-    return 'crescent'
+    return 'ink-wash-light'
   }
 }
 
@@ -24,9 +39,10 @@ export function readAppTheme(): AppThemeId {
 
 function applyAppThemeAttribute(theme: AppThemeId): void {
   const root = document.documentElement
-  root.classList.add('dark')
-  if (theme === 'crescent') root.removeAttribute('data-crescent-theme')
-  else root.setAttribute('data-crescent-theme', theme)
+  const appearance = APP_THEMES[theme].meta.appearance
+  root.classList.toggle('dark', appearance === 'dark')
+  root.style.colorScheme = appearance
+  root.setAttribute('data-crescent-theme', theme)
 }
 
 export function initializeAppTheme(): void {

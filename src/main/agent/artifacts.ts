@@ -11,6 +11,7 @@ import { AgentBrain } from './brain'
 import { readAgentConfig } from '../crescent-store'
 import { getCrescentAttachmentsDir } from '../crescent-paths'
 import { decodeAttachmentBase64 } from '../ipc-security'
+import { validateAttachment } from './multimodal'
 import type {
   AgentPathReference,
   PastedAttachmentInput,
@@ -45,6 +46,9 @@ export async function savePastedAttachment(
   input: PastedAttachmentInput
 ): Promise<AgentPathReference> {
   const data = decodeAttachmentBase64(input.base64)
+  const metadata = input.mimeType?.startsWith('audio/')
+    ? { mimeType: input.mimeType }
+    : validateAttachment(data, input.name, input.mimeType)
   const attachmentDir = getCrescentAttachmentsDir()
   await fs.mkdir(attachmentDir, { recursive: true })
 
@@ -67,7 +71,9 @@ export async function savePastedAttachment(
     id: `file:${path}`,
     kind: 'file',
     path,
-    name: basename(path) || path
+    name: basename(path) || path,
+    ...metadata,
+    size: data.length
   }
 }
 

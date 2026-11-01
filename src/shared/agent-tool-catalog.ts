@@ -1,13 +1,21 @@
 import type { ToolCatalogEntry } from './agent-types'
 
-/** Pi coding-agent built-in tools exposed by Crescent after the Pi migration. */
+/** Reviewed host tools only; the runtime independently enforces this boundary. */
 export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
-  ...['code_search', 'symbol_lookup', 'dependency_trace', 'impact_analysis', 'memory_search'].map(
+  ...[
+    'read',
+    'code_search',
+    'symbol_lookup',
+    'dependency_trace',
+    'impact_analysis',
+    'memory_search',
+    'observe_terminal'
+  ].map(
     (name): ToolCatalogEntry => ({
       name,
       method: 'get',
-      path: `pi://crescent/${name}`,
-      description: 'Read local code index or approved historical memory with bounded evidence.',
+      path: `pi://moxun/${name}`,
+      description: 'Read authorized, bounded, redacted evidence.',
       source: 'built-in',
       risk: 'low',
       requiresApproval: false,
@@ -16,10 +24,11 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
     })
   ),
   {
-    name: 'return_to_main_terminal',
+    name: 'propose_command',
     method: 'post',
-    path: 'pi://crescent/return_to_main_terminal',
-    description: 'Restore the verified parent execution target.',
+    path: 'pi://moxun/propose_command',
+    description:
+      'Suggest one focused command or three next-direction choices, target-bound and manually copied/typed by the operator.',
     source: 'built-in',
     risk: 'low',
     requiresApproval: false,
@@ -27,67 +36,13 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
     stateChanging: false
   },
   {
-    name: 'submit_change_plan',
+    name: 'request_file_change',
     method: 'post',
-    path: 'pi://crescent/submit_change_plan',
-    description: 'Review an exact target-bound plan, then execute approved steps once in order.',
+    path: 'pi://moxun/request_file_change',
+    description:
+      'Request exact one-time file Diff approval; verify paths, hashes and actual results.',
     source: 'built-in',
     risk: 'high',
-    requiresApproval: true,
-    external: true,
-    stateChanging: true
-  },
-  {
-    name: 'read',
-    method: 'get',
-    path: 'pi://workspace/read',
-    description: 'Read a file from the agent workspace cwd.',
-    source: 'built-in',
-    risk: 'low',
-    requiresApproval: false,
-    external: false,
-    stateChanging: false
-  },
-  {
-    name: 'write',
-    method: 'post',
-    path: 'pi://workspace/write',
-    description: 'Write a file in the agent workspace cwd.',
-    source: 'built-in',
-    risk: 'medium',
-    requiresApproval: true,
-    external: false,
-    stateChanging: true
-  },
-  {
-    name: 'edit',
-    method: 'post',
-    path: 'pi://workspace/edit',
-    description: 'Edit an existing file in the agent workspace cwd.',
-    source: 'built-in',
-    risk: 'medium',
-    requiresApproval: true,
-    external: false,
-    stateChanging: true
-  },
-  {
-    name: 'bash',
-    method: 'post',
-    path: 'pi://workspace/bash',
-    description: 'Execute on the host-bound terminal target (local or SSH).',
-    source: 'built-in',
-    risk: 'high',
-    requiresApproval: false,
-    external: false,
-    stateChanging: true
-  },
-  {
-    name: 'open_subterminal',
-    method: 'post',
-    path: 'pi://crescent/open_subterminal',
-    description: 'Open a docked local or SSH subterminal and route subsequent bash commands there.',
-    source: 'built-in',
-    risk: 'medium',
     requiresApproval: true,
     external: false,
     stateChanging: true
@@ -95,37 +50,25 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
   {
     name: 'subagent',
     method: 'post',
-    path: 'pi://crescent/subagent',
-    description:
-      'Decide solo vs multi-agent, then delegate. Each child runs in its own docked subterminal. Parent bash stays on the current pane.',
+    path: 'pi://moxun/subagent',
+    description: 'Delegate read-only analysis; children have no terminal or file mutation access.',
     source: 'built-in',
-    risk: 'medium',
+    risk: 'low',
     requiresApproval: false,
     external: false,
-    stateChanging: true
+    stateChanging: false
   },
-  {
-    name: 'create-skill',
-    method: 'post',
-    path: 'pi://crescent/create-skill',
-    description:
-      'Capture this session as a Skill draft. The operator confirms before SKILL.md is written.',
-    source: 'built-in',
-    risk: 'medium',
-    requiresApproval: false,
-    external: false,
-    stateChanging: true
-  },
-  {
-    name: 'create-sop',
-    method: 'post',
-    path: 'pi://crescent/create-sop',
-    description:
-      'Capture this session as a wiki SOP draft. The operator confirms before the wiki is written.',
-    source: 'built-in',
-    risk: 'medium',
-    requiresApproval: false,
-    external: false,
-    stateChanging: true
-  }
+  ...['create-skill', 'create-sop'].map(
+    (name): ToolCatalogEntry => ({
+      name,
+      method: 'post',
+      path: `pi://moxun/${name}`,
+      description: 'Prepare a knowledge draft for separate operator confirmation.',
+      source: 'built-in',
+      risk: 'medium',
+      requiresApproval: false,
+      external: false,
+      stateChanging: false
+    })
+  )
 ]

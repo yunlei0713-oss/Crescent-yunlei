@@ -26,7 +26,10 @@ export interface AgentRuntimeSession {
   readonly model: RuntimeModel | undefined
   readonly isStreaming: boolean
   readonly isCompacting: boolean
-  prompt(input: string): Promise<void>
+  prompt(
+    input: string,
+    images?: Array<{ type: 'image'; data: string; mimeType: string }>
+  ): Promise<void>
   steer(input: string): Promise<void>
   abort(): Promise<void>
   waitForIdle(): Promise<void>

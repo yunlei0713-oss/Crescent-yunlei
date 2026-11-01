@@ -56,7 +56,7 @@ export interface AgentRunViewState {
   result?: string
   error?: string
   /** Structured provider failure class when error is set (additive). */
-  errorKind?: 'quota' | 'transient' | 'other'
+  errorKind?: import('../../../shared/agent-errors').AgentErrorKind
   errorProvider?: string
   errorResetHint?: string
   elapsedMs?: number
@@ -165,6 +165,10 @@ export interface AgentToolReference {
 }
 
 export interface AgentTerminalTab {
+  projectId?: string
+  /** UI-only preference. Does not grant observation or terminal execution. */
+  proactiveSuggestionsPaused?: boolean
+  external?: import('../../../shared/external-terminal').ExternalTerminalBinding
   id: string
   title: string
   /** Shared chat session id. Peer comparison terminals reuse the root tab id. */
@@ -281,6 +285,7 @@ export interface TemporarySubterminal {
   terminalReady?: boolean
   agentName?: string
   agentStatus?: 'running' | 'done' | 'error'
+  observationOnly?: boolean
 }
 
 // A known problematic PTY title leaked a bare `topology` token; block any
@@ -314,7 +319,9 @@ export function createTerminalTab(input?: Partial<AgentTerminalTab>): AgentTermi
     requestedGroupId && !isReservedTerminalTabId(requestedGroupId) ? requestedGroupId : id
   return {
     id,
-    title: input?.title ?? 'Terminal',
+    title: input?.title ?? 'Chat',
+    projectId: input?.projectId,
+    external: input?.external,
     sessionGroupId,
     providerId: input?.providerId,
     model: input?.model,
@@ -419,21 +426,25 @@ export function resolveTerminalDisconnectStrip(input: {
 }
 
 export function toStoredSessionTabs(tabs: AgentTerminalTab[]): StoredSessionTab[] {
-  return tabs.map((tab) => ({
-    tabId: tab.id,
-    sessionGroupId: getSessionGroupId(tab),
-    title: tab.title,
-    connectionId: tab.connectionId,
-    connectionName: tab.connectionName,
-    isSsh: tab.isSsh,
-    terminalCwd: tab.terminalCwd,
-    terminalMode: tab.terminalMode,
-    executionMode: normalizeExecutionMode(tab.executionMode),
-    agentStyle: tab.agentStyle,
-    handoffBlocked: tab.handoffBlocked,
-    expectedTarget: tab.expectedTarget,
-    connectionOrigin: tab.connectionOrigin
-  }))
+  // External bindings are process-local. Never restore one as an unrelated local shell.
+  return tabs
+    .filter((tab) => !tab.external)
+    .map((tab) => ({
+      tabId: tab.id,
+      projectId: tab.projectId,
+      sessionGroupId: getSessionGroupId(tab),
+      title: tab.title,
+      connectionId: tab.connectionId,
+      connectionName: tab.connectionName,
+      isSsh: tab.isSsh,
+      terminalCwd: tab.terminalCwd,
+      terminalMode: tab.terminalMode,
+      executionMode: normalizeExecutionMode(tab.executionMode),
+      agentStyle: tab.agentStyle,
+      handoffBlocked: tab.handoffBlocked,
+      expectedTarget: tab.expectedTarget,
+      connectionOrigin: tab.connectionOrigin
+    }))
 }
 
 /** Chat/session id shared by peer comparison terminals. */

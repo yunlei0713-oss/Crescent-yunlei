@@ -2,24 +2,17 @@
 
 <LatestDownloads locale="zh" />
 
-## macOS：「已损坏，无法打开」
+当前 Mac 交付标准是一份包含 Intel x64 和 Apple Silicon arm64 的 Universal 包。下载列表来自历史 Release，文件存在不代表本轮已验收或已签名；Windows 适配不在当前开发范围。
 
-在仓库配置签名密钥之前，部分正式包可能仍未签名。说明见仓库内 [Document/CODE_SIGNING.md](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md)。
+## macOS 安全提示
 
-从浏览器下载后，Gatekeeper 可能提示 **「Crescent」已损坏，无法打开**。这不是安装包损坏。把 `Crescent.app` 放进「应用程序」后，解除隔离再打开：
-
-```bash
-xattr -cr /Applications/Crescent.app
-```
-
-也可以在「系统设置 → 隐私与安全性」里查看是否有「仍要打开」。若仍无法启动，优先使用上面的 `xattr` 命令。
+确认下载来源和 SHA-256，按 Release 说明检查签名、公证。Gatekeeper 提示“已损坏”可能来自签名、隔离或文件损坏，不能直接断言文件正常；不要对来源不明的应用解除隔离。源码本地无签名包仅供开发验证。详见 [签名说明](https://github.com/aide-family/Crescent/blob/main/Document/CODE_SIGNING.md)。
 
 ## 从源码安装
 
-开发者克隆仓库后在仓库根目录安装依赖：
-
 ```bash
-npm install
+npm ci
+npm run dev
 ```
 
-本地运行和打包见 [从源码运行与贡献](/develop/)。
+详见 [开发与构建](/develop/)；AI 需另行配置模型，终端操作需 iTerm。

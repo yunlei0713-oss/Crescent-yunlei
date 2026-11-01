@@ -1,0 +1,75 @@
+/* Reference tokens for Codex integration. Map these to the existing theme system. */
+:root[data-theme='moxun-ink-wash-light'] {
+  color-scheme: light;
+  --mx-bg: #f7f7f3;
+  --mx-bg-secondary: #f0f0ea;
+  --mx-surface: #fcfcf9;
+  --mx-surface-elevated: #ffffff;
+  --mx-surface-input: #f3f3ed;
+  --mx-text-primary: #171918;
+  --mx-text-secondary: #626964;
+  --mx-text-muted: #858b86;
+  --mx-border: #daddd6;
+  --mx-border-strong: #bfc4bc;
+  --mx-selection: #e2e4de;
+  --mx-focus: #555d57;
+  --mx-terminal-bg: #171a18;
+  --mx-terminal-text: #e3e7df;
+  --mx-terminal-muted: #a7ada5;
+  --mx-success: #287a4b;
+  --mx-warning: #946019;
+  --mx-danger: #b43b3b;
+  --mx-info: #4d6478;
+  --mx-shadow-subtle: 0 2px 10px rgba(23, 25, 24, 0.045);
+  --mx-shadow-popover: 0 10px 30px rgba(23, 25, 24, 0.1);
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 9px;
+  --mx-radius-lg: 13px;
+  --mx-radius-panel: 14px;
+}
+
+:root[data-theme='moxun-ink-wash-dark'] {
+  color-scheme: dark;
+  --mx-bg: #111312;
+  --mx-bg-secondary: #191d1a;
+  --mx-surface: #202421;
+  --mx-surface-elevated: #252a26;
+  --mx-surface-input: #202521;
+  --mx-text-primary: #f1f2ed;
+  --mx-text-secondary: #c0c4bd;
+  --mx-text-muted: #a5aaa2;
+  --mx-border: #363c37;
+  --mx-border-strong: #505850;
+  --mx-selection: #303831;
+  --mx-focus: #c7ccc3;
+  --mx-terminal-bg: #090b0a;
+  --mx-terminal-text: #d9ded6;
+  --mx-terminal-muted: #929a91;
+  --mx-success: #70c493;
+  --mx-warning: #e4b66b;
+  --mx-danger: #f07b7b;
+  --mx-info: #9ab6cb;
+  --mx-shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.18);
+  --mx-shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.32);
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 9px;
+  --mx-radius-lg: 13px;
+  --mx-radius-panel: 14px;
+}
+
+.moxun-ink-wash-watermark {
+  opacity: 0.05;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^='moxun-ink-wash'] *,
+  [data-theme^='moxun-ink-wash'] *::before,
+  [data-theme^='moxun-ink-wash'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,4 +1,5 @@
 import { redactSensitiveText } from '../../shared/secret-redaction'
+import { denyAgentOperation } from '../security/agent-capability-policy'
 import { randomUUID } from 'node:crypto'
 import type {
   ChangePlanStep,
@@ -243,6 +244,7 @@ export async function submitAndExecutePlan(
   value: unknown,
   host: PlanHost
 ): Promise<{ ok: boolean; message: string }> {
+  denyAgentOperation('change-plan.execute')
   const existing = activePlans.get(host.runId)
   if (existing && !['stopped', 'rejected', 'completed', 'recovered'].includes(existing.phase))
     return { ok: false, message: 'A plan is already active.' }

@@ -6,6 +6,7 @@ import type {
   AgentValidationResult
 } from '../../../shared/agent-types'
 import { BUILT_IN_TOOL_CATALOG } from '../../../shared/agent-tool-catalog'
+import { modelCapabilities } from '../../../shared/model-capabilities'
 import type { AgentToolReference } from './terminal-tabs'
 
 export function parseProviderModels(value: string): AgentProviderModelConfig[] {
@@ -13,15 +14,14 @@ export function parseProviderModels(value: string): AgentProviderModelConfig[] {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((id) => ({
-      id,
-      name: id,
-      reasoning: isReasoningModelId(id)
-    }))
+    .map((line) => {
+      const [id, capability] = line.split('|').map((part) => part.trim())
+      return { id, name: id, reasoning: isReasoningModelId(id), imageInput: capability === 'image' }
+    })
 }
 
 export function formatProviderModels(models: AgentProviderModelConfig[]): string {
-  return models.map((model) => model.id).join('\n')
+  return models.map((model) => model.id + (model.imageInput ? ' | image' : '')).join('\n')
 }
 
 export function parseMcpArgs(value: string): string[] {
@@ -71,7 +71,8 @@ export function flattenProviderModels(providers: AgentProviderConfig[]): AgentMo
       name: model.name || model.id,
       providerId: provider.id,
       providerName: provider.name || provider.id,
-      reasoning: Boolean(model.reasoning)
+      reasoning: Boolean(model.reasoning),
+      capabilities: modelCapabilities(model.imageInput === true)
     }))
   )
 }

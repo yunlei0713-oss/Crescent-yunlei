@@ -1,8 +1,3 @@
-import { CodeIntelligenceSettings } from './CodeIntelligenceSettings'
-import {
-  normalizeCommandTimeoutPolicy,
-  type CommandTimeoutPolicy
-} from '../../../shared/command-timeouts'
 import {
   AGENT_THINKING_LEVELS,
   normalizeThinkingLevel,
@@ -20,12 +15,12 @@ import {
 } from 'lucide-react'
 
 import { OpenApiProfileEditorFields } from '@renderer/components/OpenApiSettingsFields'
+import { ProviderSettingsEditor } from '@renderer/components/ProviderSettingsEditor'
 import { StatusDot } from '@renderer/components/StatusIndicators'
 import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@renderer/components/ui/field'
 import { Input } from '@renderer/components/ui/input'
-import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
 import { Separator } from '@renderer/components/ui/separator'
 import {
   Sheet,
@@ -47,7 +42,6 @@ import {
 import type { Dictionary } from '@renderer/i18n'
 import { agentStyleSelectOptions } from '@renderer/lib/agent-style-ui'
 import { buildModelSelectionValue, parseModelSelectionValue } from '@renderer/lib/app-runtime'
-import { isWorkbenchLayout, type WorkbenchLayout } from '@renderer/lib/app-shell'
 import {
   formatPinnedWorkflowsText,
   parsePinnedWorkflowsText
@@ -113,8 +107,6 @@ export interface SettingsSheetProps {
   saved: boolean
   importingOpenApi: boolean
   closeTerminalConfirmEnabled: boolean
-  workbenchLayout: WorkbenchLayout
-  onWorkbenchLayoutChange: (layout: WorkbenchLayout) => void
   onCreateProvider: () => void
   onToggleProviderDetails: (providerId: string) => void
   onToggleProviderEnabled: (providerId: string, enabled: boolean) => void
@@ -126,7 +118,7 @@ export interface SettingsSheetProps {
   onLogLevelChange: (level: SystemLogLevel) => void
   onShowAgentThinkingChange: (value: boolean | undefined) => void
   onWorkspaceCwdChange: (value: string) => void
-  onCommandTimeoutsChange: (value: CommandTimeoutPolicy) => void
+  onTerminalContextCharsChange: (value: number) => void
   onMaxActiveToolsChange: (value: number) => void
   onCommandWhitelistChange: (text: string) => void
   onCreateOpenApiProfile: () => void
@@ -172,8 +164,6 @@ export function SettingsSheet({
   saved,
   importingOpenApi,
   closeTerminalConfirmEnabled,
-  workbenchLayout,
-  onWorkbenchLayoutChange,
   onCreateProvider,
   onToggleProviderDetails,
   onToggleProviderEnabled,
@@ -184,7 +174,7 @@ export function SettingsSheet({
   onLogLevelChange,
   onShowAgentThinkingChange,
   onWorkspaceCwdChange,
-  onCommandTimeoutsChange,
+  onTerminalContextCharsChange,
   onMaxActiveToolsChange: _onMaxActiveToolsChange,
   onCommandWhitelistChange: _onCommandWhitelistChange,
   onCreateOpenApiProfile: _onCreateOpenApiProfile,
@@ -241,7 +231,6 @@ export function SettingsSheet({
         </SheetHeader>
         <div className="app-sheet-split flex min-h-0 flex-1 flex-row-reverse gap-3 overflow-hidden px-4">
           <div className="app-sheet-main min-w-0 flex-1 space-y-3 overflow-auto overscroll-contain">
-            <CodeIntelligenceSettings />
             <div className="flex items-center justify-between gap-2">
               <p className="app-section-label">
                 {t.settings.providerList} · {config.providers.length}
@@ -531,61 +520,6 @@ export function SettingsSheet({
                 </label>
               </Field>
               <Field>
-                <FieldLabel htmlFor="workbench-layout">{t.settings.workbenchLayout}</FieldLabel>
-                <ToggleGroup
-                  id="workbench-layout"
-                  type="single"
-                  value={workbenchLayout}
-                  onValueChange={(value) => {
-                    if (isWorkbenchLayout(value)) onWorkbenchLayoutChange(value)
-                  }}
-                  variant="outline"
-                  size="sm"
-                  aria-label={t.settings.workbenchLayout}
-                >
-                  <ToggleGroupItem value="split" aria-label={t.app.layoutSplit}>
-                    {t.app.layoutSplit}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="chat" aria-label={t.app.layoutChat}>
-                    {t.app.layoutChat}
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="terminal" aria-label={t.app.layoutTerminal}>
-                    {t.app.layoutTerminal}
-                  </ToggleGroupItem>
-                </ToggleGroup>
-                <FieldDescription>{t.settings.workbenchLayoutHint}</FieldDescription>
-              </Field>
-              <Field>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['startMs', 'idleMs', 'executionMs', 'approvalMs'] as const).map((key) => (
-                    <label key={key} className="space-y-1 text-xs">
-                      {
-                        {
-                          startMs: '启动告警（秒）',
-                          idleMs: '空闲告警（秒）',
-                          executionMs: '执行时限（秒）',
-                          approvalMs: '审批等待（秒）'
-                        }[key]
-                      }
-                      <Input
-                        type="number"
-                        value={normalizeCommandTimeoutPolicy(config.commandTimeouts)[key] / 1000}
-                        onChange={(event) =>
-                          onCommandTimeoutsChange(
-                            normalizeCommandTimeoutPolicy({
-                              ...config.commandTimeouts,
-                              [key]: Number(event.target.value) * 1000
-                            })
-                          )
-                        }
-                      />
-                    </label>
-                  ))}
-                </div>
-                <FieldDescription>
-                  超时只标记未知结果；不会自动 Ctrl+C 或重放变更。执行时限 60–600
-                  秒，可在运行中继续等待。
-                </FieldDescription>
                 <FieldLabel htmlFor="workspace-cwd">{t.settings.workspaceCwd}</FieldLabel>
                 <Input
                   id="workspace-cwd"
@@ -594,6 +528,27 @@ export function SettingsSheet({
                   placeholder="~/.crescent/workspace…"
                 />
                 <FieldDescription>{t.settings.workspaceCwdHint}</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="terminal-context-chars">
+                  {t.locale === 'zh-CN'
+                    ? '终端观察上下文上限（字符）'
+                    : 'Terminal evidence limit (characters)'}
+                </FieldLabel>
+                <Input
+                  id="terminal-context-chars"
+                  type="number"
+                  min={8000}
+                  max={64000}
+                  step={1000}
+                  value={config.terminalContextChars ?? 32000}
+                  onChange={(event) => onTerminalContextCharsChange(Number(event.target.value))}
+                />
+                <FieldDescription>
+                  {t.locale === 'zh-CN'
+                    ? '8,000–64,000 字符，默认 32,000。只提供脱敏后的近期证据；原始观察数据仅在内存保留 30 分钟。'
+                    : '8,000–64,000 characters; default 32,000. Recent redacted evidence only. Observations stay in memory for 30 minutes.'}
+                </FieldDescription>
               </Field>
               <Separator />
               <Field>
@@ -695,131 +650,20 @@ export function SettingsSheet({
             </FieldGroup>
           </div>
           {providerEditorOpen && settingsProviderId ? (
-            <div
-              id="provider-editor-panel"
-              className="app-sheet-detail flex w-[560px] shrink-0 flex-col overflow-hidden rounded-md border bg-background"
-            >
-              <div className="flex shrink-0 items-start justify-between gap-3 border-b px-3 py-2">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    {t.settings.providerList}:{' '}
-                    {editingProvider.name.trim() || editingProvider.id || t.settings.newProvider}
-                  </div>
-                  <div className="mt-1 truncate font-mono text-xs text-muted-foreground">
-                    {editingProvider.id || settingsProviderId}
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    disabled={config.providers.length <= 1}
-                    aria-label={t.settings.deleteProvider}
-                    title={t.settings.deleteProvider}
-                    onClick={() => onDeleteProvider(settingsProviderId)}
-                  >
-                    <Trash2Icon aria-hidden="true" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label={t.common.close}
-                    title={t.common.close}
-                    onClick={() => onProviderEditorOpenChange(false)}
-                  >
-                    <XIcon aria-hidden="true" />
-                  </Button>
-                </div>
-              </div>
-              <div className="min-h-0 flex-1 overflow-auto overscroll-contain p-3">
-                <FieldGroup className="gap-4">
-                  <label
-                    htmlFor="provider-enabled"
-                    className="flex items-center justify-between gap-3 px-0.5 py-0.5"
-                  >
-                    <span className="space-y-0.5">
-                      <span className="block text-sm font-medium">
-                        {t.settings.providerEnabled}
-                      </span>
-                      <FieldDescription>{t.settings.providerEnabledHint}</FieldDescription>
-                    </span>
-                    <Input
-                      id="provider-enabled"
-                      type="checkbox"
-                      checked={editingProvider.enabled !== false}
-                      onChange={(event) =>
-                        onToggleProviderEnabled(editingProvider.id, event.target.checked)
-                      }
-                      className="size-4 shrink-0 accent-primary"
-                    />
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field>
-                      <FieldLabel htmlFor="provider-id">{t.settings.providerId}</FieldLabel>
-                      <Input
-                        id="provider-id"
-                        value={editingProvider.id}
-                        onChange={(event) => onUpdateSettingsProvider('id', event.target.value)}
-                        placeholder="provider-id…"
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="provider-name">{t.settings.providerName}</FieldLabel>
-                      <Input
-                        id="provider-name"
-                        value={editingProvider.name}
-                        onChange={(event) => onUpdateSettingsProvider('name', event.target.value)}
-                        placeholder={t.settings.providerName}
-                      />
-                    </Field>
-                  </div>
-                  <Field>
-                    <FieldLabel htmlFor="provider-base-url">{t.settings.baseUrl}</FieldLabel>
-                    <Input
-                      id="provider-base-url"
-                      value={editingProvider.baseUrl}
-                      onChange={(event) => onUpdateSettingsProvider('baseUrl', event.target.value)}
-                      placeholder="https://api.deepseek.com…"
-                    />
-                    <FieldDescription>{t.settings.baseUrlHint}</FieldDescription>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="provider-api-key">{t.settings.apiKey}</FieldLabel>
-                    <Input
-                      id="provider-api-key"
-                      type="password"
-                      value={editingProvider.apiKey ?? ''}
-                      onChange={(event) => onUpdateSettingsProvider('apiKey', event.target.value)}
-                      placeholder="sk-… or leave blank when env key is available"
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="provider-models">{t.settings.providerModels}</FieldLabel>
-                    <Textarea
-                      id="provider-models"
-                      className="min-h-44 resize-y font-mono text-xs"
-                      value={providerModelsText}
-                      onChange={(event) => onUpdateSettingsProviderModels(event.target.value)}
-                      placeholder={'deepseek-chat\ndeepseek-reasoner'}
-                    />
-                    <FieldDescription>{t.settings.modelListHint}</FieldDescription>
-                  </Field>
-                </FieldGroup>
-              </div>
-              <div className="flex shrink-0 items-center justify-end gap-2 border-t px-3 py-2">
-                <Button type="button" onClick={() => void onSaveProviderEditor()}>
-                  {saved ? (
-                    <CheckIcon data-icon="inline-start" />
-                  ) : (
-                    <BotIcon data-icon="inline-start" />
-                  )}
-                  {saved ? t.settings.saved : t.settings.saveSettings}
-                </Button>
-              </div>
-            </div>
+            <ProviderSettingsEditor
+              t={t}
+              provider={editingProvider}
+              providerId={settingsProviderId}
+              modelsText={providerModelsText}
+              canDelete={config.providers.length > 1}
+              saved={saved}
+              onDelete={onDeleteProvider}
+              onClose={() => onProviderEditorOpenChange(false)}
+              onToggleEnabled={onToggleProviderEnabled}
+              onUpdate={onUpdateSettingsProvider}
+              onModelsChange={onUpdateSettingsProviderModels}
+              onSave={onSaveProviderEditor}
+            />
           ) : openApiEditorOpen && settingsOpenApiProfile ? (
             <div className="app-sheet-detail flex w-[560px] shrink-0 flex-col overflow-hidden rounded-md border bg-background">
               <div className="flex shrink-0 items-start justify-between gap-3 border-b px-3 py-2">

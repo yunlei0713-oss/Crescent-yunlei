@@ -16,20 +16,22 @@ export interface AgentConfig {
   providers: AgentProviderConfig[]
   providerId?: string
   model: string
-  /** Workspace directory for Pi read/write/edit/bash tools. */
+  /** Authorized local workspace for host read and file-change reviews. */
   workspaceCwd?: string
   /** How much the agent says to the user. Does not change execution speed or safety. */
   agentStyle: AgentStyle
   /** When set, overrides the style default for showing the thinking block. */
   showAgentThinking?: boolean
   commandTimeouts?: Partial<import('./command-timeouts').CommandTimeoutPolicy>
+  /** Serialized read-only terminal evidence budget, 8K–64K characters. */
+  terminalContextChars?: number
   /** Requested reasoning effort; the runtime clamps it to model capabilities. */
   thinkingLevel?: AgentThinkingLevel
   /** @deprecated Ignored; Pi owns the agent loop. Kept for config migration. */
   agentMode: AgentMode
   /** @deprecated Ignored after Pi migration. */
   maxActiveTools: number
-  /** Legacy command whitelist; mutations still require the host approval policy. */
+  /** Legacy setting; cannot grant Agent terminal execution. */
   commandWhitelist: string[]
   /** @deprecated OpenAPI tools removed from agent loop; retained for settings migration. */
   openApiProfiles: AgentOpenApiProfile[]
@@ -101,6 +103,8 @@ export interface AgentProviderConfig {
 }
 
 export interface AgentProviderModelConfig {
+  /** Explicit provider-declared vision support; never inferred from the model name. */
+  imageInput?: boolean
   /** Optional provider-specific sampling overrides by reasoning effort. */
   samplingParamsByThinkingLevel?: AgentSamplingMap
   id: string
@@ -153,6 +157,9 @@ export interface ConnectionInput {
 }
 
 export interface AgentPathReference {
+  mimeType?: string
+  size?: number
+  previewDataUrl?: string
   id: string
   kind: 'file' | 'directory'
   path: string
@@ -248,6 +255,11 @@ export interface AgentSessionTerminalRef {
 }
 
 export interface AgentRunInput {
+  /** Main-owned project ID; never an arbitrary renderer-supplied cwd. */
+  projectId?: string
+  /** One-use Main-issued terminal evidence notice; not an observation grant. */
+  proactiveToken?: string
+  attachments?: Array<{ path: string }>
   runId?: string
   input: string
   skillInput?: string
@@ -258,6 +270,8 @@ export interface AgentRunInput {
   tabId?: string
   /** Visible terminal pane where bash commands are executed (main or subterminal). */
   executionTabId?: string
+  /** Operator-selected terminals in this conversation; Main rechecks each grant. */
+  observationTabIds?: string[]
   /** SSH connection of the current execution pane, if that pane is remote. */
   executionConnectionId?: string
   /** Recent terminal scrollback for command review / agent context. */
@@ -440,6 +454,7 @@ export type TerminalActivity =
   | 'session-exited'
 
 export interface TerminalExecutionTarget {
+  external?: import('./external-terminal').ExternalTerminalBinding
   activity?: TerminalActivity
   cwd?: string
   shell?: string
@@ -456,7 +471,7 @@ export interface TerminalExecutionTarget {
     ready: boolean
   }
   owner?: string
-  executionMode: 'local' | 'ssh'
+  executionMode: 'local' | 'ssh' | 'unknown'
   connectionName?: string
   expectedTarget?: string
 }
@@ -568,6 +583,7 @@ export interface AgentValidationResult {
 }
 
 export interface AgentModelOption {
+  capabilities?: import('./model-capabilities').ModelCapabilities
   id: string
   name: string
   providerId: string
@@ -693,7 +709,7 @@ export type AgentEvent =
        * Structured provider failure class (additive).
        * `quota` must not dump raw HTTP JSON into the timeline.
        */
-      kind?: 'quota' | 'transient' | 'other'
+      kind?: import('./agent-errors').AgentErrorKind
       /** @deprecated Prefer `kind: 'quota'`. Kept for additive IPC compatibility. */
       code?: 'quota_exceeded'
       provider?: string
@@ -745,6 +761,7 @@ export interface ToolCatalogEntry {
 }
 
 export interface StoredSessionTab {
+  projectId?: string
   tabId: string
   sessionGroupId?: string
   title: string

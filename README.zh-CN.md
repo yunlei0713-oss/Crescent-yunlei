@@ -1,214 +1,70 @@
-# Crescent
+# 墨巡 · MoXun
 
-[English](./README.md) | 简体中文
+[English](README.md) | 简体中文
 
-文档：<https://aide-family.github.io/Crescent/>（[安装](https://aide-family.github.io/Crescent/guide/install)、[快速开始](https://aide-family.github.io/Crescent/guide/quick-start)、[命令审核](https://aide-family.github.io/Crescent/guide/command-review)）
+基于 Electron、React 和 TypeScript 的聊天优先运维协作台。墨巡帮助你分析授权证据、理解操作风险、沉淀排障知识。**所有终端命令由你在外部 iTerm 操作；Agent 永远不能执行、输入或中断命令。** 仓库、package 标识与应用数据目录保留 Crescent 名称以兼容历史数据。
 
-把 AI 真正放进终端里的开源运维工作台。
+## 当前能力
 
-Crescent 是一个基于 Electron + React + TypeScript 构建的桌面端 AI 命令工作台，帮助运维、后端和平台工程师把本地终端、SSH 连接、AI Agent、命令审核、Skills 和知识库沉淀整合到一个界面里。
+- 聊天主工作区、固定输入框、模型选择，会话详情默认折叠。
+- 本机/SSH 连接、读取 `~/.ssh/config`、收藏、搜索、排序、导入及用户配置的登录动作。
+- 新建共享 iTerm，或只读绑定已有 iTerm。独立外置终端入口不隐式连接集群。
+- 可选 AI 观察：默认不参与、从现在开始观察、加入当前可访问上下文并继续观察。开启/恢复须 Main 原生确认；观察不授予输入权限，快照可能不完整且不能证明退出码。
+- 有授权、有限量的本地资料读取、代码索引、memory 与知识检索。
+- 本地文件变更必须完整 Diff、逐文件批准、Main 一次性授权、摘要复核及写后验证；拒绝后文件字节不变。
+- 只读子任务分析、Skills 和 SOP 草稿，通过宿主确认流程沉淀知识。
 
-> 如果你经常在服务器、Kubernetes、Docker、SSH 终端之间来回切换，又希望 AI 不只是“给建议”，而是能基于真实终端上下文一步步帮你检查、执行、复盘，Crescent 正是为这种工作流设计的。
+不提供内嵌终端主工作区，不开放 Agent `bash`、`write`、`edit` 或 `open_subterminal` 能力。MCP 设置/目录发现不是调用许可：当前已审计实现名单为空，Agent MCP 连接和调用关闭。OpenAPI 设置仅用于历史迁移，不是当前 Agent 工具。
 
-## 为什么需要 Crescent？
+## 使用流程
 
-现在很多 AI 工具都能生成命令，但真正落到运维和排障场景里，问题往往不是“AI 会不会写命令”，而是：
-
-- AI 不知道你当前终端在哪台机器、哪个集群、哪个目录。
-- AI 生成的命令需要手动复制粘贴，执行结果又要再复制回去。
-- 一旦涉及删除文件、重启服务、修改配置，风险很难被提前解释清楚。
-- 排障过程做完就散了，下次遇到类似问题还要从头来。
-- AI 建议、终端会话和沉淀下来的运维经验各自分散，很难形成一个连续工作流。
-
-Crescent 想解决的就是这个问题：让 AI 贴着真实终端工作，并把每一步变成可观察、可审核、可复用的操作过程。
-
-## 核心亮点
-
-### 1. 终端不是旁边的黑框，而是 Agent 的工作现场
-
-Crescent 内置本地终端能力，支持 PTY，并能让 Agent 在当前可见终端中执行命令、读取真实输出，再决定下一步操作。
-
-它不是简单地生成一段 shell，而是可以按类似 ReAct 的方式闭环推进：
-
-1. 理解用户目标。
-2. 查看当前终端上下文。
-3. 执行一个必要命令。
-4. 分析输出。
-5. 决定继续检查、修复，还是总结结果。
-
-对排障、巡检、部署前检查这类任务来说，这比一次性生成大段命令更接近真实工程师的工作方式。
-
-### 2. 内置命令审核，避免 AI 命令直接裸跑
-
-Crescent 对 AI 生成的命令加入了独立审核机制，会分析：
-
-- 这条命令为什么要执行。
-- 是否会修改系统、集群、文件、网络或服务状态。
-- 风险等级是低、中还是高。
-- 是否需要用户批准。
-- 潜在影响和建议是什么。
-
-只读检查可以自动放行，涉及删除、重启、提权、写文件、改配置等操作时会要求确认。AI 可以提效，但不应该绕过人的判断。
-
-### 3. SSH 连接和本地连接统一管理
-
-Crescent 可以读取 `~/.ssh/config`，也支持自定义 SSH 连接、登录动作、SSH 参数、密码环境变量等配置。
-
-你可以在一个工作台里切换本地终端、生产机器、测试环境或其他远程主机，并让 Agent 基于当前连接继续做检查。
-
-### 4. Skills + 知识库，把经验沉淀成可复用工作流
-
-Crescent 从配置的 Skill 目录加载 Agent Skills（默认 `~/.crescent/skills`）。可以从 skills.sh 搜索安装，也可以从本机 `SKILL.md` 文件或 Skill 目录导入，并可选只读加载 `~/.agents/skills`。
-
-还支持本地知识库沉淀。你可以把一次排障记录整理成 SOP，保存到本地知识库，后续 Agent 可以检索并参考这些经验。
-
-这让 Crescent 不只是会话工具，而更像一个面向团队经验复用的运维工作台。
-
-### 5. 聚焦的 Agent 工具运行时
-
-Agent 只运行一组小而可审核的工具，而不是开放式的插件面：
-
-- `read` / `write` / `edit`：操作 Agent 工作区内的文件。
-- `bash`：在当前可见终端执行，每条命令都可观察，高危命令仍需审批。
-- `open_subterminal`：停靠一个专用的本地 / SSH 子终端，用于跨上下文工作。
-
-OpenAPI 工具已停用，相关设置仅保留用于配置迁移。启用的 MCP 工具由 Crescent 主进程加载为 Pi 自定义工具，每次调用均需人工审批。
-
-## 方案对比
-
-| 方案             | 优点             | 局限                                 | Crescent 的差异                                      |
-| ---------------- | ---------------- | ------------------------------------ | ---------------------------------------------------- |
-| 普通终端         | 直接、可靠、可控 | 没有 AI 辅助和上下文理解             | 在终端旁边嵌入 Agent，并基于真实输出闭环执行         |
-| 通用 AI 聊天工具 | 推理和解释能力强 | 不能直接读取终端状态，复制粘贴成本高 | 把命令执行、结果观察和下一步决策串起来               |
-| API 调试工具     | 适合接口验证     | 不擅长 SSH、系统排障和终端操作       | 让 Agent 贴着真实终端工作，而不是替代终端            |
-| 自动化脚本平台   | 标准化强         | 灵活排障能力弱，前期沉淀成本高       | 用 Skills/SOP 逐步沉淀经验，不要求一开始就写完整平台 |
-
-## 架构概览
+1. 配置模型供应商并选择模型。
+2. 在聊天中描述问题；无观察证据时，建议只基于问题及目标信息，不声称已检查终端结果。
+3. 按需选择连接，或新建/绑定 iTerm，选择本轮是否允许 AI 观察。
+4. 阅读建议，在 iTerm 自己输入命令；只授权你希望分析的证据。
+5. 逐文件审核本地变更，将有用结论沉淀为 Skill/SOP。
 
 ```mermaid
 flowchart TD
-  user["用户请求"] --> ui["Crescent 桌面工作台"]
-  ui --> terminal["本地终端 / SSH 终端"]
-  ui --> agent["AI Agent Core"]
-  agent --> audit["命令审核"]
-  audit --> terminal
-  agent --> tools["工具运行时"]
-  tools --> files["read / write / edit"]
-  tools --> bash["bash 可见终端执行"]
-  tools --> subterm["open_subterminal"]
-  tools --> wiki["本地知识库"]
-  wiki --> agent
-  terminal --> agent
+  user[用户] --> chat[墨巡聊天]
+  user --> iterm[外部 iTerm: 人工命令]
+  chat --> main[Main: IPC 验证与能力策略]
+  main --> pi[Pi: allowlist 分析工具]
+  iterm --> consent[原生观察确认]
+  consent --> evidence[有界脱敏证据]
+  evidence --> pi
+  pi --> suggestion[建议: 不输入终端]
+  pi --> diff[完整文件 Diff: 逐文件人工批准]
+  diff --> verify[Main: 一次性写入与验证]
 ```
 
-这个设计的核心是：Agent 不脱离现场做判断，而是通过终端、工具和知识库不断补充证据。
+## 安装与构建
 
-## 快速上手
+从 [GitHub Releases](https://github.com/aide-family/Crescent/releases) 核对实际可下载资产，并验证发布的 SHA-256。当前 Mac 交付是 **一份包含 x64 + arm64 的 Universal app、DMG 和 ZIP**，不是按架构拆包。签名/公证依赖发布凭据，不把历史包都视为已签名或已验收。Windows/Linux workflow 目标保留，但当前本地适配及验收聚焦 macOS。
 
-文档站里有对应说明：[安装](https://aide-family.github.io/Crescent/guide/install)、[快速开始](https://aide-family.github.io/Crescent/guide/quick-start)、[命令审核](https://aide-family.github.io/Crescent/guide/command-review)。
-
-### 从 GitHub Release 安装（推荐普通用户）
-
-从 [Releases](https://github.com/aide-family/Crescent/releases) 下载对应平台安装包：
-
-| 平台                | 推荐资产                   |
-| ------------------- | -------------------------- |
-| macOS Apple Silicon | `crescent-*-arm64.dmg`     |
-| macOS Intel         | `crescent-*-x64.dmg`       |
-| Windows             | `crescent-*-x64-setup.exe` |
-| Linux               | `.AppImage` 或 `.deb`      |
-
-建议先用 Release 中的 `SHA256SUMS.txt` 校验下载文件。
-
-#### macOS：「已损坏，无法打开」
-
-在仓库配置签名密钥之前，部分正式包可能仍未签名。详见 [Document/CODE_SIGNING.md](./Document/CODE_SIGNING.md)。从浏览器下载后，Gatekeeper 可能提示 **「Crescent」已损坏，无法打开**。这不是安装包损坏，可按下面步骤解除隔离后再打开：
-
-1. 将 `Crescent.app` 拖到「应用程序」。
-2. 在终端执行：
-
-```bash
-xattr -cr /Applications/Crescent.app
-```
-
-3. 再双击打开应用。
-
-也可在「系统设置 → 隐私与安全性」中查看是否有「仍要打开」选项；若仍无法启动，优先使用上面的 `xattr` 命令。
-
-### 从源码安装依赖
+需要 Node.js **22.19+**：
 
 ```bash
 npm ci
-```
-
-Node.js 需要 22.19 或更高版本。解压源码包后，在项目根目录执行 `npm ci` 安装依赖，再运行 `npm run dev` 启动开发版。编译和桌面安装包说明见 [SOURCE_BUILD.md](./SOURCE_BUILD.md)。
-
-### 开发模式
-
-```bash
 npm run dev
+
+# 完整本地门禁；单测只留本机
+npm run verify:local
+
+# 未签名 Universal 交付，不发布
+npm run build:mac:local
 ```
 
-### 构建桌面端
+`npm run build` 类型检查并编译，不打包；`npm run build:mac` 需要单独配置签名/公证。旧 Mac `:x64`/`:arm64` 命令都是 Universal alias。打包读取 `out/` 时禁止同时重建。node-pty prebuild、Pi/Photon WASM、PDF worker、代码索引资源必须保留。
 
-```bash
-# Windows（可在 macOS/Linux 上交叉打包；依赖 node-pty 自带的 win32 prebuilds）
-npm run build:win
+## 文档
 
-# macOS
-npm run build:mac
+- [文档索引](Document/INDEX.md)
+- [架构](Document/ARCHITECTURE.md) · [安全模型](Document/SECURITY_MODEL.md)
+- [外部终端](Document/EXTERNAL_TERMINALS.md) · [UI 规范](Document/UI_DESIGN_SYSTEM.md)
+- [源码构建](SOURCE_BUILD.md) · [开发规范](Document/DEVELOPMENT.md)
+- [本地测试](Document/TESTING.md) · [签名](Document/CODE_SIGNING.md)
+- [路线图](ROADMAP.md) · [变更日志](CHANGELOG.md)
+- [文档网站](https://aide-family.github.io/Crescent/)
 
-# Linux
-npm run build:linux
-```
-
-说明：
-
-- `node-pty` 使用官方 N-API prebuilds，打包时关闭 `npmRebuild`，避免在 macOS 上交叉编译 Windows/Linux 原生模块失败。
-- 正式发版由 GitHub Actions 在对应系统上构建（见 `.github/workflows/release.yml`）。
-- 若本机打 Windows NSIS 安装包时提示缺少 Wine，可改用 CI，或安装 Wine 后再打包。
-
-启动后，你可以配置 OpenAI 兼容模型供应商，选择模型，然后在终端旁边直接向 Crescent 提问，例如：
-
-```text
-检查当前机器的磁盘、内存、系统服务状态，并给出异常项和建议。
-```
-
-或者：
-
-```text
-连接 production，检查 Kubernetes 集群里异常 Pod，并整理一份排障结论。
-```
-
-## 适合谁使用？
-
-Crescent 特别适合这些人：
-
-- 经常通过 SSH 排查问题的运维工程师。
-- 负责 Kubernetes、Docker、Linux 主机的 SRE。
-- 需要把排障流程沉淀成 SOP 的平台团队。
-- 希望 AI Agent 贴着真实终端工作、执行可审核命令的开发者。
-- 不满足于“AI 只给建议”，希望 AI 能围绕真实环境闭环工作的工程师。
-
-## Roadmap
-
-Crescent 目前已经具备可用 MVP 的核心能力：本地终端、模型配置、终端闭环 Agent 执行、Agent 运行面板、命令审核、Skills 和知识库等。
-
-Phase 1–4 产品与分发基础设施已就绪：基于 GitHub Releases 的应用内更新、打包冒烟检查，以及在配置证书密钥后由 CI 执行签名/公证（见 [Document/CODE_SIGNING.md](./Document/CODE_SIGNING.md)）。
-
-更多细节见 [ROADMAP.md](./ROADMAP.md)。
-
-## 参与贡献
-
-如果你正在寻找一个面向真实运维场景的 AI 终端工作台，欢迎 Star、试用和反馈。
-
-- GitHub 仓库：<https://github.com/aide-family/Crescent>
-- Bug / 需求反馈：<https://github.com/aide-family/Crescent/issues>
-
-欢迎提交 Issue、PR，或者把你的常用排障流程整理成 Skill，一起把 Crescent 打磨成更好用的开源工程师工作台。
-
-## 推荐 IDE
-
-- [VSCode](https://code.visualstudio.com/)
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+欢迎在 [aide-family/Crescent](https://github.com/aide-family/Crescent) 提交问题、PR 和可复用运维 Skills。不要提交本地 `*.test.ts`，不要跳过项目门禁。

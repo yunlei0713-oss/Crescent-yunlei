@@ -12,11 +12,10 @@ Do not create a git commit until `npm run ci` has passed in this session against
 ```bash
 npm run lint
 npm run test
-npm run typecheck
 npm run build
 ```
 
-When local test files exist (gitignored — see `Document/TESTING.md`), also run `npm run test:local` before commit.
+`build` includes `npm run typecheck`; both local CI and GitHub Actions run that check once. When local test files exist (gitignored — see `Document/TESTING.md`), also run `npm run test:local` before commit. `npm run verify:local` runs both gates; the hook automatically runs CI only.
 
 - If any step fails, fix it and re-run the full gate. Do not commit a red tree.
 - Do not use `--no-verify`, `--no-gpg-sign`, or otherwise skip hooks.

@@ -32,126 +32,8 @@
   --shadow-xl: var(--app-shadow-raised);
 }
 
-:root,
-.dark,
-.app-theme-preview[data-crescent-theme='crescent'] {
-  --background: #090d12;
-  --foreground: #e6edf4;
-  --app-chrome: #0b1016;
-  --app-panel: #0e141b;
-  --app-panel-strong: #141c25;
-  --app-panel-raised: #18212b;
-  --primary: #13c2c2;
-  --app-primary-soft: #0d8e91;
-  --secondary: #1a242f;
-  --muted: #151d26;
-  --muted-foreground: #8795a5;
-  --border: rgb(148 163 184 / 13%);
-  --app-border-strong: rgb(148 163 184 / 22%);
-  --input: rgb(148 163 184 / 17%);
-  --app-terminal: #070a0e;
-  --app-radius: 7px;
-  --app-radius-small: 4px;
-  --app-shadow: 0 4px 14px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(230 237 244 / 3%);
-  --app-shadow-raised: 0 16px 40px rgb(0 0 0 / 36%);
-  --app-label-case: none;
-  --app-label-spacing: 0.02em;
-  --app-warning: #f4c96b;
-  --app-success: #5fd6a5;
-  --app-info: #73e0e0;
-  --app-diagram-canvas: #090d12;
-}
-
-.dark[data-crescent-theme='night-shift'],
-.app-theme-preview[data-crescent-theme='night-shift'] {
-  --background: #070a06;
-  --foreground: #d5e7c5;
-  --app-chrome: #090d08;
-  --app-panel: #0c110a;
-  --app-panel-strong: #11180e;
-  --app-panel-raised: #151d11;
-  --primary: #b8e454;
-  --app-primary-soft: #8eb83a;
-  --secondary: #182116;
-  --muted: #121811;
-  --muted-foreground: #819077;
-  --border: rgb(174 207 129 / 16%);
-  --app-border-strong: rgb(184 228 84 / 27%);
-  --input: rgb(174 207 129 / 18%);
-  --app-terminal: #050705;
-  --app-radius: 3px;
-  --app-radius-small: 2px;
-  --app-shadow: none;
-  --app-shadow-raised: 0 2px 0 rgb(0 0 0 / 60%);
-  --app-label-case: uppercase;
-  --app-label-spacing: 0.08em;
-  --app-warning: #c9d77a;
-  --app-success: #98d95f;
-  --app-info: #93c7a1;
-  --app-diagram-canvas: #070a06;
-}
-
-.dark[data-crescent-theme='route-survey'],
-.app-theme-preview[data-crescent-theme='route-survey'] {
-  --background: #050e15;
-  --foreground: #dcecef;
-  --app-chrome: #07121a;
-  --app-panel: #091823;
-  --app-panel-strong: #0c202c;
-  --app-panel-raised: #102936;
-  --primary: #38bdf8;
-  --app-primary-soft: #198fbe;
-  --secondary: #112936;
-  --muted: #0d202a;
-  --muted-foreground: #7f9fab;
-  --border: rgb(88 177 210 / 17%);
-  --app-border-strong: rgb(56 189 248 / 29%);
-  --input: rgb(88 177 210 / 20%);
-  --app-terminal: #040b11;
-  --app-radius: 6px;
-  --app-radius-small: 3px;
-  --app-shadow: 0 6px 20px rgb(0 25 44 / 36%), inset 0 1px 0 rgb(56 189 248 / 5%);
-  --app-shadow-raised: 0 16px 44px rgb(0 10 22 / 60%);
-  --app-label-case: none;
-  --app-label-spacing: 0.05em;
-  --app-warning: #f6b94c;
-  --app-success: #34d399;
-  --app-info: #22d3ee;
-  --app-diagram-canvas: #061018;
-}
-
-.dark[data-crescent-theme='ink-signal'],
-.app-theme-preview[data-crescent-theme='ink-signal'] {
-  --background: #0c0d0e;
-  --foreground: #e8e6e3;
-  --app-chrome: #0e0f10;
-  --app-panel: #131516;
-  --app-panel-strong: #181a1c;
-  --app-panel-raised: #1d1f21;
-  --primary: #ff5c56;
-  --app-primary-soft: #c94a45;
-  --secondary: #202224;
-  --muted: #191b1d;
-  --muted-foreground: #919395;
-  --border: rgb(215 215 210 / 16%);
-  --app-border-strong: rgb(215 215 210 / 26%);
-  --input: rgb(215 215 210 / 18%);
-  --app-terminal: #08090a;
-  --app-radius: 2px;
-  --app-radius-small: 1px;
-  --app-shadow: none;
-  --app-shadow-raised: 0 2px 0 rgb(0 0 0 / 65%);
-  --app-label-case: uppercase;
-  --app-label-spacing: 0.065em;
-  --app-warning: #e6b450;
-  --app-success: #72c991;
-  --app-info: #77c9bd;
-  --app-diagram-canvas: #0c0d0e;
-}
-
 /* Ordinary UI uses CSS tokens. Library palettes live in shared/theme-definitions.ts. */
-:root,
-.app-theme-preview {
+:root {
   --radius: var(--app-radius);
   --card: var(--app-panel);
   --card-foreground: var(--foreground);
@@ -161,7 +43,7 @@
   --secondary-foreground: var(--foreground);
   --accent: color-mix(in srgb, var(--primary) 9%, var(--app-panel-strong));
   --accent-foreground: var(--foreground);
-  --destructive: #f87171;
+  --destructive: var(--app-danger, #f87171);
   --ring: var(--primary);
   --app-border: var(--border);
   --app-terminal-rail: var(--app-chrome);
@@ -180,4 +62,87 @@
   --chart-2: var(--app-success);
   --chart-3: var(--app-warning);
   --chart-4: var(--app-info);
+}
+
+/* Ink Wash uses the same persisted theme system, including terminal/diagram palettes. */
+:root,
+[data-crescent-theme='ink-wash-dark'] {
+  --app-radius: 6px;
+  --app-radius-small: 3px;
+  --app-label-case: none;
+  --app-label-spacing: 0.02em;
+  --app-shadow: none;
+  --app-shadow-raised: 0 8px 24px rgb(0 0 0 / 12%);
+  --app-grid-color: transparent;
+  --app-primary-soft: var(--muted-foreground);
+}
+
+:root,
+[data-crescent-theme='ink-wash-light'] {
+  color-scheme: light;
+  --background: #f7f7f3;
+  --foreground: #171918;
+  --app-chrome: #f0f0ea;
+  --app-panel: #fcfcf9;
+  --app-panel-strong: #f0f0ea;
+  --app-panel-raised: #fcfcf9;
+  --primary: #555d57;
+  --secondary: #e6e6df;
+  --muted: #f0f0ea;
+  --muted-foreground: #626964;
+  --border: #daddd6;
+  --app-border-strong: #bfc4bc;
+  --input: #bfc4bc;
+  --app-terminal: #f0f0ea;
+  --app-warning: #946019;
+  --app-success: #287a4b;
+  --app-info: #4d6478;
+  --app-danger: #b43b3b;
+  --app-diagram-canvas: #f7f7f3;
+  --app-markdown-canvas: #fcfcf9;
+  --app-markdown-surface: #f0f0ea;
+  --primary-foreground: #ffffff;
+  --accent: #e2e4de;
+}
+
+[data-crescent-theme='ink-wash-dark'] {
+  color-scheme: dark;
+  --background: #111312;
+  --foreground: #f1f2ed;
+  --app-chrome: #171a18;
+  --app-panel: #202421;
+  --app-panel-strong: #282d29;
+  --app-panel-raised: #282d29;
+  --primary: #c7ccc3;
+  --secondary: #282d29;
+  --muted: #202421;
+  --muted-foreground: #a5aaa2;
+  --border: #363c37;
+  --app-border-strong: #505850;
+  --input: #505850;
+  --app-terminal: #111312;
+  --app-markdown-canvas: var(--app-terminal);
+  --app-markdown-surface: var(--app-panel);
+  --app-warning: #e4b66b;
+  --app-success: #70c493;
+  --app-info: #9ab6cb;
+  --app-danger: #f07b7b;
+  --app-diagram-canvas: #111312;
+  --accent: #303831;
+}
+
+/* Keep dense work surfaces opaque and remove the legacy rainbow activity treatment. */
+[data-crescent-theme^='ink-wash-'] .app-composer-thinking {
+  border-color: var(--ring);
+  box-shadow: none;
+}
+
+[data-crescent-theme^='ink-wash-'] .app-composer-thinking::before {
+  display: none;
+}
+
+[data-crescent-theme^='ink-wash-'] [data-slot='dialog-content'] {
+  background: var(--card);
+  backdrop-filter: none;
+  box-shadow: var(--app-shadow-raised);
 }

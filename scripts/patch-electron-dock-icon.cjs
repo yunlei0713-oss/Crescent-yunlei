@@ -1,86 +1,80 @@
 #!/usr/bin/env node
-/**
- * Dev-only (darwin): brand Electron.app so Notification Center left-slot uses Crescent.
- * 1) Overwrite Resources/electron.icns with build/icon.icns
- * 2) Rewrite Info.plist display name + CFBundleIdentifier (breaks IconServices cache for com.github.Electron)
- * 3) Touch + lsregister the bundle so Launch Services picks up the new identity
- *
- * Idempotent; failures warn and never block install. No-op on non-darwin (CI linux safe).
- */
-const fs = require('fs')
-const path = require('path')
-const { execFileSync } = require('child_process')
+// Brand the native development bundle BEFORE launch, including minimized-window badges.
+// A runtime app.dock.setIcon() cannot replace the native bundle's IconServices identity.
+const fs = require('node:fs')
+const path = require('node:path')
+const { createHash } = require('node:crypto')
+const { execFileSync } = require('node:child_process')
 
-function main() {
+function patchElectronDockIcon(root = path.resolve(__dirname, '..'), options = {}) {
   if (process.platform !== 'darwin') return
+  const electronApp = path.join(root, 'node_modules/electron/dist/Electron.app')
+  const resources = path.join(electronApp, 'Contents/Resources')
+  const plist = path.join(electronApp, 'Contents/Info.plist')
+  const bytes = fs.readFileSync(path.join(root, 'build/icon.icns'))
+  const digest = createHash('sha256').update(bytes).digest('hex').slice(0, 16)
+  const iconName = `moxun-${digest}.icns`
+  let changed = false
 
-  const root = path.resolve(__dirname, '..')
-  const electronApp = path.join(root, 'node_modules', 'electron', 'dist', 'Electron.app')
-  const resourcesDir = path.join(electronApp, 'Contents', 'Resources')
-  const source = path.join(root, 'build', 'icon.icns')
-  const targetIcns = path.join(resourcesDir, 'electron.icns')
-  const plist = path.join(electronApp, 'Contents', 'Info.plist')
-
-  try {
-    if (!fs.existsSync(source)) {
-      console.warn(`[patch-electron-dock-icon] skip: missing ${source}`)
-      return
+  // Replace the old default as well: no Crescent artwork remains in the active bundle.
+  for (const name of [iconName, 'electron.icns']) {
+    const file = path.join(resources, name)
+    if (!fs.existsSync(file) || !fs.readFileSync(file).equals(bytes)) {
+      fs.writeFileSync(file, bytes)
+      changed = true
     }
-    if (!fs.existsSync(resourcesDir)) {
-      console.warn(`[patch-electron-dock-icon] skip: missing Electron Resources dir`)
-      return
-    }
-
-    fs.copyFileSync(source, targetIcns)
-
-    if (fs.existsSync(plist)) {
-      setPlistString(plist, 'CFBundleName', 'Crescent')
-      setPlistString(plist, 'CFBundleDisplayName', 'Crescent')
-      // Distinct from stock Electron so Notification Center / IconServices stop serving the atom logo.
-      setPlistString(plist, 'CFBundleIdentifier', 'com.crescent.app')
-      setPlistString(plist, 'CFBundleIconFile', 'electron.icns')
-    }
-
+  }
+  const values = {
+    CFBundleName: '墨巡',
+    CFBundleDisplayName: '墨巡',
+    // Separate development from old installed Crescent apps without moving user data.
+    CFBundleIdentifier: 'com.crescent.moxun.dev',
+    CFBundleIconFile: iconName
+  }
+  for (const [key, value] of Object.entries(values)) {
+    let current
     try {
-      const now = new Date()
-      fs.utimesSync(electronApp, now, now)
+      current = execFileSync('/usr/libexec/PlistBuddy', ['-c', `Print :${key}`, plist], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      }).trim()
     } catch {
-      // ignore
+      /* Missing optional plist key. */
     }
-
-    const lsregister = path.join(
-      '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
+    if (current === value) continue
+    execFileSync(
+      '/usr/libexec/PlistBuddy',
+      ['-c', current === undefined ? `Add :${key} string ${value}` : `Set :${key} ${value}`, plist],
+      { stdio: 'pipe' }
     )
-    if (fs.existsSync(lsregister)) {
+    changed = true
+  }
+
+  if (changed) {
+    const now = new Date()
+    fs.utimesSync(electronApp, now, now)
+    const lsregister =
+      '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
+    if (options.refreshLaunchServices !== false && fs.existsSync(lsregister)) {
       try {
-        execFileSync(lsregister, ['-f', electronApp], { stdio: 'ignore' })
+        execFileSync(lsregister, ['-f', electronApp], { stdio: 'pipe', timeout: 5000 })
       } catch {
-        // ignore — registration is best-effort
+        console.warn(
+          '[patch-electron-dock-icon] Launch Services refresh unavailable; bundle updated.'
+        )
       }
     }
-
-    console.info(`[patch-electron-dock-icon] branded ${electronApp} (icns + Info.plist)`)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.warn(`[patch-electron-dock-icon] failed (non-fatal): ${message}`)
   }
+  console.info(`[patch-electron-dock-icon] ${changed ? 'updated' : 'current'} 墨巡 (${iconName})`)
+  return { iconName, changed }
 }
 
-function setPlistString(plistPath, key, value) {
+module.exports = { patchElectronDockIcon }
+if (require.main === module) {
   try {
-    execFileSync('/usr/libexec/PlistBuddy', ['-c', `Set :${key} ${value}`, plistPath], {
-      stdio: 'ignore'
-    })
-  } catch {
-    try {
-      execFileSync('/usr/libexec/PlistBuddy', ['-c', `Add :${key} string ${value}`, plistPath], {
-        stdio: 'ignore'
-      })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.warn(`[patch-electron-dock-icon] plist ${key} failed: ${message}`)
-    }
+    patchElectronDockIcon()
+  } catch (error) {
+    console.error('[patch-electron-dock-icon] Cannot prepare native icon:', error)
+    process.exitCode = 1
   }
 }
-
-main()

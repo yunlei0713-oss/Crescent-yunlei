@@ -5,7 +5,7 @@ export function useAppTheme(): AppThemeId {
   return useSyncExternalStore(subscribeAppTheme, readAppTheme, readAppTheme)
 }
 
-/** Keep CSS/xterm switching immediate; repaint expensive libraries after the first UI frame. */
+/** Keep CSS switching immediate; repaint expensive libraries after the first UI frame. */
 function subscribeDiagramTheme(listener: () => void): () => void {
   let firstFrame = 0
   let repaintFrame = 0

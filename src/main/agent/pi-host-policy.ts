@@ -7,7 +7,7 @@
 import { hostedMcpToolFingerprint } from '../../shared/mcp-servers'
 import type { AgentMcpServerConfig } from '../../shared/agent-types'
 
-export const HOSTED_SESSION_TOOL_PROFILE = 'pty-targets-scoped-files-approval-v2'
+export const HOSTED_SESSION_TOOL_PROFILE = 'moxun-guided-ops-v1'
 
 export interface HostedSessionSnapshot {
   cwd: string
@@ -34,9 +34,13 @@ export function shouldReuseHostedSession(
  * resolved model differs by id or provider.
  */
 export function needsModelChange(
-  current: { id?: string; provider?: string } | undefined,
-  next: { id: string; provider: string }
+  current: { id?: string; provider?: string; input?: string[] } | undefined,
+  next: { id: string; provider: string; input?: string[] }
 ): boolean {
   if (!current) return true
-  return current.id !== next.id || current.provider !== next.provider
+  return (
+    current.id !== next.id ||
+    current.provider !== next.provider ||
+    JSON.stringify(current.input) !== JSON.stringify(next.input)
+  )
 }

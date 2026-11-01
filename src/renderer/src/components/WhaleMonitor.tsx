@@ -2,6 +2,7 @@ import { CopyIcon, RefreshCwIcon, Settings2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import whaleIdlePoster from '@renderer/assets/whale-idle-poster.png'
 import { WhalePetPortrait } from '@renderer/components/WhalePetPortrait'
+import { WhaleMotionMenu } from './whale/WhaleMotionMenu'
 import {
   DEFAULT_WHALE_MONITOR_CONFIG,
   type WhaleMonitorConfigInput,
@@ -909,25 +910,41 @@ export function WhaleMonitor({
               : balanceLabel}
           </button>
         )}
-        <button
-          data-whale-drag-handle
-          aria-label={en ? 'Whale pet: double click for monitor' : '桌宠互动，双击打开额度面板'}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              setDetailsOpen(true)
+        <WhaleMotionMenu
+          en={en}
+          onOpenChange={(open) => {
+            if (open && petClickTimerRef.current !== null) {
+              window.clearTimeout(petClickTimerRef.current)
+              petClickTimerRef.current = null
             }
           }}
-          className="rounded-full p-0.5 outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-          onClick={handlePetClick}
+          onSelect={(motion) => playMotion(motion, false)}
         >
-          <WhaleAvatar
-            motion={activeMotion}
-            agentBusy={agentBusy}
-            onMotionEnded={handleMotionEnded}
-            onMotionError={handleMotionError}
-          />
-        </button>
+          <button
+            data-whale-drag-handle
+            aria-label={
+              en
+                ? 'Whale pet: double click for monitor, right click for actions'
+                : '桌宠互动，双击打开额度面板，右键选择动作'
+            }
+            title={en ? 'Right click to choose an action' : '右键选择动作'}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                setDetailsOpen(true)
+              }
+            }}
+            className="rounded-full p-0.5 outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            onClick={handlePetClick}
+          >
+            <WhaleAvatar
+              motion={activeMotion}
+              agentBusy={agentBusy}
+              onMotionEnded={handleMotionEnded}
+              onMotionError={handleMotionError}
+            />
+          </button>
+        </WhaleMotionMenu>
       </div>
     </div>
   )

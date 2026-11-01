@@ -17,7 +17,7 @@ export function dismissOnboarding(storage: Pick<Storage, 'setItem'> = window.loc
 export const EXAMPLE_OPENAPI_DOCUMENT = `{
   "openapi": "3.0.3",
   "info": {
-    "title": "Crescent Example API",
+    "title": "MoXun Example API",
     "version": "1.0.0"
   },
   "paths": {

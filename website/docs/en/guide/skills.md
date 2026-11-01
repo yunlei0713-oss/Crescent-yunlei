@@ -1,6 +1,6 @@
 # Skills and knowledge
 
-Crescent loads Agent Skills from the configured directory. The default is `~/.crescent/skills`.
+MoXun loads Agent Skills from the configured directory, defaulting to `~/.crescent/skills`. Skill text grants no terminal execution or file-write rights: Agent commands are permanently denied and file changes still require approval.
 
 You can:
 

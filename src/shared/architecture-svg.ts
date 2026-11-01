@@ -6,7 +6,7 @@ import { getArchitectureTheme, ARCH_NODE_HEIGHT, ARCH_NODE_WIDTH } from './archi
 /** Build a self-contained SVG for export / docs (no foreignObject). */
 export function buildArchitectureExportSvg(
   spec: ArchitectureSpec,
-  themeId: AppThemeId = 'crescent'
+  themeId: AppThemeId = 'ink-wash-light'
 ): {
   svg: string
   width: number

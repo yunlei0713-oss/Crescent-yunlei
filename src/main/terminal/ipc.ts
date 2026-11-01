@@ -1,4 +1,5 @@
 import { recoverTimedOutSshSession } from './timeout-recovery'
+import { assertOperatorTerminalAccess } from '../security/capability-enforcement'
 import { TerminalExecutionState, requiresTerminalTakeover } from './execution-state'
 import { beginManualSshHop, observeSshHopPrompt } from './ssh-hops'
 import { readStoredExecutionIntent } from '../crescent-sqlite'
@@ -29,6 +30,11 @@ import { createPtyScriptRunner, writePtyScript } from './script-runner'
 import { TerminalSessionManager } from './session/manager'
 import { createPipeSession } from './session/pipe-session'
 import { createPtySession } from './session/pty-session'
+import { assertITermSessionId, itermRequest, listITermSessions } from './external/iterm'
+import { createObservedITermSession, type ITermScreen } from './external/observed-session'
+import { createSharedITermSession } from './external/shared-session'
+import { evidenceNotifications } from './observer/evidence-notifications'
+import { conversationEvidence } from './observer/conversation-evidence'
 export { waitForPtySessionsToExit } from './session/pty-session'
 import { TerminalRendererEvents } from './session/renderer-events'
 import type {
@@ -269,6 +275,8 @@ export function readTerminalSessionHealth(
   const session = sessions.get(key)
   const state = connectionStates.get(key)
   const hasSession = Boolean(session)
+  if (session?.external?.kind === 'existing')
+    return { hasSession, restoring: false, alignment: 'unknown', ready: false }
   return {
     hasSession,
     restoring: restoringSessionKeys.has(key),
@@ -307,6 +315,13 @@ function setConnectionState(key: string, next: ConnectionState): void {
   if (previous && identity(previous) !== identity(next)) invalidateTerminalPlans(key)
   if (next.connectionFault !== 'degraded') degradedRecoveryOutput.delete(key)
   connectionStates.set(key, next)
+  // Binding changes revoke access; SSH host changes only retire stale analysis
+  // notices and segment evidence, without stopping observation of this terminal.
+  const separator = key.indexOf(':')
+  refreshTerminalObservation(
+    key,
+    observationIdentity(Number(key.slice(0, separator)), key.slice(separator + 1))
+  )
 }
 
 function getConnectionState(key: string, mode: ConnectionState['mode'] = 'none'): ConnectionState {
@@ -351,6 +366,7 @@ export function executeCommandInTerminal(
   requiredSsh = false,
   onDispatched?: () => void
 ): Promise<TerminalCommandExecutionResult> {
+  assertOperatorTerminalAccess()
   const normalizedTabId = normalizeTabId(tabId)
   const normalizedCommand = command.trim()
   if (!normalizedTabId) {
@@ -381,6 +397,15 @@ export function executeCommandInTerminal(
     })
   const session = sessions.get(key)
   const boundTarget = connectionStates.get(key)
+  if (session?.external?.kind === 'existing')
+    return Promise.resolve({
+      ok: false,
+      command: normalizedCommand,
+      output: '',
+      outcome: 'blocked-before-dispatch',
+      error:
+        'Existing iTerm sessions provide screen snapshots, not reliable command completion. Operate in iTerm or use a shared terminal.'
+    })
   if (
     requiredSsh &&
     boundTarget?.monitorPolicy !== 'manual' &&
@@ -758,6 +783,7 @@ export function readTerminalPlanIdentity(senderId: number, tabId: string): strin
   const health = readTerminalSessionHealth(senderId, tabId)
   if (
     !session ||
+    session.external?.kind === 'existing' ||
     health.restoring ||
     (state?.manualSshActive &&
       (!state.ready ||
@@ -794,8 +820,22 @@ export function readTerminalExecutionTarget(
   const key = getSessionKey(senderId, tabId)
   const state = connectionStates.get(key)
   const session = sessions.get(key)
+  if (session?.external?.kind === 'existing')
+    return {
+      external: session.external,
+      activity: 'completion-unknown',
+      cwd: '',
+      shell: session.shell,
+      paneRole: parseTemporarySubterminalTabId(tabId) ? 'subterminal' : 'main',
+      paneId: tabId,
+      sessionGeneration: session.id,
+      readiness: readTerminalSessionHealth(senderId, tabId),
+      owner: 'user',
+      executionMode: 'unknown'
+    }
   return {
     activity: session ? executionStates.get(key)?.phase : 'session-exited',
+    external: session?.external,
     cwd: session?.cwd,
     shell: session?.shell,
     sshHops: state?.sshHops ?? [],
@@ -813,6 +853,95 @@ export function readTerminalExecutionTarget(
       state?.expectedHost ??
       (state?.manualSshActive ? state.promptHost : undefined)
   }
+}
+
+function observationIdentity(
+  senderId: number,
+  tabId: string,
+  generation?: number
+): TerminalIdentity {
+  const target = readTerminalExecutionTarget(senderId, tabId)
+  const observedHost =
+    sessions.get(getSessionKey(senderId, tabId))?.external?.kind === 'existing'
+      ? undefined
+      : (connectionStates.get(getSessionKey(senderId, tabId))?.promptHost ??
+        target.expectedTarget ??
+        (target.executionMode === 'local' ? hostname() : undefined))
+  return {
+    ownerId: senderId,
+    itermSessionId: sessions.get(getSessionKey(senderId, tabId))?.external?.sessionId,
+    tabId,
+    connectionId: target.connectionId,
+    sessionGeneration: generation ?? target.sessionGeneration ?? 0,
+    // A local zsh may alternate a bare % with its hostname prompt in one result.
+    // Those are one host, not evidence-segment changes on every command.
+    host: isLocalMachinePromptHost(observedHost, hostname()) ? 'local-shell' : observedHost,
+    cwd: target.cwd
+  }
+}
+
+export function readTerminalEvidence(senderId: number, tabId: string): TerminalEvidence {
+  const evidence = terminalEvidence(
+    getSessionKey(senderId, tabId),
+    observationIdentity(senderId, tabId),
+    readAgentConfig().terminalContextChars
+  )
+  if (sessions.get(getSessionKey(senderId, tabId))?.external?.kind === 'existing')
+    evidence.retention =
+      'iTerm accessible-text snapshot only; some scrollback may be included, never guaranteed full history. Host, working directory, command boundaries and exit codes are unverified. Text between snapshots may be missed. ' +
+      evidence.retention
+  return evidence
+}
+
+export function claimTerminalSuggestion(senderId: number, tabId: string, token: string): boolean {
+  const evidence = readTerminalEvidence(senderId, tabId)
+  return (
+    evidence.available &&
+    evidence.observations.length > 0 &&
+    evidenceNotifications.claim(getSessionKey(senderId, tabId), evidence.identity, token)
+  )
+}
+
+/** Renderer selects conversation participants; Main owns identity, consent and text. */
+export function readConversationTerminalEvidence(
+  senderId: number,
+  activeTabId: string,
+  tabIds: string[] = [],
+  consumeNotifications = false
+) {
+  if (
+    typeof activeTabId !== 'string' ||
+    activeTabId.length > 200 ||
+    activeTabId.trim() !== activeTabId ||
+    !isUsableTerminalTabId(activeTabId)
+  )
+    throw new Error('Invalid active conversation terminal')
+  if (
+    !Array.isArray(tabIds) ||
+    tabIds.length > 8 ||
+    tabIds.some(
+      (id) =>
+        typeof id !== 'string' || id.length > 200 || id.trim() !== id || !isUsableTerminalTabId(id)
+    )
+  )
+    throw new Error('Invalid conversation terminal participants (maximum 8)')
+  const peers = [...new Set(tabIds)]
+    .filter((id) => id !== activeTabId && sessions.get(getSessionKey(senderId, id))?.external)
+    .slice(0, 7)
+  const evidence = conversationEvidence(
+    readTerminalEvidence(senderId, activeTabId),
+    peers.map((id) => readTerminalEvidence(senderId, id)),
+    readAgentConfig().terminalContextChars
+  )
+  // Main-only manual-run option, never a Renderer/tool-controlled permission.
+  // Consume synchronously with the fresh read; output arriving later remains new evidence.
+  if (consumeNotifications)
+    for (const id of [
+      activeTabId,
+      ...(evidence.relatedTerminals ?? []).map((item) => item.identity.tabId)
+    ])
+      evidenceNotifications.consume(getSessionKey(senderId, id))
+  return evidence
 }
 
 /**
@@ -923,6 +1052,7 @@ export async function executeCommandInTemporaryTerminal(
   requiredSsh = false,
   onDispatched?: () => void
 ): Promise<TerminalCommandExecutionResult> {
+  assertOperatorTerminalAccess()
   const parent = normalizeTabId(parentTabId)
   const normalizedCommand = command.trim()
   if (!parent) {
@@ -1004,6 +1134,7 @@ export function openTemporarySubterminal(
   terminalName: string,
   options?: TemporarySubterminalOpenOptions
 ): TemporarySubterminalOpenResult {
+  assertOperatorTerminalAccess()
   const parent = normalizeTabId(parentTabId)
   if (!parent) {
     return { ok: false, error: 'Missing parent terminal tab id for temporary sub-terminal.' }
@@ -1072,6 +1203,7 @@ export async function teardownTerminalSessionGracefully(
   tabId: string,
   timeoutMs = GRACEFUL_TEARDOWN_TIMEOUT_MS
 ): Promise<{ ok: boolean; error?: string }> {
+  assertOperatorTerminalAccess()
   const normalized = normalizeTabId(tabId)
   if (!normalized || !isUsableTerminalTabId(normalized)) {
     return { ok: false, error: 'Missing or reserved terminal tab id.' }
@@ -1080,6 +1212,11 @@ export async function teardownTerminalSessionGracefully(
   markTerminalSessionRestoring(senderId, normalized, true)
   const session = sessions.get(key)
   if (!session) return { ok: true }
+
+  if (session.external?.kind === 'existing') {
+    stopSession(key)
+    return { ok: true }
+  }
 
   const exitPromise = waitForSessionExit(key)
   const deadline = Date.now() + Math.max(200, timeoutMs)
@@ -1313,7 +1450,246 @@ function extractLikelyLocalDirectory(command: string): string | undefined {
   return /\.[A-Za-z0-9]{1,8}$/.test(expanded) ? dirname(expanded) : expanded
 }
 
+const observationRequests = new Map<string, symbol>()
+const terminalOwnerEpochs = new WeakMap<WebContents, symbol>()
+const terminalOwners = new WeakSet<WebContents>()
+
+/** A WebContents ID survives a renderer crash/reload; its consent must not.
+ * Main owns this boundary, before renderer recovery can load a new document.
+ */
+export function attachTerminalOwnerLifecycle(owner: WebContents): void {
+  if (terminalOwners.has(owner)) return
+  terminalOwners.add(owner)
+  const invalidate = (): void => {
+    terminalOwnerEpochs.set(owner, Symbol())
+    const prefix = `${owner.id}:`
+    const keys = new Set([
+      ...sessions.keys(),
+      ...sessionWebContents.keys(),
+      ...connectionStates.keys(),
+      ...restoringSessionKeys,
+      ...observationRequests.keys()
+    ])
+    for (const key of keys) {
+      if (!key.startsWith(prefix)) continue
+      observationRequests.delete(key)
+      restoringSessionKeys.delete(key)
+      try {
+        stopSession(key)
+      } catch (error) {
+        console.warn('Terminal owner cleanup failed', error)
+      }
+      sessionWebContents.delete(key)
+      connectionStates.delete(key)
+      temporarySubterminals.delete(key)
+      handoffDataOnly.delete(key)
+    }
+  }
+  owner.on('render-process-gone', invalidate)
+  owner.once('destroyed', invalidate)
+  owner.on('did-start-navigation', (details) => {
+    if (details.isMainFrame && !details.isSameDocument) invalidate()
+  })
+}
+
 export function registerTerminalIpc(): void {
+  rendererIpc.handle('terminal:list-iterm', async () => {
+    try {
+      return { ok: true, sessions: await listITermSessions() }
+    } catch (error) {
+      return {
+        ok: false,
+        sessions: [],
+        error: error instanceof Error ? error.message : 'iTerm unavailable'
+      }
+    }
+  })
+  rendererIpc.handle(
+    'terminal:connect-iterm',
+    async (
+      event,
+      payload?: {
+        tabId?: string
+        kind?: string
+        sessionId?: string
+        observationMode?: TerminalObservationMode
+        connectionId?: string
+      }
+    ) => {
+      assertOperatorTerminalAccess()
+      const tabId = normalizeTabId(payload?.tabId)
+      if (
+        !isUsableTerminalTabId(tabId) ||
+        !tabId ||
+        !['shared', 'existing'].includes(payload?.kind ?? '')
+      )
+        throw new Error('Invalid external terminal request')
+      const key = getSessionKey(event.sender.id, tabId)
+      if (sessions.has(key) || restoringSessionKeys.has(key))
+        throw new Error('Terminal is already connected')
+      restoringSessionKeys.add(key)
+      const ownerEpoch = terminalOwnerEpochs.get(event.sender)
+      let session: TerminalSession | undefined
+      try {
+        const connection = payload?.connectionId
+          ? (await listConnections()).find((item) => item.id === payload.connectionId)
+          : undefined
+        if (payload?.connectionId && (!connection || payload.kind !== 'shared'))
+          throw new Error('Invalid cluster connection')
+        const mode = payload?.observationMode ?? 'off'
+        if (!['off', 'live', 'context-live'].includes(mode))
+          throw new Error('Invalid observation mode')
+        if (mode !== 'off' && !(await confirmObservation(event.sender, mode)))
+          throw new Error('Terminal observation cancelled')
+        let screen: ITermScreen | undefined
+        if (payload?.kind === 'existing') {
+          assertITermSessionId(payload.sessionId)
+          if ([...sessions.values()].some((item) => item.external?.sessionId === payload.sessionId))
+            throw new Error('This iTerm session is already connected')
+          const size = await itermRequest<{ columns: number; rows: number }>({
+            action: 'size',
+            id: payload.sessionId
+          })
+          screen = { ...size, text: '' }
+          if ([...sessions.values()].some((item) => item.external?.sessionId === payload.sessionId))
+            throw new Error('This iTerm session is already connected')
+        }
+        if (event.sender.isDestroyed() || terminalOwnerEpochs.get(event.sender) !== ownerEpoch)
+          throw new Error('Window closed or renderer replaced')
+        const launch = resolveShellLaunchConfig()
+        terminalOutputBuffers.set(key, '')
+        session = createTerminalSession({
+          ...launch,
+          cols: 80,
+          rows: 24,
+          sessionId: nextSessionId++,
+          webContents: event.sender,
+          tabId,
+          key,
+          external: screen
+            ? { kind: 'existing', id: payload!.sessionId!, screen }
+            : { kind: 'shared' }
+        })
+        sessions.set(key, session)
+        if (session.stopObservation) bindObservationSampling(key, session.stopObservation)
+        noteSessionMode(key, session.mode)
+        if (connection)
+          setSessionExpectedHost(key, connection.host, {
+            connectionId: connection.id,
+            connectionName: connection.name,
+            clusterHostRegex: connection.clusterHostRegex,
+            connectionOrigin: 'connection-card'
+          })
+        if (session.external?.kind === 'shared') await session.openExternal?.()
+        if (
+          event.sender.isDestroyed() ||
+          terminalOwnerEpochs.get(event.sender) !== ownerEpoch ||
+          sessions.get(key) !== session
+        )
+          throw new Error('Terminal disconnected')
+        const observation = observationGrants.authorize(
+          key,
+          observationIdentity(event.sender.id, tabId),
+          mode,
+          session.external?.kind === 'existing' ? 'screen-snapshot' : 'structured-stream',
+          { waitForLogin: Boolean(connection) }
+        )
+        await session.setObservation?.(observation?.status === 'pending' ? 'off' : mode)
+        if (terminalOwnerEpochs.get(event.sender) !== ownerEpoch || sessions.get(key) !== session)
+          throw new Error('Terminal disconnected')
+        return {
+          observation,
+          sessionId: session.id,
+          tabId,
+          mode: session.mode,
+          pid: session.pid,
+          cwd: session.cwd,
+          shell: session.shell,
+          external: session.external
+        }
+      } catch (error) {
+        if (session && sessions.get(key) === session) stopSession(key)
+        throw error
+      } finally {
+        if (terminalOwnerEpochs.get(event.sender) === ownerEpoch) restoringSessionKeys.delete(key)
+      }
+    }
+  )
+  rendererIpc.handle(
+    'terminal:observation',
+    async (event, payload: { tabId?: string; action?: string; mode?: TerminalObservationMode }) => {
+      assertOperatorTerminalAccess()
+      const tabId = normalizeTabId(payload?.tabId)
+      if (!tabId) throw new Error('Invalid terminal binding')
+      const key = getSessionKey(event.sender.id, tabId)
+      const session = sessions.get(key)
+      if (payload.action === 'status' && !session?.external) return undefined
+      if (!session?.external) throw new Error('No live iTerm binding')
+      const identity = observationIdentity(event.sender.id, tabId)
+      if (payload.action === 'status') return observationGrants.read(key, identity)
+      if (payload.action === 'pause' || payload.action === 'revoke') {
+        observationRequests.delete(key)
+        if (payload.action === 'pause') observationGrants.pause(key, identity)
+        else observationGrants.revoke(key)
+        await session.setObservation?.('off')
+      } else if (payload.action === 'authorize') {
+        const mode = payload.mode
+        if (mode !== 'live' && mode !== 'context-live') throw new Error('Invalid observation mode')
+        const requestId = Symbol()
+        const requestedIdentity = terminalObservationBindingKey(identity)
+        observationRequests.set(key, requestId)
+        let confirmed = false
+        try {
+          confirmed = await confirmObservation(event.sender, mode)
+          if (observationRequests.get(key) !== requestId)
+            throw new Error('Observation request superseded')
+        } catch (error) {
+          if (observationRequests.get(key) === requestId) observationRequests.delete(key)
+          throw error
+        }
+        if (!confirmed) throw new Error('Observation cancelled')
+        if (sessions.get(key) !== session || event.sender.isDestroyed())
+          throw new Error('Terminal disconnected')
+        if (
+          terminalObservationBindingKey(observationIdentity(event.sender.id, tabId)) !==
+          requestedIdentity
+        )
+          throw new Error('Terminal identity changed; confirm observation again')
+        observationGrants.authorize(
+          key,
+          observationIdentity(event.sender.id, tabId),
+          mode,
+          session.external.kind === 'existing' ? 'screen-snapshot' : 'structured-stream'
+        )
+        try {
+          await session.setObservation?.(mode)
+          if (
+            observationRequests.get(key) !== requestId ||
+            sessions.get(key) !== session ||
+            !observationGrants.active(key, observationIdentity(event.sender.id, tabId))
+          )
+            throw new Error('Observation request superseded or terminal identity changed')
+        } catch (error) {
+          if (observationRequests.get(key) === requestId) observationGrants.revoke(key)
+          throw error
+        } finally {
+          if (observationRequests.get(key) === requestId) observationRequests.delete(key)
+        }
+      } else throw new Error('Invalid observation action')
+      return observationGrants.read(key, observationIdentity(event.sender.id, tabId))
+    }
+  )
+  rendererIpc.handle('terminal:focus-iterm', async (event, payload?: { tabId?: string }) => {
+    const tabId = normalizeTabId(payload?.tabId)
+    const session = tabId ? sessions.get(getSessionKey(event.sender.id, tabId)) : undefined
+    if (!session?.openExternal) return { ok: false, error: 'External terminal is not connected' }
+    try {
+      await session.openExternal()
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'iTerm unavailable' }
+    }
+  })
   rendererIpc.handle(
     'terminal:prepare-handoff',
     async (event, payload?: { sourceId?: string; tabId?: string; target?: string }) => {
@@ -1341,6 +1717,11 @@ export function registerTerminalIpc(): void {
       }
       const sourceKey = getSessionKey(event.sender.id, sourceId)
       const source = connectionStates.get(sourceKey)
+      if (selection === 'inherit' && sessions.get(sourceKey)?.external?.kind === 'existing')
+        return {
+          ok: false,
+          error: 'Existing iTerm targets are unverified. Select an explicit handoff target.'
+        }
       if (selection === 'inherit' && !sessions.has(sourceKey))
         return {
           ok: false,
@@ -1567,7 +1948,7 @@ export function registerTerminalIpc(): void {
    */
   rendererIpc.handle(
     'terminal:confirm-login',
-    (
+    async (
       event,
       payload?: {
         tabId?: string
@@ -1576,7 +1957,7 @@ export function registerTerminalIpc(): void {
         expectedTargetHost?: string
         jumpPromptHost?: string
       }
-    ): {
+    ): Promise<{
       ok: boolean
       tabId?: string
       promptHost?: string
@@ -1585,7 +1966,7 @@ export function registerTerminalIpc(): void {
       ready?: boolean
       aliases?: string[]
       error?: string
-    } => {
+    }> => {
       const tabId = normalizeTabId(payload?.tabId)
       const sourceTabId = normalizeTabId(payload?.sourceTabId)
       const confirmTabId = normalizeTabId(
@@ -1683,6 +2064,18 @@ export function registerTerminalIpc(): void {
           ready: failed?.ready,
           aliases: failed?.aliases,
           error: 'Login could not be verified (terminal still shows the local prompt).'
+        }
+      }
+      const observation = observationGrants.completeLogin(
+        key,
+        observationIdentity(event.sender.id, confirmTabId)
+      )
+      if (observation) {
+        try {
+          await sessions.get(key)?.setObservation?.(observation.mode)
+        } catch (error) {
+          observationGrants.revoke(key)
+          throw error
         }
       }
       markTerminalSessionRestoring(event.sender.id, confirmTabId, false)
@@ -1789,6 +2182,12 @@ export function registerTerminalIpc(): void {
       }
 
       if (isTerminalInterruptPayload(data)) {
+        observeTerminal(
+          getSessionKey(event.sender.id, tabId),
+          observationIdentity(event.sender.id, tabId),
+          'input',
+          data
+        )
         interruptPendingTerminalCommands(event.sender.id, tabId)
         return
       }
@@ -1816,11 +2215,17 @@ export function registerTerminalIpc(): void {
               extractPasswordPromptLine(terminalOutputBuffers.get(key) ?? '') ?? ''
             )
           ) ?? data
-        session.write(data)
+        await session.write(data)
         return
       }
       noteManualTerminalInput(getSessionKey(event.sender.id, tabId), data)
-      session.write(data)
+      await session.write(data)
+      observeTerminal(
+        getSessionKey(event.sender.id, tabId),
+        observationIdentity(event.sender.id, tabId),
+        'input',
+        data
+      )
     }
   )
 
@@ -1902,7 +2307,7 @@ export function registerTerminalIpc(): void {
         noteDispatchedManualCommand(key, command)
       }
 
-      session.write(`${command}${payload?.execute ? '\r' : ''}`)
+      await session.write(`${command}${payload?.execute ? '\r' : ''}`)
       connTrace('paste-command-written', `tab=${tabId}`, `mode=${session.mode}`)
       return { ok: true as const }
     }
@@ -1914,6 +2319,20 @@ export function registerTerminalIpc(): void {
     let state = key ? connectionStates.get(key) : undefined
     const expectedHost = state?.expectedHost ?? ''
     const output = key ? (terminalOutputBuffers.get(key) ?? '') : ''
+    const externalSession = sessions.get(key)
+    if (tabId && externalSession?.external?.kind === 'existing')
+      return {
+        ...readTerminalExecutionTarget(event.sender.id, tabId),
+        mode: externalSession.mode,
+        pid: externalSession.pid,
+        cwd: '',
+        shell: externalSession.shell,
+        output,
+        ready: false,
+        restoring: false,
+        alignment: 'unknown' as const,
+        sessionAligned: 'unknown' as const
+      }
     // Match injection-guard: prefer the runtime anchor learned after login so
     // IP-configured connections that show a hostname prompt stay aligned.
     const effectiveExpectedHost = (state ? runtimeAnchorHost(state) : undefined) ?? expectedHost
@@ -2027,6 +2446,7 @@ export function registerTerminalIpc(): void {
 
     return {
       mode: session.mode,
+      external: session.external,
       pid: session.pid,
       cwd: session.cwd,
       shell: session.shell,
@@ -2080,6 +2500,7 @@ export function registerTerminalIpc(): void {
 }
 
 export function stopAllTerminalSessions(): void {
+  observationRequests.clear()
   for (const key of sessions.keys()) invalidateTerminalPlans(key)
   handoffDataOnly.clear()
   uncertainCommands.clear()
@@ -2301,6 +2722,7 @@ function parseTemporarySubterminalTabId(
 }
 
 function createTerminalSession(input: {
+  external?: { kind: 'shared' } | { kind: 'existing'; id: string; screen: ITermScreen }
   sessionId: number
   shell: string
   args: string[]
@@ -2313,13 +2735,49 @@ function createTerminalSession(input: {
   key: string
 }): TerminalSession {
   sessionWebContents.set(input.key, input.webContents)
+  evidenceNotifications.bind(input.key, (notice) => {
+    safeWebContentsSend(input.webContents, 'terminal:evidence-changed', notice)
+  })
   executionStates.set(input.key, new TerminalExecutionState())
   let creating = true
   const current = (): boolean => creating || sessions.get(input.key)?.id === input.sessionId
   const events: TerminalSessionEvents = {
+    onExternalBinding: (binding) => {
+      if (!current()) return
+      // Reopening preserves the PTY, but a new native UUID never inherits a grant.
+      observationGrants.read(
+        input.key,
+        observationIdentity(input.webContents.id, input.tabId, input.sessionId)
+      )
+      sendIfAlive(input.webContents, input.tabId, input.key, 'terminal:external-binding', {
+        tabId: input.tabId,
+        sessionId: input.sessionId,
+        external: binding
+      })
+    },
+    onSnapshot: (text, completeLinesOnly) => {
+      if (!current()) return
+      if (input.external?.kind === 'existing') {
+        flushVisibleTerminalData(input.key)
+        terminalOutputBuffers.set(input.key, text)
+      }
+      observeTerminal(
+        input.key,
+        observationIdentity(input.webContents.id, input.tabId, input.sessionId),
+        'snapshot',
+        text,
+        completeLinesOnly
+      )
+    },
     onData: (data) => {
       if (current()) {
         observeTerminalTransport(input.key, data)
+        observeTerminal(
+          input.key,
+          observationIdentity(input.webContents.id, input.tabId, input.sessionId),
+          'output',
+          data
+        )
         sendIfAlive(input.webContents, input.tabId, input.key, 'terminal:data', data)
       }
     },
@@ -2350,6 +2808,30 @@ function createTerminalSession(input: {
     }
   }
   try {
+    if (input.external?.kind === 'existing')
+      return createObservedITermSession(
+        input.sessionId,
+        input.external.id,
+        input.external.screen,
+        events
+      )
+    if (input.external?.kind === 'shared')
+      return createSharedITermSession(input, events, (data) => {
+        if (!current()) return
+        if (isTerminalInterruptPayload(data)) {
+          interruptPendingTerminalCommands(input.webContents.id, input.tabId)
+          return
+        }
+        if (isUserInputLocked(input.webContents.id, input.tabId)) return
+        noteManualTerminalInput(input.key, data)
+        void sessions.get(input.key)?.write(data)
+        observeTerminal(
+          input.key,
+          observationIdentity(input.webContents.id, input.tabId),
+          'input',
+          data
+        )
+      })
     try {
       return createPtySession(input, events)
     } catch (error) {
@@ -2432,13 +2914,28 @@ function observeTerminalTransport(key: string, data: string): void {
   const activity = executionStates.get(key)
   if (!activity) return
   const observation = activity.consume(data)
-  const state = connectionStates.get(key)
+  let state = connectionStates.get(key)
   if (!state) return
   if (observation.prompt) {
     const hop = observeSshHopPrompt(state, observation.prompt, hostname())
     if (hop) {
       setConnectionState(key, hop)
       return
+    }
+    // Prompt labels are observation metadata, not execution/login attestation.
+    // Even unrecognized shell hops or return-to-local must retire the old host's
+    // evidence segment, without moving the configured/runtime execution anchor.
+    const observedHost =
+      observation.prompt.kind === 'host'
+        ? isLocalMachinePromptHost(observation.prompt.host, hostname())
+          ? 'local-shell'
+          : observation.prompt.host
+        : observation.prompt.kind === 'local'
+          ? 'local-shell'
+          : undefined
+    if (observedHost && observedHost !== state.promptHost) {
+      state = { ...state, promptHost: observedHost }
+      setConnectionState(key, state)
     }
   }
   if (observation.disconnected && !pendingCommandPromises.has(key)) {
@@ -2600,3 +3097,32 @@ function isUserInputLocked(senderId: number, tabId: string): boolean {
     isAgentExecutionTab: isPtyExecutionTabLocked(tabId)
   })
 }
+import {
+  observeTerminal,
+  terminalEvidence,
+  observationGrants,
+  refreshTerminalObservation,
+  bindObservationSampling
+} from './observer/registry'
+import type { TerminalObservationMode } from '../../shared/external-terminal'
+
+async function confirmObservation(
+  webContents: WebContents,
+  mode: TerminalObservationMode
+): Promise<boolean> {
+  const owner = BrowserWindow.fromWebContents(webContents)
+  if (!owner || webContents.isDestroyed()) return false
+  const result = await dialog.showMessageBox(owner, {
+    type: 'question',
+    buttons: ['取消', '允许本轮只读观察'],
+    defaultId: 0,
+    cancelId: 0,
+    title: 'AI 终端协作授权',
+    message: mode === 'live' ? '允许 AI 从现在开始观察？' : '允许加入当前可访问文本并继续观察？',
+    detail:
+      '仅此 iTerm Session 本轮有效；在此终端 SSH 跳转到任何主机或退回本地都会继续观察，请留意本地及其他主机的业务机密。其他终端需独立授权。已有终端提供约 750 ms 的可访问文本快照（可能含部分滚屏），不保证完整历史，可能遗漏输出，不能验证命令退出码。暂停/结束将清除证据；恢复需重新确认。Agent 永远不能输入或执行命令。'
+  })
+  return result.response === 1 && !webContents.isDestroyed()
+}
+import type { TerminalEvidence, TerminalIdentity } from '../../shared/terminal-observation-types'
+import { terminalObservationBindingKey } from '../../shared/terminal-observation-types'

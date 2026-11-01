@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <title>墨巡 MoXun Symbol — Light Surface</title>
+  <desc>Dark ink droplet and inspection orbit for use on a light background.</desc>
+  <circle cx="256" cy="256" r="178" stroke="#293638" stroke-width="12" stroke-linecap="round" stroke-dasharray="850 268" transform="rotate(-36 256 256)"/>
+  <path d="M256 112C229 150 174 211 174 282C174 343 210 389 256 389C302 389 338 343 338 282C338 211 283 150 256 112Z" fill="#172223"/>
+  <path d="M216 321C237 296 267 276 296 238" stroke="#F5F5F0" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="216" cy="321" r="8" fill="#F5F5F0"/>
+  <circle cx="297" cy="237" r="10" fill="#779B91"/>
+  <circle cx="382" cy="116" r="11" fill="#779B91"/>
+</svg>

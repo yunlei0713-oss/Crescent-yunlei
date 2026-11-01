@@ -1,6 +1,49 @@
 import { ipcRenderer } from 'electron'
 
 export const terminalApi = {
+  onEvidenceChanged: (
+    callback: (
+      notice: import('../../shared/terminal-observation-types').TerminalEvidenceNotice
+    ) => void
+  ): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, notice: Parameters<typeof callback>[0]): void =>
+      callback(notice)
+    ipcRenderer.on('terminal:evidence-changed', listener)
+    return () => ipcRenderer.removeListener('terminal:evidence-changed', listener)
+  },
+  onExternalBinding: (
+    callback: (event: {
+      tabId: string
+      sessionId: number
+      external: import('../../shared/external-terminal').ExternalTerminalBinding
+    }) => void
+  ): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, event: Parameters<typeof callback>[0]): void =>
+      callback(event)
+    ipcRenderer.on('terminal:external-binding', listener)
+    return () => ipcRenderer.removeListener('terminal:external-binding', listener)
+  },
+  listITerm: (): Promise<{
+    ok: boolean
+    sessions: import('../../shared/external-terminal').ITermSessionSummary[]
+    error?: string
+  }> => ipcRenderer.invoke('terminal:list-iterm'),
+  connectITerm: (options: {
+    tabId: string
+    kind: 'shared' | 'existing'
+    sessionId?: string
+    observationMode?: import('../../shared/external-terminal').TerminalObservationMode
+    connectionId?: string
+  }): Promise<import('../../shared/external-terminal').ExternalTerminalConnection> =>
+    ipcRenderer.invoke('terminal:connect-iterm', options),
+  observation: (options: {
+    tabId: string
+    action: 'status' | 'pause' | 'revoke' | 'authorize'
+    mode?: import('../../shared/external-terminal').TerminalObservationMode
+  }): Promise<import('../../shared/external-terminal').TerminalObservationGrant | undefined> =>
+    ipcRenderer.invoke('terminal:observation', options),
+  focusITerm: (tabId: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('terminal:focus-iterm', { tabId }),
   prepareHandoff: (
     sourceId: string,
     tabId: string,
@@ -34,6 +77,7 @@ export const terminalApi = {
   getContext: (
     tabId?: string
   ): Promise<{
+    external?: import('../../shared/external-terminal').ExternalTerminalBinding
     activity?: import('../../shared/agent-types').TerminalActivity
     sessionGeneration?: number
     sshHops?: import('../../shared/connection-state').SshHop[]
@@ -55,7 +99,7 @@ export const terminalApi = {
     paneRole?: 'main' | 'subterminal'
     paneId?: string
     owner?: string
-    executionMode?: 'local' | 'ssh'
+    executionMode?: 'local' | 'ssh' | 'unknown'
     connectionId?: string
     connectionName?: string
     expectedTarget?: string

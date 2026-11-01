@@ -1,212 +1,70 @@
-# Crescent
+# 墨巡 · MoXun
 
-English | [简体中文](./README.zh-CN.md)
+English | [简体中文](README.zh-CN.md)
 
-Documentation: <https://aide-family.github.io/Crescent/en/> ([install](https://aide-family.github.io/Crescent/en/guide/install), [quick start](https://aide-family.github.io/Crescent/en/guide/quick-start), [command review](https://aide-family.github.io/Crescent/en/guide/command-review))
+A chat-first operations workbench built with Electron, React and TypeScript. MoXun helps you analyze authorized evidence, understand risks and preserve operational knowledge. **You operate the terminal in external iTerm; the Agent never executes, types or interrupts terminal commands.** The repository, package identity and application data directory retain the Crescent name for compatibility.
 
-An open-source operations workbench that brings AI into the real terminal.
+## Current capabilities
 
-Crescent is a desktop AI command workbench built with Electron, React, and TypeScript. It helps operations engineers, backend developers, and platform teams bring local terminals, SSH connections, AI agents, command review, Skills, and reusable operational knowledge into one focused workspace.
+- Chat-first workspace with a fixed composer, model selection and optional session details.
+- Local and saved SSH connections, `~/.ssh/config`, favorites, search, ordering, imports and user-configured login actions.
+- Open a new shared iTerm, or bind an existing iTerm read-only. The standalone terminal entry does not implicitly connect a cluster.
+- Optional AI observation: off by default, observe from now, or include accessible current context and continue. Enabling/resuming requires Main's native confirmation. Observation never grants input permission; snapshots may omit output and cannot establish exit codes.
+- Authorized, bounded local document reading, code indexing, memory and knowledge retrieval.
+- Local file changes through complete Diff review, per-file approval, one-time Main authorization, hash checks and post-write verification. Rejection leaves bytes unchanged.
+- Read-only child analysis, Skills and SOP drafts; knowledge is saved only through the host confirmation flow.
 
-> If you frequently switch between servers, Kubernetes clusters, Docker hosts, and SSH terminals, and you want AI to do more than “suggest commands”, Crescent is designed for that workflow: inspect the real terminal context, execute step by step, review results, and preserve the final knowledge.
+There is no embedded terminal workspace and no Agent `bash`, `write`, `edit` or `open_subterminal` capability. MCP settings/discovery are not execution permission: the reviewed implementation allowlist is empty, so Agent MCP connections/calls are disabled. OpenAPI settings remain for legacy migration, not current Agent tools.
 
-## Why Crescent?
+## Workflow
 
-Many AI tools can generate shell commands. In real operations and troubleshooting work, the harder problems are different:
-
-- AI does not know which host, cluster, directory, or terminal session you are currently using.
-- Generated commands still need manual copy and paste, and command output must be copied back into the chat.
-- Risky operations such as file deletion, service restarts, and configuration changes need clear review before execution.
-- Troubleshooting knowledge often disappears after the incident is closed.
-- AI suggestions, terminal sessions, and accumulated operational knowledge are usually scattered across different products.
-
-Crescent aims to solve this by keeping AI close to the real terminal and making each step observable, reviewable, and reusable.
-
-## Highlights
-
-### 1. The Terminal Is the Agent's Workspace
-
-Crescent includes an integrated local terminal with PTY support. The Agent can execute commands in the current visible terminal, read real output, and then decide the next step.
-
-Instead of generating a large shell script once, Crescent can work in a closed loop:
-
-1. Understand the user's goal.
-2. Inspect the current terminal context.
-3. Execute one useful command.
-4. Analyze the output.
-5. Continue checking, apply a fix, or summarize the result.
-
-For troubleshooting, inspections, and pre-deployment checks, this is much closer to how experienced engineers actually work.
-
-### 2. Built-In Command Review
-
-Crescent adds an independent review step before AI-generated commands are executed. The review explains:
-
-- Why the command is being proposed.
-- Whether it may change system, cluster, file, network, service, credential, or data state.
-- The risk level.
-- Whether user approval is required.
-- The likely impact and recommendation.
-
-Clearly read-only checks can be allowed automatically. Mutating or ambiguous commands require confirmation. AI should improve speed, not bypass human judgment.
-
-### 3. Unified Local and SSH Connections
-
-Crescent can read `~/.ssh/config` and also supports custom SSH connections, login actions, SSH options, and password environment variables.
-
-You can switch between local terminals, production hosts, test environments, and other remote machines in one workbench while keeping the Agent grounded in the active connection.
-
-### 4. Skills and Knowledge Base
-
-Crescent loads Agent Skills from the configured skill directory (default `~/.crescent/skills`). You can search and install from skills.sh, import a local `SKILL.md` file or skill directory, and optionally load `~/.agents/skills` read-only.
-
-It also supports a local knowledge base. You can turn troubleshooting records into reusable SOPs and let future Agent runs retrieve that operational knowledge.
-
-This makes Crescent more than a chat interface. It is a workbench for gradually accumulating team knowledge.
-
-### 5. Focused Agent Tool Runtime
-
-The Agent runs on a small, reviewable tool set instead of an open-ended plugin surface:
-
-- `read` / `write` / `edit` for files inside the Agent workspace.
-- `bash` executed in the visible terminal pane, so every command is observable and high-risk commands still need approval.
-- `open_subterminal` to dock a dedicated local or SSH terminal for cross-context work.
-
-OpenAPI tools are deprecated and retained only for settings migration. Configured MCP tools are loaded as Crescent-owned Pi custom tools; every invocation requires operator approval.
-
-## Comparison
-
-| Option               | Strength                         | Limitation                                                   | Crescent Difference                                                           |
-| -------------------- | -------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Plain terminal       | Direct, reliable, controllable   | No AI assistance or context understanding                    | Embeds an Agent beside the terminal and works from real command output        |
-| General AI chat      | Strong reasoning and explanation | Cannot inspect the live terminal; copy/paste heavy           | Connects command execution, output observation, and next-step decisions       |
-| API testing tools    | Good for endpoint validation     | Weak for SSH, system troubleshooting, and terminal workflows | Keeps the Agent grounded in real terminal workflows instead of replacing them |
-| Automation platforms | Strong standardization           | Less flexible for exploratory troubleshooting                | Lets teams evolve Skills and SOPs gradually                                   |
-
-## Architecture
+1. Configure a model provider and select a model.
+2. Describe your problem in chat. A suggestion can be based on your description and target metadata without claiming observed results.
+3. If needed, select a connection or open/bind iTerm. Choose whether AI may observe this session.
+4. Review suggestions and type commands yourself in iTerm. Grant observation only for evidence you want analyzed.
+5. Review local file changes individually; preserve useful conclusions as Skills/SOPs.
 
 ```mermaid
 flowchart TD
-  user["User request"] --> ui["Crescent desktop workbench"]
-  ui --> terminal["Local terminal / SSH terminal"]
-  ui --> agent["AI Agent Core"]
-  agent --> audit["Command review"]
-  audit --> terminal
-  agent --> tools["Tool runtime"]
-  tools --> files["read / write / edit"]
-  tools --> bash["bash in visible terminal"]
-  tools --> subterm["open_subterminal"]
-  tools --> wiki["Local knowledge base"]
-  wiki --> agent
-  terminal --> agent
+  user[Operator] --> chat[MoXun chat]
+  user --> iterm[External iTerm: manual commands]
+  chat --> main[Main: validated IPC and capability policy]
+  main --> pi[Pi: allowlisted analysis tools]
+  iterm --> consent[Native observation consent]
+  consent --> evidence[Bounded redacted evidence]
+  evidence --> pi
+  pi --> suggestion[Suggestions: no terminal input]
+  pi --> diff[File Diff: per-file human approval]
+  diff --> verify[Main: one-time write and verification]
 ```
 
-The core idea is simple: the Agent should not reason away from the worksite. It should gather evidence through the terminal, tools, and knowledge base before making decisions.
+## Install and build
 
-## Quick Start
+Check [GitHub Releases](https://github.com/aide-family/Crescent/releases) for actually available assets and verify their published SHA-256 checksums. Current Mac delivery uses **one Universal app, DMG and ZIP containing x64 and arm64**, not separate architecture packages. Signing/notarization depends on configured release credentials; do not assume every historical download is signed or validated. Windows/Linux workflow targets remain, but current local adaptation and acceptance focus on macOS.
 
-See the docs for [install](https://aide-family.github.io/Crescent/en/guide/install), [quick start](https://aide-family.github.io/Crescent/en/guide/quick-start), and [command review](https://aide-family.github.io/Crescent/en/guide/command-review).
-
-### Install from GitHub Releases (recommended for end users)
-
-Download the package for your platform from [Releases](https://github.com/aide-family/Crescent/releases):
-
-| Platform            | Recommended asset          |
-| ------------------- | -------------------------- |
-| macOS Apple Silicon | `crescent-*-arm64.dmg`     |
-| macOS Intel         | `crescent-*-x64.dmg`       |
-| Windows             | `crescent-*-x64-setup.exe` |
-| Linux               | `.AppImage` or `.deb`      |
-
-Verify downloads with `SHA256SUMS.txt` from the same release when possible.
-
-#### macOS: “is damaged and can’t be opened”
-
-Until repository signing secrets are configured, some release builds may still be unsigned. See [Document/CODE_SIGNING.md](./Document/CODE_SIGNING.md). After a browser download, Gatekeeper may say **“Crescent” is damaged and can’t be opened**. The package is not corrupt—clear the quarantine attribute, then open the app:
-
-1. Move `Crescent.app` into Applications.
-2. Run:
+Node.js **22.19+** is required:
 
 ```bash
-xattr -cr /Applications/Crescent.app
-```
-
-3. Open the app again.
-
-You can also check **System Settings → Privacy & Security** for an “Open Anyway” option; if that fails, prefer the `xattr` command above.
-
-### Install from source
-
-```bash
-npm install
-```
-
-### Development
-
-```bash
+npm ci
 npm run dev
-```
 
-### Build
+# Full local verification; tests stay local-only
+npm run verify:local
 
-macOS delivery uses one **Universal** application, DMG and ZIP containing both x64 and arm64. Follow [the development and packaging rules](Document/DEVELOPMENT.md).
-
-```bash
-# Local unsigned Universal package; runs all local gates, never publishes
+# Unsigned Universal delivery, no publishing
 npm run build:mac:local
-
-# Universal package with separately configured signing / notarization
-npm run build:mac
 ```
 
-The legacy Mac x64/arm64 command names also produce Universal packages. Windows adaptation is outside the current development and acceptance scope.
+`npm run build` typechecks and compiles without packaging. `npm run build:mac` uses separately configured signing/notarization. Legacy Mac `:x64`/`:arm64` scripts are Universal aliases. Never rebuild `out/` while packaging is reading it. Keep required node-pty prebuilds, Pi/Photon WASM, PDF worker and code-index resources.
 
-Notes:
+## Documentation
 
-- Packaging uses `node-pty` N-API prebuilds with `npmRebuild: false`, so macOS does not try to cross-compile Windows/Linux native modules.
-- Official releases build each platform on its native runner (see `.github/workflows/release.yml`).
+- [Documentation index](Document/INDEX.md)
+- [Architecture](Document/ARCHITECTURE.md) · [Security model](Document/SECURITY_MODEL.md)
+- [External terminals](Document/EXTERNAL_TERMINALS.md) · [UI design](Document/UI_DESIGN_SYSTEM.md)
+- [Source build](SOURCE_BUILD.md) · [Development](Document/DEVELOPMENT.md)
+- [Local testing](Document/TESTING.md) · [Signing](Document/CODE_SIGNING.md)
+- [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
+- [Website](https://aide-family.github.io/Crescent/en/)
 
-After launch, configure an OpenAI-compatible model provider, select a model, and ask Crescent beside the terminal:
-
-```text
-Check the current machine's disk, memory, and system services, then summarize abnormal findings and recommendations.
-```
-
-Or:
-
-```text
-Connect to production, inspect abnormal Pods in the Kubernetes cluster, and summarize the troubleshooting result.
-```
-
-## Who Is It For?
-
-Crescent is especially useful for:
-
-- Operations engineers who troubleshoot through SSH every day.
-- SREs responsible for Kubernetes, Docker, and Linux hosts.
-- Platform teams that want to turn troubleshooting workflows into SOPs.
-- Developers who want an AI Agent grounded in real terminals with reviewable command execution.
-- Engineers who want AI to operate around real environments instead of only giving suggestions.
-
-## Roadmap
-
-Crescent already includes the core MVP capabilities: local terminal, model provider configuration, terminal-grounded Agent execution, Agent run panel, command review, Skills, and a knowledge base.
-
-Phase 1–4 product and distribution plumbing are in place: in-app updates against GitHub Releases, packaging smoke checks, and CI signing/notarization when certificate secrets are configured (see [Document/CODE_SIGNING.md](./Document/CODE_SIGNING.md)).
-
-See [ROADMAP.md](./ROADMAP.md) for details.
-
-## Contributing
-
-If you are looking for an AI terminal workbench built for real operations work, try Crescent and share your feedback.
-
-- GitHub repository: <https://github.com/aide-family/Crescent>
-- Bug reports and feature requests: <https://github.com/aide-family/Crescent/issues>
-
-Issues, pull requests, and reusable operational Skills are welcome.
-
-## Recommended IDE
-
-- [VSCode](https://code.visualstudio.com/)
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+Issues, pull requests and reusable operational Skills are welcome at [aide-family/Crescent](https://github.com/aide-family/Crescent). Do not commit local `*.test.ts` files or bypass repository verification hooks.

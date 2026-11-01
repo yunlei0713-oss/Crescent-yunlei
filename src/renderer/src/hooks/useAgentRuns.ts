@@ -417,7 +417,7 @@ export function useAgentRuns({
       if (event.type === 'status') {
         const title = formatAgentEventActionTitle(event, t)
         if (isNoiseAuditStatusMessage(title, t)) return
-        const detail = localizeAgentEventMessage(event.message, t)
+        const detail = event.message
         updateAgentRun(tabId, (run) => {
           const steps = closeStreamingOpenSteps(run.steps ?? [])
           const last = steps[steps.length - 1]
@@ -760,26 +760,13 @@ export function useAgentRuns({
                 String(Math.max(1, Math.ceil(event.retryAfterMs / 60_000)))
               )
             : t.input.modelQuotaResetHintSoon)
-        const humanError = isQuota
-          ? t.input.modelQuotaExceeded
-              .replace('{provider}', provider)
-              .replace('{resetHint}', resetHint)
-          : localizeAgentEventMessage(event.message, t)
         updateAgentRun(tabId, (run) => ({
           ...run,
-          error: humanError,
-          errorKind: isQuota ? 'quota' : event.kind === 'transient' ? 'transient' : 'other',
+          error: event.message,
+          errorKind: isQuota ? 'quota' : (event.kind ?? 'other'),
           errorProvider: isQuota ? provider : event.provider,
           errorResetHint: isQuota ? resetHint : undefined,
-          steps: [
-            ...closeStreamingOpenSteps(run.steps ?? []),
-            {
-              id: createStepId('status'),
-              kind: 'status',
-              title: isQuota ? t.input.modelQuotaExceededTitle : `${t.input.error}: ${humanError}`,
-              detail: humanError
-            }
-          ]
+          steps: closeStreamingOpenSteps(run.steps ?? [])
         }))
         return
       }

@@ -3,11 +3,11 @@ import type { AgentSessionEvent } from '@earendil-works/pi-coding-agent'
 import {
   buildQuotaResetHint,
   classifyProviderError,
-  formatQuotaWaitingStatus,
   formatRetryAfterLabel,
   summarizeProviderErrorForStatus
 } from '../../shared/provider-error'
 import type { AgentEvent } from './types'
+import { redactSensitiveText } from '../../shared/secret-redaction'
 
 export interface PiEventBridgeMeta {
   runId: string
@@ -57,7 +57,9 @@ export function mapPiSessionEventToAgentEvents(
           message:
             event.toolName === 'submit_change_plan'
               ? 'Submitting structured plan for host validation.'
-              : formatToolArgs(event.args),
+              : event.toolName === 'request_file_change'
+                ? 'File change requested. Exact contents are available in the approval dialog.'
+                : formatToolArgs(event.args),
           ...base
         }
       ]
@@ -81,13 +83,8 @@ export function mapPiSessionEventToAgentEvents(
         const resetHint = buildQuotaResetHint(classified.retryAfterMs, locale)
         return [
           {
-            type: 'status',
-            message: formatQuotaWaitingStatus(classified, locale),
-            ...base
-          },
-          {
             type: 'error',
-            message: 'AccountQuotaExceeded',
+            message: redactSensitiveText(event.errorMessage || 'AccountQuotaExceeded'),
             kind: 'quota',
             code: 'quota_exceeded',
             provider: classified.provider,
@@ -135,22 +132,24 @@ export function mapPiSessionEventToAgentEvents(
 
 function formatToolArgs(args: unknown): string {
   if (args == null) return ''
-  if (typeof args === 'string') return args.slice(0, 500)
+  if (typeof args === 'string') return redactSensitiveText(args).slice(0, 500)
   try {
-    return JSON.stringify(args).slice(0, 500)
+    return redactSensitiveText(JSON.stringify(args)).slice(0, 500)
   } catch {
-    return String(args)
+    return redactSensitiveText(String(args)).slice(0, 500)
   }
 }
 
 function extractBashCommand(args: unknown): string | undefined {
   if (!args || typeof args !== 'object') return undefined
   const command = (args as { command?: unknown }).command
-  return typeof command === 'string' && command.trim() ? command.trim() : undefined
+  return typeof command === 'string' && command.trim()
+    ? redactSensitiveText(command.trim()).slice(0, 4000)
+    : undefined
 }
 
 function formatToolResult(result: unknown, isError: boolean): string {
-  const text = extractToolResultText(result)
+  const text = redactSensitiveText(extractToolResultText(result))
   if (text.trim()) return text.slice(0, MAX_TOOL_RESULT_CHARS)
   return isError ? 'Tool failed.' : 'Tool finished.'
 }

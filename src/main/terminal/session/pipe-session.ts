@@ -1,10 +1,12 @@
 import { spawn as spawnProcess, type ChildProcessWithoutNullStreams } from 'child_process'
+import { assertOperatorTerminalAccess } from '../../security/capability-enforcement'
 import type { TerminalSession, TerminalSessionEvents, TerminalTransportInput } from './types'
 const PIPE_PROMPT_PREFIX = '__TERMINAL_AGENT_PROMPT__'
 export function createPipeSession(
   input: TerminalTransportInput,
   events: TerminalSessionEvents
 ): TerminalSession {
+  assertOperatorTerminalAccess()
   const shell = process.platform === 'win32' ? input.shell : '/bin/sh'
   const args = process.platform === 'win32' ? input.args : []
   const child = spawnProcess(shell, args, {
@@ -47,6 +49,7 @@ export function createPipeSession(
     display: (data) => events.onDisplay(data),
     interrupt: () => interruptPipeProcess(child),
     write: (data) => {
+      assertOperatorTerminalAccess()
       const command = data.replace(/\r?\n$/, '')
 
       if (!command.trim()) {
@@ -58,11 +61,15 @@ export function createPipeSession(
     },
     resize: () => undefined,
     clear: () => undefined,
-    kill: () => child.kill()
+    kill: () => {
+      assertOperatorTerminalAccess()
+      return child.kill()
+    }
   }
 }
 
 function interruptPipeProcess(child: ChildProcessWithoutNullStreams): void {
+  assertOperatorTerminalAccess()
   if (child.killed) return
 
   try {

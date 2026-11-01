@@ -40,6 +40,31 @@ export function isConversationLog(kind: AgentLogEntry['kind']): boolean {
 
 export const AGENT_LOG_SOFT_LIMIT = 120
 
+/** A history cursor needs a contiguous latest page, not live-run turn pinning. */
+export function hydrateLatestAgentLogPage(
+  entries: StoredAgentLogEntry[],
+  limit = AGENT_LOG_SOFT_LIMIT
+): AgentLogEntry[] {
+  return (limit > 0 ? entries.slice(-limit) : []).map(hydrateStoredAgentLog)
+}
+
+/** Explicit history paging must not discard the very rows the operator requested.
+ * Inputs are already hydrated/text-clamped; the soft limit remains for live runs.
+ * Compare against the current tab (not the pre-IPC snapshot) to avoid duplicates.
+ */
+export function prependEarlierAgentLogs(
+  current: AgentLogEntry[],
+  earlier: AgentLogEntry[]
+): AgentLogEntry[] {
+  const ids = new Set(current.map((entry) => entry.id))
+  const added = earlier.filter((entry) => {
+    if (ids.has(entry.id)) return false
+    ids.add(entry.id)
+    return true
+  })
+  return added.length ? [...added, ...current] : current
+}
+
 /**
  * Clamp a single log entry's text for renderer memory.
  * CRESCENT_RUN_V2 envelopes are structure-shrunk or replaced with a parseable stub

@@ -60,11 +60,10 @@ export function setApplicationMenuLocale(locale: unknown): MenuLocale {
 
 export function configureAboutPanel(iconPath: string): void {
   app.setAboutPanelOptions({
-    applicationName: 'Crescent',
+    applicationName: '墨巡 · MoXun',
     applicationVersion: app.getVersion(),
     version: app.getVersion(),
-    copyright: 'Copyright © 2026 Crescent',
-    website: 'https://github.com/aide-family/Crescent',
+    copyright: 'MoXun · 智能运维协作台\nBased on Crescent · Copyright © 2026 Crescent',
     iconPath
   })
 }

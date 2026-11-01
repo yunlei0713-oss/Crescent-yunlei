@@ -1,0 +1,75 @@
+.app-sidebar {
+  width: var(--app-sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--app-chrome);
+}
+
+.app-sidebar-action {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  font-size: 12px;
+}
+.app-sidebar-action[aria-current='page'] {
+  background: var(--accent);
+}
+.app-sidebar:not(.is-expanded) .app-sidebar-action {
+  justify-content: center;
+  padding-inline: 0;
+}
+.app-sidebar .app-utilitybar {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.app-sidebar:not(.is-expanded) .app-utilitybar {
+  height: auto;
+  flex-direction: column;
+}
+.chat-workspace .app-agent-log-list {
+  padding-top: 20px;
+}
+.chat-workspace [data-scroll-follow-content] {
+  max-width: 1040px;
+  margin-inline: auto;
+}
+.chat-workspace .app-input-dock {
+  width: 100%;
+  max-width: 1060px;
+  margin-inline: auto;
+  flex-shrink: 0;
+}
+.chat-workspace .app-agent-message-user {
+  background: transparent;
+  border-left: 2px solid var(--border);
+  padding-left: 12px;
+}
+.chat-workspace .app-agent-message-meta button {
+  opacity: 0;
+}
+.chat-workspace .app-agent-message:hover .app-agent-message-meta button,
+.chat-workspace .app-agent-message:focus-within .app-agent-message-meta button {
+  opacity: 1;
+}
+.chat-workspace pre {
+  max-height: 440px;
+  overflow: auto;
+}
+.chat-workspace .guided-ops-command {
+  max-height: none;
+}
+.chat-session-details {
+  max-height: 160px;
+  overflow: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-workspace *,
+  .app-sidebar * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

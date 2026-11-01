@@ -1,5 +1,5 @@
 appId: com.crescent.app
-productName: Crescent
+productName: 墨巡
 directories:
   buildResources: build
 files:
@@ -18,8 +18,10 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!node_modules/@tailwindcss/**/*'
-  # PDF.js is baked into the lazy renderer chunk and worker; no native canvas at runtime.
-  - '!node_modules/pdfjs-dist/**/*'
+  # Renderer has its own lazy PDF chunk; Main lazily imports the legacy text reader.
+  - '!node_modules/pdfjs-dist/{web,build,image_decoders,types,wasm}/**/*'
+  - '!node_modules/pdfjs-dist/legacy/web/**/*'
+  - '!node_modules/pdfjs-dist/**/*.map'
   - '!node_modules/@napi-rs/canvas*/**/*'
   # Prefer node-pty N-API prebuilds over host-compiled build/ binaries.
   - '!node_modules/node-pty/build/**'
@@ -35,6 +37,9 @@ asarUnpack:
   - '**/@modelcontextprotocol/**'
   # Pi optional image tooling (WASM) must be readable outside asar.
   - '**/@silvia-odwyer/photon-node/**'
+  # Native ESM import and PDF.js's local worker must resolve outside the archive.
+  - '**/pdfjs-dist/legacy/build/**'
+  - '**/pdfjs-dist/{standard_fonts,cmaps}/**'
 win:
   executableName: crescent
   icon: build/icon.ico
@@ -63,6 +68,7 @@ mac:
     - target: zip
       arch: [universal]
   extendInfo:
+    - NSAppleEventsUsageDescription: 墨巡需要连接您选择的 iTerm 会话，以同步终端内容并转发您的输入。
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.

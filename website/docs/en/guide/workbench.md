@@ -1,30 +1,13 @@
 # Workbench
 
-Crescent keeps the conversation and the terminal in one window. Layout and how much the Agent talks can follow your habit. Safety rules stay the same.
+MoXun keeps left navigation, central chat and a fixed Composer. Session details are collapsed by default and management surfaces open on demand. Terminal operation lives in external iTerm; embedded-terminal layouts and pane swapping are retired.
 
-## Layout
-
-The workbench layout in Settings applies immediately and is kept for the next launch:
-
-| Layout | What you see |
-| --- | --- |
-| Chat and terminal | Both panes, the default way of working |
-| Chat only | Hide the terminal while you settle the goal and the conclusion |
-| Terminal only | Hide the chat while you watch command output yourself |
-
-The title bar can also swap which side the chat and the terminal sit on. You can ask for a confirmation before a terminal tab closes, so a live session is not stopped by accident.
+Connection cards open iTerm and connect a saved target. The standalone external-terminal entry creates a shared local iTerm or binds an existing one, without implicitly connecting a cluster. Observation is selected per collaboration and defaults to off.
 
 ## Working style
 
-Working style only controls how much Crescent says to you. It does not skip checks, and it does not skip [command review](/en/guide/command-review).
+Swift, Concise, Guided and Teach control explanation density, not permissions. Show thinking can override style defaults. No style enables Agent terminal execution or bypasses file approval.
 
-| Style | Fit |
-| --- | --- |
-| Swift | Stay quiet during the run, then 1–3 sentences at the end. For people who already watch the terminal |
-| Concise | At most one status line per stage, then a short conclusion. A good on-call default |
-| Guided | Pair troubleshooting: goal, evidence, and the next step |
-| Teach | Explain why something was checked and what the evidence means |
+The existing light/dark ink themes remain. Logs live in `~/.crescent/logs`, split by day and kept for 3 days; select the log level in Settings. Check diagnostics for sensitive content before sharing.
 
-“Show thinking” overrides the style default. Swift, Concise, and Guided hide thinking unless you turn it on. Teach shows it.
-
-System logs go to `~/.crescent/logs`, split by day and kept for 3 days. The default level is info. You can turn logging off or set it to debug.
+Next: [quick start](/en/guide/quick-start), [terminal observation](/en/guide/terminal).

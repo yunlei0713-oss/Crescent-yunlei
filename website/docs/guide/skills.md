@@ -1,6 +1,6 @@
 # Skills 与知识库
 
-Crescent 从配置的 Skill 目录加载 Agent Skills，默认目录是 `~/.crescent/skills`。
+墨巡从配置的 Skill 目录加载 Agent Skills，默认目录是 `~/.crescent/skills`。Skill 文本不会赋予终端执行或文件写入权限；当前 Agent 永久不能执行命令，文件变更仍须审批。
 
 可以：
 

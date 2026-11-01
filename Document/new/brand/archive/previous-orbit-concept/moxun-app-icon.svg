@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>墨巡 MoXun App Icon</title>
+  <desc>Dark ink tile with a pale ink-drop and an open inspection orbit.</desc>
+  <defs>
+    <linearGradient id="ink" x1="132" y1="92" x2="890" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#182324"/>
+      <stop offset="1" stop-color="#080D0E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#ink)"/>
+  <g transform="translate(112 112) scale(1.5625)">
+    <circle cx="256" cy="256" r="178" stroke="#C5D0CA" stroke-width="12" stroke-linecap="round" stroke-dasharray="850 268" transform="rotate(-36 256 256)"/>
+    <path d="M256 112C229 150 174 211 174 282C174 343 210 389 256 389C302 389 338 343 338 282C338 211 283 150 256 112Z" fill="#EEF2EF"/>
+    <path d="M216 321C237 296 267 276 296 238" stroke="#111A1B" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="216" cy="321" r="8" fill="#111A1B"/>
+    <circle cx="297" cy="237" r="10" fill="#86AAA0"/>
+    <circle cx="382" cy="116" r="11" fill="#86AAA0"/>
+  </g>
+</svg>

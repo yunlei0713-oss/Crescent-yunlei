@@ -1,10 +1,9 @@
 ---
 layout: home
-
 hero:
-  name: Crescent
-  text: AI in the real terminal
-  tagline: An open-source operations workbench for local terminals, SSH, command review, Skills, and a knowledge base.
+  name: MoXun
+  text: Manual control, AI analysis
+  tagline: Chat-first · External iTerm · Optional authorized observation · Human-approved file changes
   actions:
     - theme: brand
       text: Quick start
@@ -12,16 +11,15 @@ hero:
     - theme: alt
       text: Install
       link: /en/guide/install
-
 features:
-  - title: The terminal is the workspace
-    details: The Agent runs commands in the visible terminal, reads real output, and then decides the next step.
-  - title: Review before execution
-    details: Clear read-only checks can run automatically. Deletes, restarts, and config changes wait for confirmation with a risk explanation.
-  - title: Local and SSH together
-    details: Read ~/.ssh/config or add custom connections. The Agent stays grounded in whichever host is active.
+  - title: You control the terminal
+    details: Operate local and SSH sessions in external iTerm. Agents analyze and suggest, never type or execute.
+  - title: Observation defaults off
+    details: Native consent shares redacted, bounded, short-lived evidence. Pause, revocation and identity changes clear it; input is never authorized.
+  - title: Approve file changes
+    details: Full Diff, per-file decisions, one-time Main authorization and write verification. Rejection leaves files unchanged.
   - title: Skills and knowledge
-    details: Load reusable Skills and turn troubleshooting notes into SOPs that later runs can retrieve.
+    details: Reuse knowledge and draft SOPs/Skills, saved only after your confirmation.
 ---
 
-The repository overview is in [README.md](https://github.com/aide-family/Crescent/blob/main/README.md). Switch the nav language for 简体中文.
+See the current repository [README.md](https://github.com/aide-family/Crescent/blob/main/README.md) for product and security boundaries.

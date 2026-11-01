@@ -460,6 +460,7 @@ export function normalizeAgentConfig(config: Partial<AgentConfig>): AgentConfig 
     providerId: selection.providerId,
     model: selection.model,
     commandTimeouts: normalizeCommandTimeoutPolicy(config.commandTimeouts),
+    terminalContextChars: normalizeTerminalContextChars(config.terminalContextChars),
     workspaceCwd: String(config.workspaceCwd ?? '').trim() || undefined,
     agentStyle: normalizeAgentStyle(config.agentStyle),
     thinkingLevel: normalizeThinkingLevel(config.thinkingLevel),
@@ -565,14 +566,14 @@ function normalizeAgentProviderModel(value: unknown): AgentProviderModelConfig {
     id,
     name: String(record.name || id),
     reasoning: Boolean(record.reasoning),
+    imageInput: record.imageInput === true,
     samplingParamsByThinkingLevel: normalizeSamplingMap(record.samplingParamsByThinkingLevel)
   }
 }
 
 function normalizeConfigFile(value: unknown): CrescentConfigFile {
   const record = isRecord(value) ? value : {}
-  const whaleMonitorEndpointDefaultsMigrated =
-    record.whaleMonitorEndpointDefaultsMigrated === true
+  const whaleMonitorEndpointDefaultsMigrated = record.whaleMonitorEndpointDefaultsMigrated === true
   const whaleMonitor = normalizeWhaleMonitorConfig(record.whaleMonitor)
   if (!whaleMonitorEndpointDefaultsMigrated) {
     if (whaleMonitor.spendBaseUrl === 'https://dmxwg.intra.yiducloud.cn/litellm/spend/logs/self') {
@@ -814,3 +815,4 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   if (!Number.isFinite(numeric)) return fallback
   return Math.min(max, Math.max(min, Math.round(numeric)))
 }
+import { normalizeTerminalContextChars } from '../shared/terminal-observation-types'

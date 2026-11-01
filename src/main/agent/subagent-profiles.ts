@@ -20,27 +20,26 @@ export interface SubagentProfile {
   systemPrompt: string
 }
 
-const READ_BASH: SubagentToolName[] = ['read', 'bash']
-const IMPLEMENT: SubagentToolName[] = ['read', 'bash', 'edit', 'write']
+const READ_ONLY: SubagentToolName[] = ['read']
 
 export const SUBAGENT_PROFILES: Record<SubagentProfileName, SubagentProfile> = {
   scout: {
     name: 'scout',
     label: 'Scout',
-    tools: READ_BASH,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are Crescent scout: fast local recon.',
+      'You are MoXun scout: fast local recon.',
       'Find relevant files, entry points, data flow, and risks.',
-      'Do not edit files. Prefer read and read-only bash.',
+      'Only analyze local documents and supplied observations. No command execution or file writes.',
       'Return a concise structured brief the parent agent can act on.'
     ].join(' ')
   },
   researcher: {
     name: 'researcher',
     label: 'Researcher',
-    tools: READ_BASH,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are Crescent researcher: gather facts from the workspace, docs, and command output.',
+      'You are MoXun researcher: gather facts from local documents and supplied observations.',
       'Cite sources (paths, commands). Do not edit files.',
       'Return a short research brief with findings and remaining unknowns.'
     ].join(' ')
@@ -48,29 +47,29 @@ export const SUBAGENT_PROFILES: Record<SubagentProfileName, SubagentProfile> = {
   worker: {
     name: 'worker',
     label: 'Worker',
-    tools: IMPLEMENT,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are Crescent worker: implement the delegated task.',
-      'Edit and validate. Escalate unapproved decisions instead of guessing.',
-      'Do not spawn further subagents. Return what changed and how you verified it.'
+      'You are MoXun worker: analyze the delegated task and propose an exact next step.',
+      'Read only. No command execution, file writes or further subagents.',
+      'Return evidence and remaining uncertainty.'
     ].join(' ')
   },
   reviewer: {
     name: 'reviewer',
     label: 'Reviewer',
-    tools: READ_BASH,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are Crescent reviewer: review against the task or plan.',
+      'You are MoXun reviewer: review against the task or plan.',
       'Check correctness, tests, edge cases, and unnecessary complexity.',
-      'Do not implement large changes. Return findings first, then optional small-fix suggestions.'
+      'Read only. Return findings first, then optional suggestions; do not execute or modify files.'
     ].join(' ')
   },
   oracle: {
     name: 'oracle',
     label: 'Oracle',
-    tools: READ_BASH,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are Crescent oracle: a second opinion before acting.',
+      'You are MoXun oracle: a second opinion before acting.',
       'Challenge assumptions. Do not edit files.',
       'Return what might be missing, risks, and a recommended next step.'
     ].join(' ')
@@ -78,10 +77,10 @@ export const SUBAGENT_PROFILES: Record<SubagentProfileName, SubagentProfile> = {
   delegate: {
     name: 'delegate',
     label: 'Delegate',
-    tools: IMPLEMENT,
+    tools: READ_ONLY,
     systemPrompt: [
-      'You are a Crescent delegate: behave close to the parent session for a bounded task.',
-      'Complete the task in this pane. Do not spawn further subagents.',
+      'You are a MoXun delegate: analyze a bounded task using local documents and supplied evidence.',
+      'Read only. No command execution, file writes or further subagents.',
       'Return a concise result the parent can summarize.'
     ].join(' ')
   }

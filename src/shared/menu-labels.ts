@@ -34,8 +34,8 @@ export interface MenuLabels {
 }
 
 const zhCN: MenuLabels = {
-  appName: 'Crescent',
-  about: '关于 Crescent',
+  appName: '墨巡',
+  about: '关于墨巡 · MoXun',
   checkForUpdates: '检查后更新',
   settings: '设置',
   edit: '编辑',
@@ -52,8 +52,8 @@ const zhCN: MenuLabels = {
   zoom: '缩放',
   close: '关闭',
   bringAllToFront: '前置全部窗口',
-  quit: '退出 Crescent',
-  hide: '隐藏 Crescent',
+  quit: '退出墨巡',
+  hide: '隐藏墨巡',
   hideOthers: '隐藏其他',
   showAll: '显示全部',
   updateUpToDateTitle: '已是最新版本',
@@ -67,8 +67,8 @@ const zhCN: MenuLabels = {
 }
 
 const en: MenuLabels = {
-  appName: 'Crescent',
-  about: 'About Crescent',
+  appName: '墨巡',
+  about: 'About MoXun',
   checkForUpdates: 'Check for Updates',
   settings: 'Settings',
   edit: 'Edit',
@@ -85,12 +85,12 @@ const en: MenuLabels = {
   zoom: 'Zoom',
   close: 'Close',
   bringAllToFront: 'Bring All to Front',
-  quit: 'Quit Crescent',
-  hide: 'Hide Crescent',
+  quit: 'Quit MoXun',
+  hide: 'Hide MoXun',
   hideOthers: 'Hide Others',
   showAll: 'Show All',
   updateUpToDateTitle: "You're up to date",
-  updateUpToDateMessage: 'Crescent {version} is the latest version.',
+  updateUpToDateMessage: 'MoXun {version} is the latest version.',
   updateErrorTitle: 'Update failed',
   updateDownloadedTitle: 'Update ready',
   updateDownloadedMessage: 'Version {version} has been downloaded. Restart now to install it?',

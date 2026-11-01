@@ -11,8 +11,6 @@ import {
 import { flushSync } from 'react-dom'
 
 import {
-  createTerminalTab,
-  getNextTerminalTitle,
   getSessionChatTab,
   getSessionGroupId,
   getSessionTerminals,
@@ -20,7 +18,6 @@ import {
   toStoredSessionTabs,
   type AgentTerminalTab
 } from '../lib/terminal-tabs'
-import { revealChatFromTerminalLayout, type WorkbenchLayout } from '../lib/app-shell'
 import type { StoredSessionTab } from '../../../shared/agent-types'
 
 export interface CloseTabPromotionPlan {
@@ -84,43 +81,27 @@ export function reassignSessionRootOnClose(
 
 interface UseTerminalTabsInput {
   tabs: AgentTerminalTab[]
-  setTabs: Dispatch<SetStateAction<AgentTerminalTab[]>>
   activeTabId: string
   setActiveTabId: Dispatch<SetStateAction<string>>
   activeTabIdRef: MutableRefObject<string>
   tabsRef: MutableRefObject<AgentTerminalTab[]>
-  terminalPage: 'terminal' | 'connections'
-  setTerminalPage: Dispatch<SetStateAction<'terminal' | 'connections'>>
-  setWorkbenchLayout: Dispatch<SetStateAction<WorkbenchLayout>>
   emptyLocalTab: AgentTerminalTab
-  updateTab: (tabId: string, updater: (tab: AgentTerminalTab) => AgentTerminalTab) => void
-  localTerminalTitle: string
-  providerId?: string
 }
 
 export function useTerminalTabs({
   tabs,
-  setTabs,
   activeTabId,
   setActiveTabId,
   activeTabIdRef,
   tabsRef,
-  terminalPage,
-  setTerminalPage,
-  setWorkbenchLayout,
-  emptyLocalTab,
-  updateTab,
-  localTerminalTitle,
-  providerId
+  emptyLocalTab
 }: UseTerminalTabsInput): {
   activeTab: AgentTerminalTab
   sessionChatTab: AgentTerminalTab
   sessionTerminals: AgentTerminalTab[]
   sessionChatTabs: AgentTerminalTab[]
-  terminalTabs: AgentTerminalTab[]
   activeAgentPending: boolean
   selectSessionTab: (tabId: string) => void
-  openLocalTerminal: () => void
 } {
   // Intentional: keep tabsRef aligned during render and fall back to the ref
   // snapshot during flushSync tab switches (same pattern as prior App.tsx).
@@ -138,10 +119,6 @@ export function useTerminalTabs({
   const sessionTerminals = getSessionTerminals(tabs, getSessionGroupId(activeTab))
   const sessionChatTabs = useMemo(() => listSessionChatTabs(tabs), [tabs])
   const activeAgentPending = sessionChatTab.agentBusy || sessionChatTab.agentThinking
-  const terminalTabs = useMemo(
-    () => tabs.filter((tab) => terminalPage === 'terminal' || tab.sessionId || tab.terminalReady),
-    [tabs, terminalPage]
-  )
 
   const pendingTabsSaveRef = useRef<{
     key: string
@@ -194,66 +171,17 @@ export function useTerminalTabs({
       activeTabIdRef.current = tabId
       flushSync(() => {
         setActiveTabId(tabId)
-        setTerminalPage('terminal')
-        setWorkbenchLayout((current) => revealChatFromTerminalLayout(current))
       })
     },
-    [activeTabIdRef, setActiveTabId, setWorkbenchLayout, setTerminalPage]
+    [activeTabIdRef, setActiveTabId]
   )
-
-  const openLocalTerminal = useCallback((): void => {
-    setWorkbenchLayout((current) => revealChatFromTerminalLayout(current))
-    setTerminalPage('terminal')
-
-    const currentTab = tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-    const canReuseCurrentTab =
-      currentTab &&
-      !currentTab.isSsh &&
-      !currentTab.connectionId &&
-      !currentTab.sessionId &&
-      !currentTab.terminalReady
-
-    const targetTabId = canReuseCurrentTab ? currentTab.id : createTerminalTab().id
-
-    if (canReuseCurrentTab) {
-      updateTab(currentTab.id, (tab) => ({
-        ...tab,
-        title: getNextTerminalTitle(localTerminalTitle, tabsRef.current),
-        connectionId: undefined,
-        connectionName: undefined,
-        isSsh: false
-      }))
-    } else {
-      const nextTab = createTerminalTab({
-        id: targetTabId,
-        title: getNextTerminalTitle(localTerminalTitle, tabsRef.current),
-        providerId,
-        isSsh: false
-      })
-      setTabs((current) => [...current, nextTab])
-    }
-
-    setActiveTabId(targetTabId)
-  }, [
-    activeTabIdRef,
-    localTerminalTitle,
-    providerId,
-    setActiveTabId,
-    setWorkbenchLayout,
-    setTabs,
-    setTerminalPage,
-    tabsRef,
-    updateTab
-  ])
 
   return {
     activeTab,
     sessionChatTab,
     sessionTerminals,
     sessionChatTabs,
-    terminalTabs,
     activeAgentPending,
-    selectSessionTab,
-    openLocalTerminal
+    selectSessionTab
   }
 }

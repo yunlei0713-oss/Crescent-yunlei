@@ -1,11 +1,3 @@
-import { BrainIcon } from 'lucide-react'
-import { handoffParentTab } from '@renderer/lib/handoff-target'
-import { BookMarkedIcon, FolderOpenIcon } from 'lucide-react'
-import {
-  resolveHandoffTarget,
-  handoffSourceIdentity,
-  type HandoffTarget
-} from '../../shared/handoff'
 import {
   agentClient,
   appClient,
@@ -14,7 +6,6 @@ import {
   terminalClient,
   updateClient
 } from '@renderer/clients'
-import { ChangePlanReview } from '@renderer/components/ChangePlanReview'
 import { useAgentController } from '@renderer/hooks/useAgentController'
 import { useCaptureController } from '@renderer/hooks/useCaptureController'
 import { useHistoryController } from '@renderer/hooks/useHistoryController'
@@ -24,10 +15,8 @@ import { useProviderController } from '@renderer/hooks/useProviderController'
 import { useSessionPersistence } from '@renderer/hooks/useSessionPersistence'
 import { useSkillsController } from '@renderer/hooks/useSkillsController'
 import { useWikiController } from '@renderer/hooks/useWikiController'
-import { useWorkbenchLayout } from '@renderer/hooks/useWorkbenchLayout'
 import {
   CONNECTION_LOGIN_TOTAL_TIMEOUT_MS,
-  CONNECTION_SPAWN_TIMEOUT_MS,
   PostConnectionTask,
   ReuseAgentRun,
   buildLogMarkdownFilename,
@@ -39,13 +28,11 @@ import {
   emptyProvider,
   getSelectedTextWithinLog,
   initialTerminalTab,
-  isApprovalTargetAlive,
   isComposingInput,
   resolvePastedFileReference,
   resolveSubterminalTabState,
   settleAgentCancel,
   settleStopText,
-  sleep,
   waitForPromptHostOrTimeout,
   waitForTerminalReadyForAgent
 } from '@renderer/lib/app-controller-support'
@@ -56,19 +43,6 @@ import {
 } from '@renderer/lib/connection-login-runtime'
 import { deferAfterFirstPaint } from '@renderer/lib/defer-after-paint'
 import { TOAST_INTERVENTION_DURATION_MS } from '@renderer/lib/toast-policy'
-import { FitAddon } from '@xterm/addon-fit'
-import { Terminal } from '@xterm/xterm'
-import {
-  ArrowLeftRightIcon,
-  BookOpenIcon,
-  BotIcon,
-  HistoryIcon,
-  LanguagesIcon,
-  MessageSquareIcon,
-  PlugIcon,
-  ServerIcon,
-  SettingsIcon
-} from 'lucide-react'
 import {
   KeyboardEvent,
   Suspense,
@@ -83,20 +57,28 @@ import {
 import { flushSync } from 'react-dom'
 import { Toaster, toast } from 'sonner'
 import { normalizeExecutionMode } from '../../shared/execution-plan'
+import { stripAnsi } from '../../shared/readonly-batch'
 
-import { AgentPanel } from '@renderer/components/AgentPanel'
+import { ChatWorkspace } from '@renderer/components/ChatWorkspace'
+import { AppSidebar } from '@renderer/components/AppSidebar'
+import { ExternalTerminalControls } from '@renderer/components/ExternalTerminalControls'
+import { ConversationTerminalSelector } from '@renderer/components/ConversationTerminalSelector'
 import { CloseTabsConfirmModal, type CloseTabsConfirmRequest } from '@renderer/components/AppModals'
 import { CaptureDraftDialog } from '@renderer/components/CaptureDraftDialog'
 import { type ComposerInputHandle } from '@renderer/components/ComposerEditor'
 import { ConnectionManagerModal } from '@renderer/components/ConnectionManagerModal'
-import { HandoffDialog } from '@renderer/components/HandoffDialog'
+import { ConnectionTerminalDialog } from '@renderer/components/ConnectionTerminalDialog'
+import { FileChangeReview } from '@renderer/components/FileChangeReview'
+import {
+  useConnectionTerminalChoice,
+  type ConnectionTerminalMode
+} from '@renderer/hooks/useConnectionTerminalChoice'
 import { OnboardingModal } from '@renderer/components/OnboardingModal'
 import { ProductLogo } from '@renderer/components/ProductLogo'
 import { type SkillManageMessage } from '@renderer/components/StatusIndicators'
-import { TerminalPane } from '@renderer/components/TerminalPane'
-import { AppUtilityToolbar } from '@renderer/components/AppUtilityToolbar'
+import { ExternalTerminalDialog } from '@renderer/components/ExternalTerminalDialog'
+import { useExternalTerminals } from '@renderer/hooks/useExternalTerminals'
 import { usePetVisibility } from '@renderer/hooks/usePetVisibility'
-import { Button } from '@renderer/components/ui/button'
 import { useAgentRuns } from '@renderer/hooks/useAgentRuns'
 import {
   connectionToForm,
@@ -105,24 +87,15 @@ import {
   normalizeConnectionInputForSave,
   useConnections
 } from '@renderer/hooks/useConnections'
-import { useHandoff } from '@renderer/hooks/useHandoff'
 import { useScrollFollow } from '@renderer/hooks/useScrollFollow'
 import { useSettings } from '@renderer/hooks/useSettings'
-import { useTerminalOutputRing } from '@renderer/hooks/useTerminalOutputRing'
-import { useTerminalSessions } from '@renderer/hooks/useTerminalSessions'
 import {
   planCloseTabPromotion,
   reassignSessionRootOnClose,
   useTerminalTabs
 } from '@renderer/hooks/useTerminalTabs'
-import { useXtermLifecycle } from '@renderer/hooks/useXtermLifecycle'
-import {
-  dictionaries,
-  localeOptions,
-  nextLocale,
-  resolveInitialLocale,
-  type Locale
-} from '@renderer/i18n'
+import { useTerminalCollaborationLifecycle } from '@renderer/hooks/useTerminalCollaborationLifecycle'
+import { dictionaries, nextLocale, resolveInitialLocale, type Locale } from '@renderer/i18n'
 import {
   buildAvailableToolRefs,
   flattenProviderModels,
@@ -138,12 +111,12 @@ import {
   buildPostLoginAgentInput
 } from '@renderer/lib/agent-input'
 import {
-  AGENT_LOG_SOFT_LIMIT,
   appendElapsedFooter,
   connectionFailureMarkers,
   hydrateStoredAgentLog,
+  hydrateLatestAgentLogPage,
   isConnectionFailureLog,
-  trimAgentLogEntries
+  prependEarlierAgentLogs
 } from '@renderer/lib/agent-log'
 import { decodeUserMessageText } from '@renderer/lib/agent-message-refs'
 import { buildFinishPersistText, closeStreamingOpenSteps } from '@renderer/lib/agent-run-document'
@@ -165,11 +138,8 @@ import {
   resolveOpsConnectionId
 } from '@renderer/lib/app-runtime'
 import {
-  PANE_ORDER_STORAGE_KEY,
-  formatPipePrompt,
-  hasConfiguredModelSelection,
-  revealChatFromTerminalLayout,
-  type WorkbenchLayout
+  CLOSE_TERMINAL_CONFIRM_STORAGE_KEY,
+  hasConfiguredModelSelection
 } from '@renderer/lib/app-shell'
 import {
   captureReadyLogsForTab,
@@ -177,7 +147,6 @@ import {
   hiddenCaptureReadyLogIds,
   visibleCaptureDraftPins
 } from '@renderer/lib/capture-draft-ui'
-import { suggestWhitelistRule } from '@renderer/lib/command-whitelist'
 import {
   caretAfterProgrammaticValueChange,
   collectComposerRefIds,
@@ -189,11 +158,9 @@ import {
 import {
   buildConnectionCommands,
   createCustomConnectionId,
-  hasLiveTerminalSession,
   isPasswordEnvVarMissing,
   mergeConnectionInput,
   resolveRemainingConnectionCommands,
-  shouldSkipReuseRelogin,
   stripStoredPassword,
   toConnectionClipboardPayload
 } from '@renderer/lib/connection-commands'
@@ -207,7 +174,6 @@ import {
   findCustomConnectionNameConflict
 } from '@renderer/lib/connection-name-conflict'
 import { settleRunningToolStepsAsInterrupted } from '@renderer/lib/settle-interrupted-tool-steps'
-import { findRunningPtyCommandTabId, isTerminalPaneLocked } from '@renderer/lib/terminal-lock'
 import { isAgentProviderEnabled } from '../../shared/agent-providers'
 import {
   appendRunStatusStep,
@@ -215,18 +181,13 @@ import {
   resolveRunStopReason,
   type RunStopReason
 } from '../../shared/connection-state'
-import { findNewestPromptSignal, isPromptHostAligned } from '../../shared/terminal-prompt-host'
+import { isPromptHostAligned } from '../../shared/terminal-prompt-host'
 const MemoryCenter = lazy(() =>
   import('@renderer/components/MemoryCenter').then((module) => ({ default: module.MemoryCenter }))
 )
 const LocalDocumentsSheet = lazy(() =>
   import('@renderer/components/LocalDocumentsSheet').then((module) => ({
     default: module.LocalDocumentsSheet
-  }))
-)
-const CommandDirectorySheet = lazy(() =>
-  import('@renderer/components/CommandDirectorySheet').then((module) => ({
-    default: module.CommandDirectorySheet
   }))
 )
 
@@ -254,12 +215,10 @@ const WhaleMonitor = lazy(() =>
 import { mergePostLoginSupplements, resolveLoginContinuation } from '@renderer/lib/busy-supplement'
 import { isComposerNewlineEnter, isComposerSubmitEnter } from '@renderer/lib/composer-newline'
 import {
-  beginConnectionRetry,
-  canAttemptConnection,
   createIdleConnectionAttempt,
   markConnectionFailed,
   markConnectionReady,
-  shouldAppendSwitchedEntry,
+  canFinalizeConnectionLogin,
   type ConnectionAttemptState
 } from '@renderer/lib/connection-attempt'
 import {
@@ -277,11 +236,9 @@ import {
   copyFeedback,
   copyText,
   downloadJson,
-  downloadMarkdown,
-  notifyOperationError
+  downloadMarkdown
 } from '@renderer/lib/operation-feedback'
 import { createPendingAttentionNotifier } from '@renderer/lib/pending-attention-notify'
-import { applyTerminalConvertEol, fitAndSyncPty } from '@renderer/lib/pipe-terminal'
 import { isIpv4Literal } from '@renderer/lib/prompt-host-wait'
 import {
   buildConnectionSlashCommand,
@@ -310,15 +267,11 @@ import {
 import {
   createTerminalTab,
   getNextTerminalTitle,
-  getSessionChatTab,
   getSessionDisplayTitle,
   getSessionGroupId,
-  getSessionTerminals,
   isReservedTerminalTabId,
-  resolveConnectTargetTab,
   resolveSessionAgentStyle,
   resolveSessionChatTabId,
-  toStoredSessionTabs,
   type AgentLogEntry,
   type AgentRunStep,
   type AgentRunViewState,
@@ -330,14 +283,9 @@ import {
   buildAgentSessionTrace,
   serializeAgentSessionTrace
 } from '../../shared/agent-session-trace'
-import {
-  normalizeAgentStyle,
-  resolveShowAgentThinking,
-  type AgentStyle
-} from '../../shared/agent-style'
+import { normalizeAgentStyle, type AgentStyle } from '../../shared/agent-style'
 import {
   type AgentConfig,
-  type AgentConnectionIntentResult,
   type AgentModelOption,
   type AgentOpenApiProfile,
   type AgentPathReference,
@@ -352,9 +300,7 @@ import {
   type WikiDocumentSummary
 } from '../../shared/agent-types'
 import {
-  collectAttentionTabIds,
   normalizeAttentionClickedPayload,
-  pendingApprovalTabIdsFromRuns,
   resolveAttentionJumpTabId
 } from '../../shared/attention-notify'
 import {
@@ -374,20 +320,7 @@ import { isSshCommandLine, resolveFinalSshTarget } from '../../shared/ssh-destin
 
 /** Subterminals live under the parent tab; resolve their terminal state. */
 
-function App({
-  recoveryMode = 'none',
-  initialWorkbenchLayout
-}: {
-  recoveryMode?: 'none' | 'pending'
-  initialWorkbenchLayout?: WorkbenchLayout | null
-}): React.JSX.Element {
-  const terminalHostRef = useRef<HTMLDivElement | null>(null)
-  const terminalRef = useRef<Terminal | null>(null)
-  const fitAddonRef = useRef<FitAddon | null>(null)
-  const terminalSessionIdRef = useRef<number | null>(null)
-  const terminalModeRef = useRef<'pty' | 'pipe'>('pty')
-  const terminalCwdRef = useRef('')
-  const pipePromptRef = useRef('')
+function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): React.JSX.Element {
   const activeRunCanceledRef = useRef(new Set<string>())
   const activeRunIdRef = useRef(new Map<string, string>())
   const activeRunInputRef = useRef(new Map<string, string>())
@@ -397,9 +330,6 @@ function App({
     })
   )
   const activeExecutionTabIdRef = useRef(new Map<string, string>())
-  const [executionTerminalByChatId, setExecutionTerminalByChatId] = useState<
-    Record<string, string>
-  >({})
 
   const validationRequestRef = useRef(0)
   const nextLogIdRef = useRef(1)
@@ -410,33 +340,16 @@ function App({
   const activeTabIdRef = useRef(initialTerminalTab.id)
   const tabsRef = useRef<AgentTerminalTab[]>([])
   const connectionsRef = useRef<ConnectionConfig[]>([])
-  const subterminalResizeRef = useRef<{
-    tabId: string
-    leftId: string
-    rightId: string
-    startX: number
-    leftStart: number
-    rightStart: number
-  } | null>(null)
-  const subterminalHeightResizeRef = useRef<{
-    startY: number
-    startHeight: number
-  } | null>(null)
   const wikiSheetResizeRef = useRef<{
     startX: number
     startWidth: number
   } | null>(null)
-  const pendingSshRef = useRef(new Map<string, ConnectionConfig>())
   const postConnectionTasksRef = useRef(new Map<string, PostConnectionTask[]>())
   const pendingPostLoginSupplementsRef = useRef(new Map<string, string[]>())
-  const reconnectingTabsRef = useRef(new Set<string>())
-  const ptyRetryTriedRef = useRef(new Set<string>())
-  const suppressTerminalReconnectRef = useRef(new Set<string>())
   const automatedLoginTabsRef = useRef(new Set<string>())
   const clusterLoginQueueRef = useRef(new ConnectionLoginQueue())
   const skipConnectionReconnectRef = useRef(new Set<string>())
   const skipStoredPasswordTabsRef = useRef(new Set<string>())
-  const restoreTerminalSessionRef = useRef<((tabId: string) => Promise<boolean>) | null>(null)
   const stopAgentRunRef = useRef<
     | ((
         tabId?: string,
@@ -472,7 +385,6 @@ function App({
    *  can rewrite an already-finalized (failed) login card to success. */
   const lastLoginRunLogIdRef = useRef(new Map<string, number>())
 
-  const splitDragRef = useRef(false)
   const [config, setConfig] = useState<AgentConfig>(emptyConfig)
   const [commandWhitelistText, setCommandWhitelistText] = useState('')
   const configRef = useRef(config)
@@ -530,7 +442,6 @@ function App({
   const [importingOpenApi, setImportingOpenApi] = useState(false)
   const [memoryCenterOpen, setMemoryCenterOpen] = useState(false)
   const [localDocumentsOpen, setLocalDocumentsOpen] = useState(false)
-  const [commandDirectoryOpen, setCommandDirectoryOpen] = useState(false)
   const [connections, setConnections] = useState<ConnectionConfig[]>([])
 
   const [connectionModalOpen, setConnectionModalOpen] = useState(false)
@@ -552,11 +463,8 @@ function App({
   } | null>(null)
   const [connectionActionBusy, setConnectionActionBusy] = useState(false)
   const connectionActionBusyRef = useRef(false)
+  const connectionTerminalChoice = useConnectionTerminalChoice(openConnectionTerminal)
 
-  // First-open shows the terminal and keeps the chat area hidden; the chat can
-  // be summoned from the right-edge rail or the layout toggle.
-
-  const [terminalPage, setTerminalPage] = useState<'terminal' | 'connections'>('terminal')
   const [slashCommandOpen, setSlashCommandOpen] = useState(true)
   const [slashCommandIndex, setSlashCommandIndex] = useState(0)
   const [composerCaret, setComposerCaret] = useState(0)
@@ -566,44 +474,77 @@ function App({
     useState<CloseTabsConfirmRequest | null>(null)
   const [settingsProviderId, setSettingsProviderId] = useState('')
   const [settingsMcpServerId, setSettingsMcpServerId] = useState('')
-  const [tabs, setTabs] = useState<AgentTerminalTab[]>([initialTerminalTab])
+  const [tabs, setTabs] = useState<AgentTerminalTab[]>(() => [
+    { ...initialTerminalTab, title: locale === 'zh-CN' ? '新建对话' : 'New conversation' }
+  ])
   const [activeTabId, setActiveTabId] = useState(initialTerminalTab.id)
-  const [tabMenu, setTabMenu] = useState<{
-    tabId: string
-    x: number
-    y: number
-  } | null>(null)
-  const {
-    updateTab,
-    updateSubterminalOutput,
-    updateSubterminalCwd,
-    updateSubterminalStatus,
-    ensureSubterminal,
-    closeSubterminal,
-    closeAllSubterminals,
-    resizeSubterminalPair
-  } = useTerminalSessions({ tabsRef, setTabs })
+  const externalTerminals = useExternalTerminals(
+    (tab) => {
+      if (tab.sessionGroupId === tab.id && !tabsRef.current.some((item) => item.id === tab.id)) {
+        activateNewSession(tab)
+        return
+      }
+      if (!tabsRef.current.some((item) => item.id === tab.sessionGroupId))
+        throw new Error(
+          locale === 'zh-CN' ? '对话已关闭，请重新连接' : 'Conversation closed; connect again'
+        )
+      const existing = tabsRef.current.find((item) => item.id === tab.id)
+      const nextTabs = existing
+        ? tabsRef.current.map((item) =>
+            item.id === tab.id
+              ? {
+                  ...item,
+                  title: item.agentLog.length ? item.title : tab.title,
+                  external: tab.external,
+                  sessionId: tab.sessionId,
+                  terminalMode: tab.terminalMode,
+                  terminalCwd: tab.terminalCwd,
+                  terminalReady: true,
+                  terminalExited: false
+                }
+              : item
+          )
+        : [...tabsRef.current, tab]
+      tabsRef.current = nextTabs
+      activeTabIdRef.current = tab.id
+      flushSync(() => {
+        setTabs(nextTabs)
+        setActiveTabId(tab.id)
+      })
+      setActiveExecutionTerminal(tab.sessionGroupId, tab.id)
+    },
+    () => {
+      const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
+      const chat = tabsRef.current.find((item) => item.id === chatId)
+      return {
+        id: chat && !chat.external && !chat.sessionId ? chat.id : undefined,
+        sessionGroupId: chatId,
+        providerId: chat?.providerId ?? config.providerId,
+        model: chat?.model,
+        agentStyle: chat?.agentStyle ?? config.agentStyle,
+        projectId: chat?.projectId
+      }
+    }
+  )
+  const updateTab = useCallback(
+    (tabId: string, updater: (tab: AgentTerminalTab) => AgentTerminalTab): void => {
+      setTabs((current) => current.map((tab) => (tab.id === tabId ? updater(tab) : tab)))
+    },
+    []
+  )
   const t = dictionaries[locale]
 
-  const {
-    terminalPanePercent,
-    setTerminalPanePercent,
-    subterminalPanelHeight,
-    setSubterminalPanelHeight,
-    subterminalCollapsed,
-    setSubterminalCollapsed,
-    workbenchLayout,
-    setWorkbenchLayout,
-    persistAndSetWorkbenchLayout,
-    paneOrder,
-    setPaneOrder,
-    closeTerminalConfirmEnabled,
-    setCloseTerminalConfirmEnabled
-  } = useWorkbenchLayout({ initialWorkbenchLayout })
+  const [closeTerminalConfirmEnabled, setCloseTerminalConfirmEnabled] = useState(
+    () => localStorage.getItem(CLOSE_TERMINAL_CONFIRM_STORAGE_KEY) !== 'false'
+  )
+  useEffect(() => {
+    localStorage.setItem(CLOSE_TERMINAL_CONFIRM_STORAGE_KEY, String(closeTerminalConfirmEnabled))
+    localStorage.removeItem('crescent.workbenchLayout')
+    localStorage.removeItem('crescent.paneOrder')
+  }, [closeTerminalConfirmEnabled])
 
   const {
     passwordPromptsByTabRef,
-    passwordAttentionTabIds,
     setPasswordAttentionTabIds,
     passwordPromptInputRef,
     passwordPromptBuffersRef,
@@ -684,24 +625,15 @@ function App({
     sessionChatTab,
     sessionTerminals,
     sessionChatTabs,
-    terminalTabs,
     activeAgentPending,
-    selectSessionTab,
-    openLocalTerminal
+    selectSessionTab
   } = useTerminalTabs({
     tabs,
-    setTabs,
     activeTabId,
     setActiveTabId,
     activeTabIdRef,
     tabsRef,
-    terminalPage,
-    setTerminalPage,
-    setWorkbenchLayout,
-    emptyLocalTab,
-    updateTab,
-    localTerminalTitle: t.connections.localTerminal,
-    providerId: config.providerId
+    emptyLocalTab
   })
 
   const {
@@ -742,8 +674,7 @@ function App({
     importSkillFromDisk,
     deleteSkill,
     previewSkill,
-    previewCatalogSkill,
-    removeSkillRef
+    previewCatalogSkill
   } = useSkillsController({
     saveAgentConfig,
     config,
@@ -761,16 +692,6 @@ function App({
     opsFeedbackBusyLogId,
     submitOpsFeedbackForEntry
   } = useOpsFeedback({ activeAgentRunRef, tabsRef, activeTab, activeTabIdRef, t })
-
-  const handoff = useHandoff({
-    tabId: sessionChatTab.id,
-    tabIds: tabs.map((tab) => tab.id),
-    busy: sessionChatTab.agentBusy || Boolean(contextCompactingByTabId[sessionChatTab.id]),
-    contextVersion: sessionChatTab.agentLog.length,
-    locale,
-    t,
-    createDraft: createHandoffConversation
-  })
 
   const sessionAgentStyle = resolveSessionAgentStyle(sessionChatTab, config)
   const sessionTokenUsage = addSessionTokenUsage(
@@ -883,7 +804,7 @@ function App({
         return
       }
       updateTab(chatTabId, (tab) => {
-        const merged = trimAgentLogEntries([...hydrated, ...tab.agentLog], AGENT_LOG_SOFT_LIMIT)
+        const merged = prependEarlierAgentLogs(tab.agentLog, hydrated)
         return { ...tab, agentLog: merged }
       })
       const total = await storageClient.countAgentLogs(chatTabId)
@@ -964,10 +885,7 @@ function App({
     updateAgentRun,
     appendAgentEvent,
     liveRunByLogId,
-    pruneLiveRuns,
-    attachApprovalRequest,
-    applyApprovalPurpose,
-    resolveApprovalStep
+    pruneLiveRuns
   } = useAgentRuns({
     activeTabIdRef,
     nextLogIdRef,
@@ -1121,7 +1039,6 @@ function App({
     : modelValidationError
       ? `${t.app.aiNotReady}: ${modelValidationError}`
       : t.app.aiReady
-  const terminalVisible = workbenchLayout !== 'chat' && terminalPage === 'terminal'
   const {
     displayConnections,
     filteredDisplayConnections,
@@ -1188,7 +1105,6 @@ function App({
   const catalogLoadFailedText = t.app.catalogLoadFailed
   const failedToLoadConnectionsText = t.terminal.failedToLoadConnections
   const failedToLoadModelsText = t.terminal.failedToLoadModels
-  const terminalPaneFirst = paneOrder === 'terminal-chat'
 
   useEffect(() => {
     if (!slashMenuVisible) return
@@ -1867,7 +1783,8 @@ function App({
       )
       connTrace('automation-start', `tab=${targetTabId}`, `connection=${connection.id}`)
       const isSubterminal = Boolean(resolveSubterminalTabState(tabsRef.current, targetTabId))
-      const ok = await runWithTimeout(
+      const startedTab = tabsRef.current.find((tab) => tab.id === targetTabId)
+      let ok = await runWithTimeout(
         executeConnectionAutomation(connection, targetTabId, true),
         CONNECTION_LOGIN_TOTAL_TIMEOUT_MS,
         () => {
@@ -1876,6 +1793,24 @@ function App({
         }
       )
       if (!isSubterminal) {
+        if (ok) {
+          try {
+            const context = await terminalClient.getContext(targetTabId)
+            const currentTab = tabsRef.current.find((tab) => tab.id === targetTabId)
+            ok = canFinalizeConnectionLogin({
+              startedSessionId: startedTab?.sessionId,
+              currentSessionId: currentTab?.sessionId,
+              startedExternalId: startedTab?.external?.sessionId,
+              currentExternalId: context.external?.sessionId,
+              transportMode: context.mode,
+              exited: Boolean(
+                currentTab?.terminalExited || skipConnectionReconnectRef.current.has(targetTabId)
+              )
+            })
+          } catch {
+            ok = false
+          }
+        }
         if (ok) {
           markChatTabReady(chatTabId)
           updateTab(targetTabId, (tab) => ({
@@ -1936,10 +1871,6 @@ function App({
   }, [connections])
 
   useEffect(() => {
-    restoreTerminalSessionRef.current = restoreTerminalSession
-  })
-
-  useEffect(() => {
     stopAgentRunRef.current = stopAgentRun
   })
 
@@ -1962,6 +1893,7 @@ function App({
   }, [appendSystemToRunOrLog, t])
 
   useEffect(() => {
+    document.documentElement.lang = locale
     localStorage.setItem('crescent.locale', locale)
     void appClient.setLocale(locale)
   }, [locale])
@@ -2016,27 +1948,6 @@ function App({
     }
   }, [t.app.updateSaved])
 
-  const syncActiveTerminalSize = useCallback((): void => {
-    const terminal = terminalRef.current
-    const fitAddon = fitAddonRef.current
-    if (!terminal || !fitAddon) return
-    fitAndSyncPty(terminal, fitAddon, activeTabIdRef.current)
-  }, [])
-
-  useEffect(() => {
-    const timer = window.setTimeout(syncActiveTerminalSize, 40)
-    return () => window.clearTimeout(timer)
-  }, [terminalPanePercent, subterminalPanelHeight, syncActiveTerminalSize])
-
-  useEffect(() => {
-    localStorage.setItem(PANE_ORDER_STORAGE_KEY, paneOrder)
-    window.requestAnimationFrame(() => syncActiveTerminalSize())
-  }, [paneOrder, syncActiveTerminalSize])
-
-  useEffect(() => {
-    window.requestAnimationFrame(() => syncActiveTerminalSize())
-  }, [workbenchLayout, syncActiveTerminalSize])
-
   useEffect(() => {
     configRef.current = config
   }, [config])
@@ -2070,43 +1981,7 @@ function App({
   }, [])
 
   useEffect(() => {
-    if (!tabMenu) return
-
-    const closeMenu = (): void => setTabMenu(null)
-    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
-      if (event.key === 'Escape') closeMenu()
-    }
-    window.addEventListener('click', closeMenu)
-    window.addEventListener('blur', closeMenu)
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => {
-      window.removeEventListener('click', closeMenu)
-      window.removeEventListener('blur', closeMenu)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [tabMenu])
-
-  useEffect(() => {
     const handlePointerMove = (event: PointerEvent): void => {
-      const subterminalHeightResize = subterminalHeightResizeRef.current
-      if (subterminalHeightResize) {
-        const maxHeight = Math.max(
-          120,
-          Math.min(window.innerHeight * 0.65, window.innerHeight - 180)
-        )
-        const nextHeight = Math.max(
-          96,
-          Math.min(
-            maxHeight,
-            subterminalHeightResize.startHeight - (event.clientY - subterminalHeightResize.startY)
-          )
-        )
-        setSubterminalPanelHeight(nextHeight)
-        window.requestAnimationFrame(() => syncActiveTerminalSize())
-        return
-      }
-
       const wikiSheetResize = wikiSheetResizeRef.current
       if (wikiSheetResize) {
         const maxWidth = Math.max(
@@ -2120,42 +1995,11 @@ function App({
         setWikiPreviewWidth(nextWidth)
         return
       }
-
-      const subterminalResize = subterminalResizeRef.current
-      if (subterminalResize) {
-        const deltaPercent = ((event.clientX - subterminalResize.startX) / window.innerWidth) * 100
-        resizeSubterminalPair(
-          subterminalResize.tabId,
-          subterminalResize.leftId,
-          subterminalResize.rightId,
-          subterminalResize.leftStart + deltaPercent,
-          subterminalResize.rightStart - deltaPercent
-        )
-        return
-      }
-
-      if (!splitDragRef.current) return
-
-      const width = window.innerWidth
-      const rawPercent =
-        paneOrder === 'terminal-chat'
-          ? (event.clientX / width) * 100
-          : ((width - event.clientX) / width) * 100
-      const nextPercent = Math.max(35, Math.min(78, rawPercent))
-      setTerminalPanePercent(nextPercent)
-      window.requestAnimationFrame(() => syncActiveTerminalSize())
     }
     const handlePointerUp = (): void => {
-      const resized = Boolean(
-        splitDragRef.current || subterminalResizeRef.current || subterminalHeightResizeRef.current
-      )
-      splitDragRef.current = false
-      subterminalResizeRef.current = null
-      subterminalHeightResizeRef.current = null
       wikiSheetResizeRef.current = null
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
-      if (resized) window.requestAnimationFrame(() => syncActiveTerminalSize())
     }
 
     window.addEventListener('pointermove', handlePointerMove)
@@ -2170,17 +2014,10 @@ function App({
       window.removeEventListener('blur', handlePointerUp)
       handlePointerUp()
     }
-  }, [
-    paneOrder,
-    resizeSubterminalPair,
-    setSubterminalPanelHeight,
-    setTerminalPanePercent,
-    setWikiPreviewWidth,
-    syncActiveTerminalSize
-  ])
+  }, [setWikiPreviewWidth])
 
   const writeLine = useCallback((text: string): void => {
-    terminalRef.current?.writeln(text.replace(/\n/g, '\r\n'))
+    toast.error(stripAnsi(text))
   }, [])
 
   useEffect(() => {
@@ -2209,8 +2046,6 @@ function App({
   }, [setWikiDocuments, setWikiMessage, slashCommandQuery])
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
-
     let cancelled = false
 
     agentClient
@@ -2366,179 +2201,24 @@ function App({
 
   useEffect(() => {
     return agentClient.onCommandApprovalRequest((request) => {
-      if (request.runId.startsWith('catalog-')) return
-      const targetId = request.chatTabId ?? request.tabId
-      const alive =
-        isApprovalTargetAlive(request.tabId, tabsRef.current) ||
-        isApprovalTargetAlive(request.chatTabId, tabsRef.current)
-      if (!alive) {
-        void agentClient.resolveCommandApproval({
-          requestId: request.id,
-          approved: false,
-          rejectionReason: t.commandReview.sessionClosedRejection
-        })
-        return
-      }
-
-      const chatTabId = resolveSessionChatTabId(tabsRef.current, targetId ?? activeTabIdRef.current)
-      attachApprovalRequest(chatTabId, request)
-      pendingAttentionNotifierRef.current.notifyIfUnfocused(
-        `approval:${request.id}`,
-        t.notifications.approvalTitle,
-        t.notifications.approvalBody,
-        {
-          runId: request.runId,
-          tabId: request.tabId?.trim() || chatTabId,
-          chatTabId
-        }
-      )
+      // Fail closed for stale/legacy senders; command approval is no longer a UI flow.
+      void agentClient.resolveCommandApproval({
+        requestId: request.id,
+        approved: false,
+        rejectionReason: 'Agent terminal execution is permanently disabled.'
+      })
     })
-  }, [attachApprovalRequest, t.commandReview.sessionClosedRejection, t.notifications])
-
-  useEffect(() => {
-    return agentClient.onCommandApprovalPurpose((payload) => {
-      for (const [chatTabId, run] of activeAgentRunRef.current.entries()) {
-        if (run.runId !== payload.runId) continue
-        applyApprovalPurpose(chatTabId, payload.requestId, payload.purpose)
-      }
-    })
-  }, [applyApprovalPurpose])
+  }, [])
 
   useEffect(() => {
     return agentClient.onSubterminalOpened((payload) => {
-      void (async () => {
-        const chatTabId =
-          payload.chatTabId?.trim() || resolveSessionChatTabId(tabsRef.current, payload.parentTabId)
-        if (chatTabId && activeRunCanceledRef.current.has(chatTabId)) {
-          void agentClient.ackSubterminalOpened({
-            tabId: payload.tabId,
-            ok: false,
-            error: 'Agent run was canceled.'
-          })
-          return
-        }
-
-        const parentTab = tabsRef.current.find((tab) => tab.id === payload.parentTabId)
-        const existing = parentTab?.subTerminals.find((item) => item.id === payload.tabId)
-        const alreadyReady = Boolean(existing?.terminalReady && existing.status === 'active')
-
-        ensureSubterminal(payload.parentTabId, {
-          id: payload.tabId,
-          name: payload.name,
-          output: '',
-          rawOutput: '',
-          cwd: '',
-          status: 'active',
-          isSsh: payload.mode === 'ssh',
-          terminalMode: payload.terminalMode,
-          terminalReady: true,
-          agentName: payload.agentName ?? existing?.agentName,
-          agentStatus: payload.agentStatus ?? existing?.agentStatus
-        })
-        setSubterminalCollapsed(false)
-
-        if (alreadyReady || payload.mode !== 'ssh' || !payload.connectionId) {
-          void agentClient.ackSubterminalOpened({ tabId: payload.tabId, ok: true })
-          return
-        }
-
-        try {
-          if (chatTabId && activeRunCanceledRef.current.has(chatTabId)) {
-            void agentClient.ackSubterminalOpened({
-              tabId: payload.tabId,
-              ok: false,
-              error: 'Agent run was canceled.'
-            })
-            return
-          }
-          const refreshed = await connectionsClient.resolve(payload.connectionId)
-          const fallback = connectionsRef.current.find((item) => item.id === payload.connectionId)
-          const connection = refreshed
-            ? mergeConnectionInput(refreshed, fallback ?? refreshed)
-            : fallback
-          if (!connection || isLocalConnection(connection)) {
-            void agentClient.ackSubterminalOpened({
-              tabId: payload.tabId,
-              ok: false,
-              error: `Connection ${payload.connectionId} not found or is local-only.`
-            })
-            return
-          }
-          const timeoutMessage = t.terminal.connectionLoginTimeout.replace(
-            '{ms}',
-            String(Math.round(CONNECTION_LOGIN_TOTAL_TIMEOUT_MS / 1000))
-          )
-          const ok = await runWithTimeout(
-            executeConnectionAutomation(connection, payload.tabId, true),
-            CONNECTION_LOGIN_TOTAL_TIMEOUT_MS,
-            () => {
-              void agentClient.ackSubterminalOpened({
-                tabId: payload.tabId,
-                ok: false,
-                error: timeoutMessage
-              })
-            }
-          )
-          if (ok === true) {
-            connTrace('subterminal-ssh-ok', `tab=${payload.tabId}`, `parent=${payload.parentTabId}`)
-          }
-          void agentClient.ackSubterminalOpened({
-            tabId: payload.tabId,
-            ok: ok === true,
-            error:
-              ok === true
-                ? undefined
-                : ok === undefined
-                  ? timeoutMessage
-                  : 'SSH login automation failed.'
-          })
-        } catch (error) {
-          void agentClient.ackSubterminalOpened({
-            tabId: payload.tabId,
-            ok: false,
-            error: error instanceof Error ? error.message : String(error)
-          })
-        }
-      })()
-    })
-  }, [ensureSubterminal, executeConnectionAutomation, setSubterminalCollapsed, t])
-
-  useEffect(() => {
-    return agentClient.onSubagentStatus((payload) => {
-      if (payload.close) {
-        closeSubterminal(payload.parentTabId, payload.tabId)
-        return
-      }
-      ensureSubterminal(payload.parentTabId, {
-        id: payload.tabId,
-        name: payload.name,
-        agentName: payload.agentName,
-        agentStatus: payload.agentStatus
+      void agentClient.ackSubterminalOpened({
+        tabId: payload.tabId,
+        ok: false,
+        error: 'Guided Ops: Agent terminal creation is disabled.'
       })
     })
-  }, [closeSubterminal, ensureSubterminal])
-
-  useEffect(() => {
-    return agentClient.onCommandApprovalDismiss((payload) => {
-      pendingAttentionNotifierRef.current.clear(`approval:${payload.requestId}`)
-      for (const [chatTabId, run] of activeAgentRunRef.current.entries()) {
-        if (run.runId !== payload.runId) continue
-        const pending = (run.steps ?? []).some(
-          (step) =>
-            step.kind === 'approval' &&
-            step.requestId === payload.requestId &&
-            step.phase === 'pending'
-        )
-        if (!pending) continue
-        resolveApprovalStep(
-          chatTabId,
-          payload.requestId,
-          false,
-          t.commandReview.sessionClosedRejection
-        )
-      }
-    })
-  }, [resolveApprovalStep, t.commandReview.sessionClosedRejection])
+  }, [])
 
   useEffect(() => {
     return storageClient.onSessionSummaryUpdated((event) => {
@@ -2552,138 +2232,48 @@ function App({
     })
   }, [setHistoryItems])
 
-  const activeLiveRun = useMemo(() => {
-    const entries = activeTab?.agentLog ?? []
-    for (let index = entries.length - 1; index >= 0; index--) {
-      const entry = entries[index]
-      if (entry.kind === 'assistant' && liveRunByLogId[entry.id]) {
-        return liveRunByLogId[entry.id]
-      }
-    }
-    return undefined
-  }, [activeTab?.agentLog, liveRunByLogId])
+  const newUserInputForScroll = sessionChatTab.agentLog.findLast(
+    (entry) => entry.kind === 'user' || entry.kind === 'user-supplement'
+  )?.id
 
-  const attentionTabIds = useMemo(() => {
-    const clarifyTabIds = tabs
-      .filter((tab) => Boolean(tab.pendingClarification) && !tab.pendingClarification?.settled)
-      .map((tab) => tab.id)
-    return collectAttentionTabIds({
-      passwordTabIds: passwordAttentionTabIds,
-      pendingApprovalTabIds: pendingApprovalTabIdsFromRuns(Object.values(liveRunByLogId)),
-      clarifyTabIds
-    })
-  }, [liveRunByLogId, passwordAttentionTabIds, tabs])
-
-  const newUserInputForScroll = useMemo(() => {
-    const entries = activeTab?.agentLog ?? []
-    const lastEntry = entries[entries.length - 1]
-    return Boolean(lastEntry && (lastEntry.kind === 'user' || lastEntry.kind === 'user-supplement'))
-  }, [activeTab?.agentLog])
-
-  const { followNow: followAgentLog } = useScrollFollow(
+  const { followNow: followAgentLog, following: followingAgentLog } = useScrollFollow(
     agentLogRef,
-    [activeTab?.agentLog, activeTab?.agentThinking, activeTab?.thinkingMessage, activeLiveRun],
-    { forceFollow: newUserInputForScroll }
+    [sessionChatTab.agentLog, sessionChatTab.agentThinking, sessionChatTab.thinkingMessage],
+    {
+      enabled: true,
+      resetKey: sessionChatTab.id,
+      followRequest: newUserInputForScroll
+    }
   )
 
-  const activeTabExists = tabs.some((tab) => tab.id === activeTabId)
-  const executionTerminalId = executionTerminalByChatId[sessionChatTab.id]
-  const sessionLiveRun = useMemo(() => {
-    const entries = sessionChatTab.agentLog ?? []
-    for (let index = entries.length - 1; index >= 0; index--) {
-      const entry = entries[index]
-      if (entry.kind === 'assistant' && liveRunByLogId[entry.id]) {
-        return liveRunByLogId[entry.id]
-      }
-    }
-    return undefined
-  }, [sessionChatTab.agentLog, liveRunByLogId])
-  const runningCommandTabId = findRunningPtyCommandTabId(sessionLiveRun?.steps, executionTerminalId)
-  const terminalInputLocked = isTerminalPaneLocked({
-    tabId: activeTabId,
-    executionTerminalId,
-    agentBusy: sessionChatTab.agentBusy
-  })
-
-  useTerminalOutputRing()
-
-  useXtermLifecycle({
-    terminalVisible,
-    inputLocked: terminalInputLocked,
-    activeTabId,
-    activeTabExists,
-    activeTabIdRef,
+  useTerminalCollaborationLifecycle({
     tabsRef,
-    terminalHostRef,
-    terminalRef,
-    fitAddonRef,
-    terminalSessionIdRef,
-    terminalModeRef,
-    terminalCwdRef,
-    pipePromptRef,
-    pendingSshRef,
-    suppressTerminalReconnectRef,
-    automatedLoginTabsRef,
-    passwordPromptBuffersRef,
-    skipConnectionReconnectRef,
-    ptyRetryTriedRef,
-    restoreTerminalSessionRef,
     updateTab,
-    updateSubterminalOutput,
-    updateSubterminalCwd,
-    updateSubterminalStatus,
-    executeConnectionCommands,
-    abortPostConnectionTasks,
-    appendLog,
-    shellExitedText: t.terminal.shellExited,
-    failedToStartShellText: t.terminal.failedToStartShell,
-    postLoginTaskAbortedText: t.terminal.postLoginTaskAborted
-  })
-
-  // Local tabs stay "Shell starting" if the terminal pane is hidden (xterm never mounts).
-  useEffect(() => {
-    const tab = tabsRef.current.find((candidate) => candidate.id === activeTabId)
-    if (!tab) return
-    if (tab.connectionId || tab.sessionId || tab.terminalReady || tab.terminalStartError) return
-    let cancelled = false
-    void (async () => {
-      try {
-        const session = await terminalClient.start({
-          cols: 80,
-          rows: 24,
-          tabId: tab.id
-        })
-        if (cancelled) return
-        updateTab(tab.id, (current) => ({
-          ...current,
-          sessionId: session.sessionId,
-          terminalMode: session.mode,
-          terminalCwd: session.cwd,
-          terminalReady: true,
-          terminalStartError: undefined
-        }))
-        if (tab.id === activeTabIdRef.current) {
-          terminalSessionIdRef.current = session.sessionId
-          terminalModeRef.current = session.mode
-          if (terminalRef.current) applyTerminalConvertEol(terminalRef.current, session.mode)
-          terminalCwdRef.current = session.cwd
-          pipePromptRef.current = formatPipePrompt(session.cwd)
+    onExit: useCallback(
+      (tabId: string) => {
+        // Invalidate pending login completion synchronously, before React renders.
+        skipConnectionReconnectRef.current.add(tabId)
+        automatedLoginTabsRef.current.delete(tabId)
+        passwordPromptBuffersRef.current.delete(tabId)
+        abortPostConnectionTasks(tabId, t.terminal.postLoginTaskAborted)
+        const tab = tabsRef.current.find((candidate) => candidate.id === tabId)
+        if (tab?.connectionId) {
+          const chatTabId = resolveSessionChatTabId(tabsRef.current, tabId)
+          updateConnectionAttempt(chatTabId, (state) =>
+            markConnectionFailed(state, { reason: t.terminal.connectionDisconnected })
+          )
+          setDismissedRecoveryByChatTab((current) => ({ ...current, [chatTabId]: false }))
         }
-      } catch (error) {
-        if (cancelled) return
-        const message = error instanceof Error ? error.message : String(error)
-        updateTab(tab.id, (current) => ({
-          ...current,
-          sessionId: undefined,
-          terminalReady: false,
-          terminalStartError: message
-        }))
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [activeTabId, updateTab])
+      },
+      [
+        abortPostConnectionTasks,
+        passwordPromptBuffersRef,
+        t.terminal.postLoginTaskAborted,
+        t.terminal.connectionDisconnected,
+        updateConnectionAttempt
+      ]
+    )
+  })
 
   async function saveInstructionFile(): Promise<void> {
     const savedFile = await agentClient.saveInstructionFile({
@@ -2890,10 +2480,7 @@ function App({
     const connection = detail.connectionId
       ? await findConnectionById(detail.connectionId)
       : undefined
-    const restoredLogs = trimAgentLogEntries(
-      detail.logs.map(hydrateStoredAgentLog),
-      AGENT_LOG_SOFT_LIMIT
-    )
+    const restoredLogs = hydrateLatestAgentLogPage(detail.logs)
     if (detail.connectionId && !connection) {
       restoredLogs.push({
         id: Math.max(0, ...restoredLogs.map((log) => log.id)) + 1,
@@ -2913,6 +2500,7 @@ function App({
       id: restoreTabId,
       sessionGroupId: restoreGroupId ?? restoreTabId,
       title: detail.title,
+      projectId: detail.projectId,
       connectionId: detail.connectionId,
       connectionName: detail.connectionName,
       isSsh: detail.isSsh,
@@ -2935,15 +2523,7 @@ function App({
     )
     setActiveTabId(existingTab?.id ?? restoredTab.id)
     setHistoryOpen(false)
-    setWorkbenchLayout((current) => revealChatFromTerminalLayout(current))
-
-    if (connection) {
-      const liveTabId = existingTab?.id ?? restoredTab.id
-      const activeSession = tabsRef.current.find((tab) => tab.id === liveTabId)?.sessionId
-      if (!activeSession) {
-        pendingSshRef.current.set(liveTabId, connection)
-      }
-    }
+    // Restoring history never reconnects or inherits terminal observation permission.
   }
 
   useEffect(() => {
@@ -3136,18 +2716,9 @@ function App({
   function setActiveExecutionTerminal(chatTabId: string, terminalTabId: string | null): void {
     if (terminalTabId) {
       activeExecutionTabIdRef.current.set(chatTabId, terminalTabId)
-      setExecutionTerminalByChatId((current) =>
-        current[chatTabId] === terminalTabId ? current : { ...current, [chatTabId]: terminalTabId }
-      )
       return
     }
     activeExecutionTabIdRef.current.delete(chatTabId)
-    setExecutionTerminalByChatId((current) => {
-      if (!(chatTabId in current)) return current
-      const next = { ...current }
-      delete next[chatTabId]
-      return next
-    })
   }
 
   function remapActiveExecutionTerminal(fromChatTabId: string, toChatTabId: string): void {
@@ -3155,12 +2726,6 @@ function App({
     if (!executionTabId) return
     activeExecutionTabIdRef.current.delete(fromChatTabId)
     activeExecutionTabIdRef.current.set(toChatTabId, executionTabId)
-    setExecutionTerminalByChatId((current) => {
-      const next = { ...current }
-      delete next[fromChatTabId]
-      next[toChatTabId] = executionTabId
-      return next
-    })
   }
 
   function cancelAgentRunForChatTab(chatTabId: string): void {
@@ -3248,12 +2813,6 @@ function App({
       })
   }
 
-  function interruptAgentCommand(tabId: string): void {
-    const target = tabId.trim()
-    if (!target) return
-    void terminalClient.interrupt(target)
-  }
-
   function stopAgentRun(
     tabId = activeTabIdRef.current,
     options: { reason?: RunStopReason; expectedHost?: string; observedHost?: string } = {}
@@ -3338,523 +2897,17 @@ function App({
     }
   }
 
-  function resolveInlineCommandApproval(requestId: string, approved: boolean, note?: string): void {
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
-    // Prefer the chat that owns the pending approval step.
-    let targetChatTabId = chatTabId
-    for (const [candidateId, run] of activeAgentRunRef.current.entries()) {
-      const pending = (run.steps ?? []).some(
-        (step) =>
-          step.kind === 'approval' && step.requestId === requestId && step.phase === 'pending'
-      )
-      if (pending) {
-        targetChatTabId = candidateId
-        break
-      }
-    }
-    resolveApprovalStep(targetChatTabId, requestId, approved, note)
-    pendingAttentionNotifierRef.current.clear(`approval:${requestId}`)
-    void agentClient.resolveCommandApproval({
-      requestId,
-      approved,
-      note,
-      rejectionReason: approved ? undefined : note
-    })
-  }
-
-  async function addCommandToWhitelist(command: string): Promise<void> {
-    const rule = suggestWhitelistRule(command)
-    if (!rule) return
-    const existing = parseCommandWhitelist(commandWhitelistText)
-    if (existing.some((item) => item.trim() === rule)) {
-      toast.message(t.commandReview.addedToWhitelist)
-      return
-    }
-    const nextText = [...existing, rule].join('\n')
-    setCommandWhitelistText(nextText)
-    try {
-      const nextConfig = await agentClient.saveConfig({
-        ...config,
-        commandWhitelist: parseCommandWhitelist(nextText)
-      })
-      setConfig(nextConfig)
-      setCommandWhitelistText((nextConfig.commandWhitelist ?? []).join('\n'))
-      toast.success(t.commandReview.addedToWhitelist)
-    } catch (error) {
-      notifyOperationError(t.commandReview.addToWhitelist, error)
-    }
-  }
-
-  async function restoreTerminalSession(tabId: string): Promise<boolean> {
-    const tab = tabsRef.current.find((current) => current.id === tabId)
-    if (!tab) return false
-
-    if (skipConnectionReconnectRef.current.delete(tabId)) {
-      return restoreLocalTerminal(tabId)
-    }
-
-    // Recovery brake #1: read SSOT first. Live PTY already on target -> nothing to do.
-    const context = await terminalClient.getContext(tabId)
-    if (context.mode !== 'none' && context.alignment === 'aligned' && !context.restoring) {
-      connTrace('restore-cancel', `tab=${tabId}`, 'already aligned')
-      return true
-    }
-
-    return tab.connectionId ? restoreTerminalConnection(tabId) : restoreLocalTerminal(tabId)
-  }
-
-  async function restoreLocalTerminal(tabId: string): Promise<boolean> {
-    if (reconnectingTabsRef.current.has(tabId)) return waitForTerminalRestore(tabId)
-
-    reconnectingTabsRef.current.add(tabId)
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, tabId)
-    appendSystemToRunOrLog(chatTabId, t.terminal.terminalReconnecting)
-    if (!tabsRef.current.find((current) => current.id === tabId)?.connectionId) {
-      void terminalClient.setExpectedHost({ tabId, host: null })
-    }
-
-    try {
-      const dimensions =
-        tabId === activeTabIdRef.current ? fitAddonRef.current?.proposeDimensions() : undefined
-      const session = await terminalClient.start({
-        cols: dimensions?.cols ?? 80,
-        rows: dimensions?.rows ?? 24,
-        tabId
-      })
-      updateTab(tabId, (current) => ({
-        ...current,
-        sessionId: session.sessionId,
-        terminalMode: session.mode,
-        terminalCwd: session.cwd,
-        terminalReady: true,
-        terminalStartError: undefined
-      }))
-      if (tabId === activeTabIdRef.current) {
-        terminalSessionIdRef.current = session.sessionId
-        terminalModeRef.current = session.mode
-        if (terminalRef.current) applyTerminalConvertEol(terminalRef.current, session.mode)
-        terminalCwdRef.current = session.cwd
-        pipePromptRef.current = formatPipePrompt(session.cwd)
-      }
-      return true
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      appendLog(
-        { kind: 'error', text: `${t.terminal.terminalReconnectFailed}: ${message}` },
-        chatTabId
-      )
-      updateTab(tabId, (current) => ({
-        ...current,
-        sessionId: undefined,
-        terminalReady: false,
-        terminalStartError: message
-      }))
-      return false
-    } finally {
-      reconnectingTabsRef.current.delete(tabId)
-    }
-  }
-
-  async function restoreTerminalConnection(tabId: string): Promise<boolean> {
-    if (reconnectingTabsRef.current.has(tabId)) {
-      return waitForTerminalRestore(tabId, { requireSshReady: true })
-    }
-
-    const tab = tabsRef.current.find((current) => current.id === tabId)
-    if (!tab?.connectionId) return false
-
-    reconnectingTabsRef.current.add(tabId)
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, tabId)
-    appendSystemToRunOrLog(chatTabId, t.terminal.terminalReconnecting)
-
-    try {
-      const connection = await findConnectionById(tab.connectionId)
-      if (!connection) {
-        throw new Error(`${t.history.connectionMissing}: ${tab.connectionName ?? tab.connectionId}`)
-      }
-
-      // Reuse the same login chain as /connect and the retry card: fresh PTY
-      // spawn (hard timeout) + normal login automation (overall timeout) +
-      // post-login task drain. No separate reconnect path that can deadlock.
-      const ok = await spawnAndLoginConnection(connection, tabId)
-      if (!ok) {
-        // Keep local shell; do not schedule another SSH reconnect cycle.
-        skipConnectionReconnectRef.current.add(tabId)
-      }
-      return ok
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      skipConnectionReconnectRef.current.add(tabId)
-      appendLog(
-        { kind: 'error', text: `${t.terminal.terminalReconnectFailed}: ${message}` },
-        chatTabId
-      )
-      updateTab(tabId, (current) => ({
-        ...current,
-        sessionId: undefined,
-        terminalReady: false,
-        terminalStartError: message
-      }))
-      return false
-    } finally {
-      reconnectingTabsRef.current.delete(tabId)
-    }
-  }
-
-  async function waitForTerminalRestore(
-    tabId: string,
-    options?: { requireSshReady?: boolean }
-  ): Promise<boolean> {
-    const deadline = Date.now() + 90_000
-    const requireSshReady = options?.requireSshReady === true
-
-    while (Date.now() < deadline) {
-      const context = await terminalClient.getContext(tabId)
-      const live = hasLiveTerminalSession(context.mode)
-      const sshReady = live && context.ready === true && !context.restoring
-      if (requireSshReady ? sshReady : live) return true
-      if (!reconnectingTabsRef.current.has(tabId)) {
-        return requireSshReady ? sshReady : live
-      }
-      await sleep(500)
-    }
-
-    return false
-  }
-
   function activateTerminalTab(tabId: string): void {
     activeTabIdRef.current = tabId
     flushSync(() => {
       setActiveTabId(tabId)
-      setTerminalPage('terminal')
     })
     const chatTabId = resolveSessionChatTabId(tabsRef.current, tabId)
     setActiveExecutionTerminal(chatTabId, tabId)
   }
 
-  async function connectToConnection(
-    connection: ConnectionConfig,
-    postLoginInput?: string,
-    postLoginDisplayInput?: string,
-    postLoginConversationContext?: string,
-    postLoginAppendUserLog = true,
-    postLoginStartedAt = Date.now(),
-    reuseRun?: ReuseAgentRun,
-    postLoginRefs?: { activeWikiIds?: string[]; activeSkillPaths?: string[] }
-  ): Promise<string> {
-    const currentTab = tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-    const resolution = resolveConnectTargetTab({
-      currentTab,
-      connectionId: connection.id,
-      tabs: tabsRef.current
-    })
-    connTrace('connect', `connection=${connection.id}`, `resolution=${resolution.kind}`)
-
-    let targetTabId = currentTab?.id ?? ''
-    let targetTab = currentTab
-    let forceFreshLogin = false
-    let statusLabel: string | undefined
-
-    void connectionsClient.setLastUsed(connection.id).catch(() => undefined)
-
-    if (resolution.kind === 'reuse') {
-      targetTabId = resolution.tab.id
-      targetTab = resolution.tab
-      forceFreshLogin = resolution.forceFreshLogin
-      updateTab(resolution.tab.id, (tab) => ({
-        ...tab,
-        connectionId: connection.id,
-        connectionName: connection.name,
-        isSsh: true
-      }))
-      statusLabel = t.terminal.switchedToConnection.replace('{name}', connection.name)
-    } else if (resolution.kind === 'create-peer' && currentTab) {
-      if (currentTab.sessionGroupId !== resolution.sessionGroupId) {
-        updateTab(currentTab.id, (tab) => ({ ...tab, sessionGroupId: resolution.sessionGroupId }))
-      }
-      const nextTab = createTerminalTab({
-        title: getNextTerminalTitle(connection.name, tabsRef.current),
-        sessionGroupId: resolution.sessionGroupId,
-        providerId: currentTab.providerId ?? config.providerId,
-        model: currentTab.model,
-        agentStyle: currentTab.agentStyle,
-        executionMode: normalizeExecutionMode(currentTab.executionMode),
-        approvalPolicy: currentTab.approvalPolicy ?? 'manual',
-        mutationPolicy: currentTab.mutationPolicy ?? 'confirm',
-        connectionId: connection.id,
-        connectionName: connection.name,
-        isSsh: true
-      })
-      targetTabId = nextTab.id
-      targetTab = nextTab
-      setTabs((current) => {
-        const next = [...current, nextTab]
-        tabsRef.current = next
-        return next
-      })
-      statusLabel = t.terminal.switchedToConnection.replace('{name}', connection.name)
-    } else if (resolution.kind === 'create-new' || !currentTab) {
-      const nextTab = createTerminalTab({
-        title: getNextTerminalTitle(connection.name, tabsRef.current),
-        providerId: config.providerId,
-        agentStyle: config.agentStyle,
-        connectionId: connection.id,
-        connectionName: connection.name,
-        isSsh: true
-      })
-      targetTabId = nextTab.id
-      targetTab = nextTab
-      setTabs((current) => {
-        const next = [...current, nextTab]
-        tabsRef.current = next
-        return next
-      })
-      statusLabel = t.terminal.switchedToConnection.replace('{name}', connection.name)
-    } else {
-      // convert-current (local / non-SSH → SSH)
-      updateTab(currentTab.id, (tab) => ({
-        ...tab,
-        title:
-          tab.connectionId || tab.isSsh
-            ? tab.title
-            : getNextTerminalTitle(connection.name, tabsRef.current),
-        connectionId: connection.id,
-        connectionName: connection.name,
-        isSsh: true
-      }))
-      targetTabId = currentTab.id
-      targetTab = currentTab
-      statusLabel = t.terminal.switchedToConnection.replace('{name}', connection.name)
-    }
-
-    activateTerminalTab(targetTabId)
-
-    if (statusLabel) {
-      const chatTabId = resolveSessionChatTabId(tabsRef.current, targetTabId)
-      const chatTab = tabsRef.current.find((tab) => tab.id === chatTabId)
-      const previousStatus = [...(chatTab?.agentLog ?? [])]
-        .reverse()
-        .find((entry) => entry.kind === 'status')?.text
-      if (shouldAppendSwitchedEntry(previousStatus, statusLabel)) {
-        appendSystemToRunOrLog(chatTabId, statusLabel)
-      }
-    }
-
-    if (postLoginInput) {
-      const tasks = postConnectionTasksRef.current.get(targetTabId) ?? []
-      postConnectionTasksRef.current.set(targetTabId, [
-        ...tasks,
-        {
-          input: postLoginInput,
-          displayInput: postLoginDisplayInput ?? postLoginInput,
-          conversationContext: postLoginConversationContext,
-          connection,
-          appendUserLog: postLoginAppendUserLog,
-          startedAt: postLoginStartedAt,
-          reuseRun,
-          activeWikiIds: postLoginRefs?.activeWikiIds,
-          activeSkillPaths: postLoginRefs?.activeSkillPaths
-        }
-      ])
-    }
-
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, targetTabId)
-    updateConnectionAttempt(chatTabId, (state) =>
-      beginConnectionRetry(state, `conn-${Date.now()}-${Math.random().toString(36).slice(2)}`)
-    )
-
-    if (resolution.kind === 'reuse') {
-      if (reconnectingTabsRef.current.has(targetTabId)) {
-        connTrace('connect-wait-restore', `tab=${targetTabId}`)
-        const restored = await waitForTerminalRestore(targetTabId, { requireSshReady: true })
-        if (restored) {
-          markChatTabReady(chatTabId)
-          finalizeLoginRun(chatTabId, true, undefined, { targetTabId, connection })
-          if (postConnectionTasksRef.current.get(targetTabId)?.length) {
-            drainPostConnectionTasks(targetTabId)
-          }
-          return targetTabId
-        }
-      }
-      // Same-tab retry / “恢复连接”: always spawn a fresh PTY and type ssh.
-      // Skip-relogin and remaining-login must not reuse a stale promptHost.
-      if (forceFreshLogin) {
-        connTrace('reuse-force-fresh-login', `tab=${targetTabId}`, `connection=${connection.id}`)
-        reconnectingTabsRef.current.add(targetTabId)
-        try {
-          await spawnAndLoginConnection(connection, targetTabId)
-        } finally {
-          reconnectingTabsRef.current.delete(targetTabId)
-        }
-      } else {
-        // Recovery brake #2: never reinit + re-knock ssh on an already connected
-        // terminal. Read the SSOT first; skip re-login when remaining commands
-        // are empty (aligned / regex / ready remote / on-target aliases).
-        const context = await terminalClient.getContext(targetTabId)
-        const waitingForSecret = findNewestPromptSignal(context.output)?.kind === 'waiting'
-        const onRemoteHost = Boolean(context.promptHost && context.promptHost !== 'local-shell')
-        const liveSession = hasLiveTerminalSession(context.mode)
-        const loginEnv = {
-          promptHost: context.promptHost,
-          alignment: context.alignment ?? context.sessionAligned,
-          output: context.output,
-          mode: context.mode,
-          ready: context.ready,
-          aliases: context.aliases,
-          returnToJumpHost: context.returnToJumpHost,
-          preferSshCommand: false as const
-        }
-        if (liveSession && !waitingForSecret && shouldSkipReuseRelogin(connection, loginEnv)) {
-          connTrace(
-            'connect-reuse-skip-relogin',
-            `tab=${targetTabId}`,
-            `promptHost=${context.promptHost ?? '-'}`,
-            `aligned=${context.alignment ?? context.sessionAligned ?? '-'}`,
-            `ready=${context.ready ? 'yes' : 'no'}`
-          )
-          markChatTabReady(chatTabId)
-          finalizeLoginRun(chatTabId, true, undefined, { targetTabId, connection })
-          if (postConnectionTasksRef.current.get(targetTabId)?.length) {
-            drainPostConnectionTasks(targetTabId)
-          }
-        } else if (liveSession && (onRemoteHost || waitingForSecret)) {
-          connTrace(
-            'reuse-remaining-login',
-            `tab=${targetTabId}`,
-            `connection=${connection.id}`,
-            `promptHost=${context.promptHost ?? '-'}`,
-            `waiting=${waitingForSecret}`
-          )
-          await executeConnectionCommands(connection, targetTabId)
-        } else {
-          connTrace('reuse-login', `tab=${targetTabId}`, `connection=${connection.id}`)
-          // Same SSH tab re-login: stop the old PTY, spawn a fresh one inline and
-          // run the normal login chain, awaited. The xterm lifecycle effect does
-          // NOT re-run for the same active tab, so deferring the spawn to
-          // pendingSshRef left the reconnect with no PTY, no login, no settle.
-          // Mark the tab as reconnecting BEFORE stopping: the stop fires
-          // terminal:exit, whose handler would otherwise start a SECOND
-          // restore+login chain concurrently (two pasted ssh commands, two
-          // password prompts). With the mark in place it waits for our spawn.
-          reconnectingTabsRef.current.add(targetTabId)
-          try {
-            await spawnAndLoginConnection(connection, targetTabId)
-          } finally {
-            reconnectingTabsRef.current.delete(targetTabId)
-          }
-        }
-      }
-    } else if (!forceFreshLogin && targetTab?.sessionId) {
-      void executeConnectionCommands(connection, targetTabId)
-    } else {
-      pendingSshRef.current.set(targetTabId, connection)
-    }
-
-    return targetTabId
-  }
-
-  /**
-   * Shared reconnect login chain used by both the connection entry point
-   * (connectToConnection reuse) and the drift/exit restore path. Spawns a fresh
-   * PTY (10s hard timeout), then runs the normal login automation (90s overall
-   * timeout) and drains any post-login agent task. Never throws.
-   */
-  async function spawnAndLoginConnection(
-    connection: ConnectionConfig,
-    tabId: string
-  ): Promise<boolean> {
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, tabId)
-    let ok = false
-    try {
-      const dimensions =
-        tabId === activeTabIdRef.current ? fitAddonRef.current?.proposeDimensions() : undefined
-      connTrace('teardown', `tab=${tabId}`)
-      await terminalClient.teardownGracefully({ tabId })
-      connTrace('spawn', `tab=${tabId}`)
-      let session = await runWithTimeout(
-        terminalClient.start({
-          cols: dimensions?.cols ?? 80,
-          rows: dimensions?.rows ?? 24,
-          tabId
-        }),
-        CONNECTION_SPAWN_TIMEOUT_MS,
-        () => {
-          connTrace('spawn-timeout', `tab=${tabId}`)
-          appendLog({ kind: 'error', text: t.terminal.terminalSpawnTimeout }, chatTabId)
-        }
-      )
-      if (!session) {
-        updateConnectionAttempt(chatTabId, (state) =>
-          markConnectionFailed(state, { reason: t.terminal.terminalSpawnTimeout })
-        )
-        updateTab(tabId, (tab) => ({
-          ...tab,
-          sessionId: undefined,
-          terminalReady: false,
-          terminalStartError: t.terminal.terminalSpawnTimeout
-        }))
-        return false
-      }
-
-      // node-pty failure falls back to PIPE; auto-reinit once before settling
-      // on the fallback so transient PTY failures self-heal.
-      if (session.mode === 'pipe' && !ptyRetryTriedRef.current.has(tabId)) {
-        ptyRetryTriedRef.current.add(tabId)
-        session = await runWithTimeout(
-          terminalClient.start({
-            cols: dimensions?.cols ?? 80,
-            rows: dimensions?.rows ?? 24,
-            tabId
-          }),
-          CONNECTION_SPAWN_TIMEOUT_MS,
-          () => {
-            connTrace('spawn-timeout-retry', `tab=${tabId}`)
-          }
-        )
-        if (!session) {
-          updateConnectionAttempt(chatTabId, (state) =>
-            markConnectionFailed(state, { reason: t.terminal.terminalSpawnTimeout })
-          )
-          return false
-        }
-      }
-
-      updateTab(tabId, (tab) => ({
-        ...tab,
-        sessionId: session.sessionId,
-        terminalMode: session.mode,
-        terminalCwd: session.cwd,
-        terminalReady: false,
-        terminalExited: false,
-        terminalStartError: undefined
-      }))
-      if (tabId === activeTabIdRef.current) {
-        terminalSessionIdRef.current = session.sessionId
-        terminalModeRef.current = session.mode
-        if (terminalRef.current) applyTerminalConvertEol(terminalRef.current, session.mode)
-        terminalCwdRef.current = session.cwd
-        pipePromptRef.current = formatPipePrompt(session.cwd)
-      }
-      connTrace('spawned', `tab=${tabId}`, `mode=${session.mode}`, `sid=${session.sessionId}`)
-      ok = await executeConnectionCommands(connection, tabId)
-      return ok
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      connTrace('spawn-failed', `tab=${tabId}`, `err=${message}`)
-      updateConnectionAttempt(chatTabId, (state) =>
-        markConnectionFailed(state, { reason: message })
-      )
-      appendLog({ kind: 'error', text: message }, chatTabId)
-      updateTab(tabId, (tab) => ({
-        ...tab,
-        sessionId: undefined,
-        terminalReady: false,
-        terminalStartError: message
-      }))
-      return false
-    } finally {
-      if (!ok) void terminalClient.clearRestoring(tabId)
-    }
+  async function connectToConnection(connection: ConnectionConfig): Promise<void> {
+    connectionTerminalChoice.show(connection)
   }
 
   async function retryActiveConnection(): Promise<void> {
@@ -3875,140 +2928,29 @@ function App({
     // burst; an in-flight retry ignores further clicks.
     if (retryInFlightRef.current.has(chatTabId)) return
     const state = connectionAttemptByChatTab[chatTabId] ?? createIdleConnectionAttempt()
-    // Feasibility gate: SSH login needs PTY; PIPE fallback retry would always fail.
-    if (!canAttemptConnection({ state, terminalMode: targetTab?.terminalMode, needsPty: true })) {
-      if (state.phase !== 'connecting' && targetTab?.terminalMode === 'pipe') {
-        updateConnectionAttempt(chatTabId, (current) =>
-          markConnectionFailed(current, {
-            reason: t.input.pipeRetryUnavailable,
-            pipeFallback: true
-          })
-        )
-      }
-      return
-    }
+    if (state.phase === 'connecting') return
 
     retryInFlightRef.current.add(chatTabId)
 
-    const connection = await findConnectionById(connectionId)
-    if (!connection) {
-      retryInFlightRef.current.delete(chatTabId)
-      updateConnectionAttempt(chatTabId, (current) =>
-        markConnectionFailed(current, { reason: t.history.connectionMissing })
-      )
-      showConnectionList()
-      return
-    }
-
-    if (targetTab?.id) {
-      skipConnectionReconnectRef.current.delete(targetTab.id)
-    }
     try {
-      void connectToConnection(connection)
+      const connection = await findConnectionById(connectionId)
+      if (!connection) {
+        updateConnectionAttempt(chatTabId, (current) =>
+          markConnectionFailed(current, { reason: t.history.connectionMissing })
+        )
+        showConnectionList()
+        return
+      }
+      await connectToConnection(connection)
     } catch (error) {
-      retryInFlightRef.current.delete(chatTabId)
       updateConnectionAttempt(chatTabId, (current) =>
         markConnectionFailed(current, {
           reason: error instanceof Error ? error.message : String(error)
         })
       )
+    } finally {
+      retryInFlightRef.current.delete(chatTabId)
     }
-  }
-
-  async function reconnectActiveTerminal(): Promise<void> {
-    const targetTab =
-      tabsRef.current.find((tab) => tab.id === activeTabIdRef.current) ??
-      tabsRef.current.find((tab) => tab.id === sessionChatTab.id)
-    if (!targetTab) return
-
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, targetTab.id)
-    setDismissedRecoveryByChatTab((current) => ({ ...current, [chatTabId]: false }))
-    skipConnectionReconnectRef.current.delete(targetTab.id)
-
-    const attempt = connectionAttemptByChatTab[chatTabId] ?? createIdleConnectionAttempt()
-    if (attempt.pipeFallback || targetTab.terminalMode === 'pipe') {
-      await reinitActiveTerminal()
-      return
-    }
-
-    if (targetTab.connectionId) {
-      await retryActiveConnection()
-      return
-    }
-
-    if (attempt.phase === 'connecting' || reconnectingTabsRef.current.has(targetTab.id)) return
-    updateConnectionAttempt(chatTabId, (current) =>
-      beginConnectionRetry(current, `local-reconnect-${Date.now()}`)
-    )
-    const ok = await restoreLocalTerminal(targetTab.id)
-    if (ok) {
-      markChatTabReady(chatTabId)
-      return
-    }
-    const failedTab = tabsRef.current.find((tab) => tab.id === targetTab.id)
-    updateConnectionAttempt(chatTabId, (current) =>
-      markConnectionFailed(current, {
-        reason: failedTab?.terminalStartError?.trim() || t.terminal.terminalReconnectFailed
-      })
-    )
-  }
-
-  async function reinitActiveTerminal(): Promise<void> {
-    const targetTab =
-      tabsRef.current.find((tab) => tab.id === activeTabIdRef.current) ??
-      tabsRef.current.find((tab) => tab.id === sessionChatTab.id)
-    if (!targetTab) return
-
-    const chatTabId = resolveSessionChatTabId(tabsRef.current, targetTab.id)
-    const current = connectionAttemptByChatTab[chatTabId] ?? createIdleConnectionAttempt()
-    // Idempotent: one reinit at a time.
-    if (current.phase === 'connecting') return
-    updateConnectionAttempt(chatTabId, (current) =>
-      beginConnectionRetry(current, `reinit-${Date.now()}`)
-    )
-    appendSystemToRunOrLog(chatTabId, t.terminal.reinitializingTerminal)
-
-    try {
-      const dimensions =
-        targetTab.id === activeTabIdRef.current
-          ? fitAddonRef.current?.proposeDimensions()
-          : undefined
-      void terminalClient.stop(targetTab.id)
-      const session = await terminalClient.start({
-        cols: dimensions?.cols ?? 80,
-        rows: dimensions?.rows ?? 24,
-        tabId: targetTab.id
-      })
-      updateTab(targetTab.id, (tab) => ({
-        ...tab,
-        sessionId: session.sessionId,
-        terminalMode: session.mode,
-        terminalCwd: session.cwd,
-        terminalReady: true,
-        terminalStartError: undefined
-      }))
-      updateConnectionAttempt(chatTabId, (current) =>
-        markConnectionFailed(current, {
-          reason: t.terminal.reinitTerminalReady,
-          pipeFallback: session.mode === 'pipe'
-        })
-      )
-    } catch (error) {
-      updateConnectionAttempt(chatTabId, (current) =>
-        markConnectionFailed(current, {
-          reason: error instanceof Error ? error.message : String(error),
-          pipeFallback: true
-        })
-      )
-    }
-  }
-
-  function dismissConnectionRecovery(chatTabId: string): void {
-    setDismissedRecoveryByChatTab((current) => ({ ...current, [chatTabId]: true }))
-  }
-
-  function viewConnectionRecovery(): void {
-    followAgentLog(true)
   }
 
   function showConnectionList(): void {
@@ -4032,78 +2974,15 @@ function App({
   function startNewSession(): void {
     const previousChatTabId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
     const nextTab = createTerminalTab({
-      title: getNextTerminalTitle(t.connections.localTerminal, tabsRef.current),
+      title: getNextTerminalTitle(
+        locale === 'zh-CN' ? '新建对话' : 'New conversation',
+        tabsRef.current
+      ),
       providerId: config.providerId,
       agentStyle: config.agentStyle,
       isSsh: false
     })
     activateNewSession(nextTab, previousChatTabId)
-  }
-
-  async function createHandoffConversation(
-    sourceId: string,
-    goal: string,
-    draft: string,
-    target: HandoffTarget
-  ): Promise<void> {
-    if (!tabsRef.current.some((tab) => tab.id === sourceId)) throw new Error('Source closed')
-    const sourceChat = tabsRef.current.find((tab) => tab.id === sourceId)!
-    const source =
-      handoffParentTab(
-        tabsRef.current,
-        sourceId,
-        activeExecutionTabIdRef.current.get(sourceId),
-        activeTabIdRef.current
-      ) ?? sourceChat
-    const sourcePaneId = activeExecutionTabIdRef.current.get(sourceId) ?? source.id
-    const parentContext = await terminalClient.getContext(sourcePaneId)
-    const resolved = resolveHandoffTarget({
-      selection: target,
-      source: handoffSourceIdentity(source, parentContext),
-      connections: connectionsRef.current
-    })
-    const nextTab = createTerminalTab({
-      title: `${t.handoff.prefix}${goal.trim().replace(/\s+/g, ' ').slice(0, 48)}`,
-      providerId: source.providerId ?? config.providerId,
-      model: source.model,
-      agentStyle: source.agentStyle ?? config.agentStyle,
-      executionMode: normalizeExecutionMode(sourceChat.executionMode),
-      isSsh: resolved.isSsh,
-      connectionId: resolved.connectionId,
-      connectionName: resolved.connectionName,
-      handoffBlocked: resolved.blocked,
-      expectedTarget: resolved.isSsh
-        ? target === 'inherit'
-          ? (parentContext.expectedTarget ?? parentContext.promptHost)
-          : connectionsRef.current.find((item) => item.id === resolved.connectionId)?.host
-        : undefined,
-      connectionOrigin:
-        target === 'inherit'
-          ? parentContext.connectionOrigin
-          : resolved.isSsh
-            ? 'connection-card'
-            : 'manual-shell',
-      agentInput: `${draft}\n\n交接目标：${resolved.connectionName ?? (resolved.isSsh ? (parentContext.expectedTarget ?? '手动 SSH，待验证') : target === 'none' ? '仅资料，待选择目标' : '本机')}。审批不继承；先复核目标和状态。`
-    })
-    const prepared = await terminalClient.prepareHandoff(sourcePaneId, nextTab.id, target)
-    if (!prepared.ok) throw new Error(prepared.error)
-
-    // Existing storage contract saves tab metadata; composer text stays in memory.
-    // Do not dismiss the editor or switch tabs until creation has been acknowledged.
-    const saved = await storageClient.saveTabs(toStoredSessionTabs([...tabsRef.current, nextTab]))
-    if (!saved?.ok) throw new Error('Could not save conversation')
-    if (!tabsRef.current.some((tab) => tab.id === sourceId)) {
-      await storageClient.saveTabs(toStoredSessionTabs(tabsRef.current))
-      throw new Error('Source closed')
-    }
-    if (resolved.connectionId) {
-      const connection = connectionsRef.current.find((item) => item.id === resolved.connectionId)
-      if (!connection) throw new Error('Connection disappeared')
-      pendingSshRef.current.set(nextTab.id, connection)
-    }
-    setWorkbenchLayout('split')
-    activateNewSession(nextTab)
-    requestAnimationFrame(() => agentInputRef.current?.focus())
   }
 
   function activateNewSession(nextTab: AgentTerminalTab, previousChatTabId?: string): void {
@@ -4130,249 +3009,63 @@ function App({
     setSlashCommandOpen(false)
     setSlashCommandIndex(0)
     flushSync(() => {
-      setWorkbenchLayout((current) => revealChatFromTerminalLayout(current))
-      setTerminalPage('terminal')
       setTabs(nextTabs)
       setActiveTabId(nextTab.id)
     })
   }
 
-  function openConnectionInCurrentSession(connection: ConnectionConfig): void {
-    if (isLocalConnection(connection)) {
-      const currentTab = tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-      if (!currentTab) {
-        openLocalTerminal()
-        return
-      }
-
-      const groupId = getSessionGroupId(currentTab)
-      if (currentTab.sessionGroupId !== groupId) {
-        updateTab(currentTab.id, (tab) => ({ ...tab, sessionGroupId: groupId }))
-      }
-      const nextTab = createTerminalTab({
-        title: getNextTerminalTitle(t.connections.localTerminal, tabsRef.current),
-        sessionGroupId: groupId,
-        providerId: currentTab.providerId ?? config.providerId,
-        model: currentTab.model,
-        agentStyle: currentTab.agentStyle,
-        executionMode: normalizeExecutionMode(currentTab.executionMode),
-        approvalPolicy: currentTab.approvalPolicy ?? 'manual',
-        mutationPolicy: currentTab.mutationPolicy ?? 'confirm',
-        isSsh: false
-      })
-      setTabs((current) => {
-        const next = [...current, nextTab]
-        tabsRef.current = next
-        return next
-      })
-      activateTerminalTab(nextTab.id)
-      appendLog(
-        {
-          kind: 'status',
-          text: `${t.terminal.openedPeerTerminal}: ${t.connections.localTerminal}`
-        },
-        resolveSessionChatTabId(tabsRef.current, nextTab.id)
-      )
-      return
-    }
-
-    void connectToConnection(connection)
-  }
-
-  function openConnectionTerminal(connection: ConnectionConfig): void {
-    if (isLocalConnection(connection)) {
-      openLocalTerminal()
-      return
-    }
-
-    // The terminal lifecycle owns PTY startup and consumes pendingSshRef.
-    // A connection-manager modal can be opened from the chat-only layout, where
-    // TerminalPane is otherwise unmounted and the queued login never starts.
-    setWorkbenchLayout('split')
-    setTerminalPage('terminal')
-
-    const nextTab = createTerminalTab({
+  async function openConnectionTerminal(
+    connection: ConnectionConfig,
+    mode: ConnectionTerminalMode = 'iterm',
+    signal?: AbortSignal,
+    observationMode: import('../../shared/external-terminal').TerminalObservationMode = 'off'
+  ): Promise<void> {
+    const local = isLocalConnection(connection)
+    let nextTab = createTerminalTab({
       title: getNextTerminalTitle(connection.name, tabsRef.current),
       providerId: config.providerId,
       agentStyle: config.agentStyle,
-      connectionId: connection.id,
-      connectionName: connection.name,
-      isSsh: true
+      connectionId: local ? undefined : connection.id,
+      connectionName: local ? undefined : connection.name,
+      isSsh: !local
     })
 
-    // Queue the connection before mounting xterm. The xterm lifecycle consumes
-    // this only after terminal.start() has created the PTY, which is the
-    // ordering used by the 1.0.11 connection flow.
-    pendingSshRef.current.set(nextTab.id, connection)
+    if (mode === 'iterm') {
+      const session = await terminalClient.connectITerm({
+        tabId: nextTab.id,
+        kind: 'shared',
+        observationMode,
+        connectionId: local ? undefined : connection.id
+      })
+      if (signal?.aborted) {
+        terminalClient.stop(nextTab.id)
+        return
+      }
+      nextTab = {
+        ...nextTab,
+        external: session.external,
+        sessionId: session.sessionId,
+        terminalMode: session.mode,
+        terminalCwd: session.cwd,
+        terminalReady: local
+      }
+    }
+
+    // The shared transport already owns a PTY. Login is independent of rendering.
     setTabs((current) => {
       const next = [...current, nextTab]
       tabsRef.current = next
       return next
     })
     activateTerminalTab(nextTab.id)
-  }
-
-  async function openLocalSubterminal(): Promise<void> {
-    const parentTab = tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-    if (!parentTab) return
-    if (parentTab.subTerminals.length >= 3) {
-      appendLog({ kind: 'error', text: t.terminal.subterminalLimitReached }, parentTab.id)
-      return
-    }
-
-    const usedNames = new Set(parentTab.subTerminals.map((subterminal) => subterminal.name))
-    let terminalName = 'local'
-    for (let index = 1; usedNames.has(terminalName); index += 1) {
-      terminalName = `local-${index}`
-    }
-
-    const dimensions = fitAddonRef.current?.proposeDimensions()
-    const opened = await terminalClient.openSubterminal({
-      parentTabId: parentTab.id,
-      terminalName,
-      cols: dimensions?.cols ?? 100,
-      rows: Math.max(12, Math.floor((dimensions?.rows ?? 24) / 2))
-    })
-    if (!opened.ok || !opened.tabId || !opened.name) {
-      appendLog(
-        {
-          kind: 'error',
-          text: opened.error || t.terminal.subterminalLimitReached
-        },
-        parentTab.id
-      )
-      return
-    }
-
-    ensureSubterminal(parentTab.id, {
-      id: opened.tabId,
-      name: opened.name,
-      output: '',
-      rawOutput: '',
-      cwd: opened.cwd ?? '',
-      status: 'active',
-      isSsh: false,
-      terminalMode: opened.mode,
-      sessionId: opened.sessionId,
-      terminalReady: true
-    })
-    setSubterminalCollapsed(false)
-    appendLog(
-      { kind: 'status', text: `${t.terminal.openedSubterminal}: ${opened.name}` },
-      resolveSessionChatTabId(tabsRef.current, parentTab.id)
-    )
-  }
-
-  async function openConnectionInSubterminal(connection: ConnectionConfig): Promise<void> {
-    const parentTab = tabsRef.current.find((tab) => tab.id === activeTabIdRef.current)
-    if (!parentTab) {
-      connectFromConnectionManager(connection)
-      return
-    }
-    if (parentTab.subTerminals.length >= 3) {
-      appendLog({ kind: 'error', text: t.terminal.subterminalLimitReached }, parentTab.id)
-      return
-    }
-
-    if (isLocalConnection(connection)) {
-      await openLocalSubterminal()
-      return
-    }
-
-    const baseName = connection.name.trim().replace(/\s+/g, '-').slice(0, 32) || 'remote'
-    const usedNames = new Set(parentTab.subTerminals.map((subterminal) => subterminal.name))
-    let terminalName = baseName
-    for (let index = 1; usedNames.has(terminalName); index += 1) {
-      terminalName = `${baseName}-${index}`
-    }
-
-    const dimensions = fitAddonRef.current?.proposeDimensions()
-    const opened = await terminalClient.openSubterminal({
-      parentTabId: parentTab.id,
-      terminalName,
-      cols: dimensions?.cols ?? 100,
-      rows: Math.max(12, Math.floor((dimensions?.rows ?? 24) / 2))
-    })
-    if (!opened.ok || !opened.tabId || !opened.name) {
-      appendLog(
-        {
-          kind: 'error',
-          text: opened.error || t.terminal.subterminalLimitReached
-        },
-        parentTab.id
-      )
-      return
-    }
-
-    ensureSubterminal(parentTab.id, {
-      id: opened.tabId,
-      name: opened.name,
-      output: '',
-      rawOutput: '',
-      cwd: opened.cwd ?? '',
-      status: 'active',
-      connectionId: connection.id,
-      connectionName: connection.name,
-      isSsh: true,
-      terminalMode: opened.mode,
-      sessionId: opened.sessionId,
-      terminalReady: true
-    })
-    setSubterminalCollapsed(false)
-    setWorkbenchLayout((current) => revealChatFromTerminalLayout(current))
-    setTerminalPage('terminal')
-    appendLog(
-      { kind: 'status', text: `${t.terminal.openedSubterminal}: ${connection.name}` },
-      resolveSessionChatTabId(tabsRef.current, parentTab.id)
-    )
-    void runWithTimeout(
-      executeConnectionAutomation(connection, opened.tabId, true),
-      CONNECTION_LOGIN_TOTAL_TIMEOUT_MS,
-      () => {
-        const timeoutMessage = t.terminal.connectionLoginTimeout.replace(
-          '{ms}',
-          String(Math.round(CONNECTION_LOGIN_TOTAL_TIMEOUT_MS / 1000))
-        )
-        appendLog(
-          { kind: 'error', text: timeoutMessage },
-          resolveSessionChatTabId(tabsRef.current, parentTab.id)
-        )
-      }
-    )
-  }
-
-  function connectFromConnectionManager(connection: ConnectionConfig): void {
-    if (connectionActionBusyRef.current) return
-    connectionActionBusyRef.current = true
-    setConnectionActionBusy(true)
-    const releaseBusy = (): void => {
-      connectionActionBusyRef.current = false
-      setConnectionActionBusy(false)
-    }
-
-    try {
-      if (isLocalConnection(connection)) {
-        openLocalTerminal()
-        if (connectionModalOpen) setConnectionModalOpen(false)
-        releaseBusy()
-        return
-      }
-
-      // A connection-card click means “open a terminal for this connection”.
-      // Keep each login isolated in its own tab and release the UI guard as
-      // soon as that tab is queued; SSH/authentication must not lock out other
-      // clusters while it waits for a prompt or recovery.
-      openConnectionTerminal(connection)
-      if (connectionModalOpen) setConnectionModalOpen(false)
-      releaseBusy()
-    } catch {
-      releaseBusy()
-    }
+    if (!local) void executeConnectionCommands(connection, nextTab.id)
   }
 
   function connectFromConnectionCard(connection: ConnectionConfig): void {
+    if (connectionActionBusyRef.current) return
     setConnectionSearchQuery('')
-    connectFromConnectionManager(connection)
+    setConnectionModalOpen(false)
+    connectionTerminalChoice.show(connection)
   }
 
   function openNewConnectionForm(): void {
@@ -4459,11 +3152,7 @@ function App({
         }
 
         if (connectAfterSave && savedConnection) {
-          if (isLocalConnection(savedConnection)) {
-            openLocalTerminal()
-          } else {
-            await openConnectionTerminal(savedConnection)
-          }
+          connectionTerminalChoice.show(savedConnection)
           setConnectionModalOpen(false)
           resetConnectionForm()
           return
@@ -4547,59 +3236,6 @@ function App({
     }
   }
 
-  async function resolveConnectionIntentForInput(
-    input: string,
-    options?: {
-      conversationContext?: string
-      currentConnectionId?: string
-      currentConnectionName?: string
-      terminalSummary?: string
-    }
-  ): Promise<{
-    analysis?: AgentConnectionIntentResult
-    connection?: ConnectionConfig
-  }> {
-    let candidates = connections
-
-    try {
-      candidates = await connectionsClient.list()
-      setConnections(candidates)
-    } catch {
-      candidates = connections
-    }
-
-    try {
-      const analysis = await agentClient.resolveConnectionIntent({
-        input,
-        conversationContext: options?.conversationContext,
-        currentConnectionId: options?.currentConnectionId,
-        currentConnectionName: options?.currentConnectionName,
-        terminalSummary: options?.terminalSummary
-      })
-      if (analysis.needsClarification) {
-        return { analysis }
-      }
-      if (!analysis.shouldConnect || !analysis.ok || !analysis.connectionId) {
-        return { analysis }
-      }
-
-      return {
-        analysis,
-        connection: candidates.find((connection) => connection.id === analysis.connectionId)
-      }
-    } catch (error) {
-      return {
-        analysis: {
-          ok: false,
-          shouldConnect: false,
-          confidence: 0,
-          needsClarification: true,
-          clarificationQuestion: t.terminal.connectionClarifyFallback,
-          reason: error instanceof Error ? error.message : String(error)
-        }
-      }
-    }
-  }
   const { submitAgent, submitAgentMessage, runAgentConversation } = useAgentController({
     activeTabIdRef,
     tabsRef,
@@ -4614,24 +3250,12 @@ function App({
     appendLog,
     pendingPostLoginSupplementsRef,
     updateAgentRun,
-    updateConnectionAttempt,
-    connections,
-    resolveConnectionIntentForInput,
     setActiveExecutionTerminal,
-    appendStatusToActiveRunOrLog,
     pendingAttentionNotifierRef,
     activeRunCanceledRef,
     activeRunInputRef,
     activeAgentRunRef,
     persistAgentRun,
-    skipStoredPasswordTabsRef,
-    connectToConnection,
-    lastLoginRunLogIdRef,
-    fitAddonRef,
-    terminalSessionIdRef,
-    terminalModeRef,
-    terminalCwdRef,
-    pipePromptRef,
     config,
     visibleModels,
     activeExecutionTabIdRef,
@@ -4720,13 +3344,32 @@ function App({
     if (files.length === 0) return
 
     event.preventDefault()
-    const references = await Promise.all(files.map(resolvePastedFileReference))
+    await handleAgentFiles(files)
+  }
+
+  async function handleAgentFiles(files: File[]): Promise<void> {
+    const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
+    if (
+      files.length + (tabsRef.current.find((tab) => tab.id === chatId)?.pathRefs.length ?? 0) >
+      8
+    ) {
+      toast.error(locale === 'zh-CN' ? '每次最多 8 个附件' : 'Maximum 8 attachments')
+      return
+    }
+    const references = await Promise.all(
+      files.map((file) =>
+        resolvePastedFileReference(file).catch((error) => {
+          toast.error(`${file.name}: ${String(error)}`)
+          return undefined
+        })
+      )
+    )
     const validReferences = references.filter((reference): reference is AgentPathReference =>
       Boolean(reference)
     )
     if (validReferences.length === 0) return
 
-    updateTab(resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current), (tab) => {
+    updateTab(chatId, (tab) => {
       let nextInput = tab.agentInput
       let cursor = slashReplacementCursor(nextInput)
       let pathRefs = tab.pathRefs
@@ -4852,18 +3495,6 @@ function App({
         shouldOpenToolList ||
         shouldOpenMcpList ||
         shouldOpenWikiList
-    )
-  }
-
-  function removeToolRef(toolId: string): void {
-    updateTab(sessionChatTab.id, (tab) =>
-      applyComposerInput(tab, removeComposerRefToken(tab.agentInput, 'tool', toolId))
-    )
-  }
-
-  function removeWikiRef(wikiId: string): void {
-    updateTab(sessionChatTab.id, (tab) =>
-      applyComposerInput(tab, removeComposerRefToken(tab.agentInput, 'wiki', wikiId))
     )
   }
 
@@ -5057,13 +3688,10 @@ function App({
       ...(closingTab?.subTerminals.map((subterminal) => subterminal.id) ?? [])
     ])
 
-    suppressTerminalReconnectRef.current.add(tabId)
     terminalClient.stop(tabId)
     closingTab?.subTerminals.forEach((subterminal) => {
-      suppressTerminalReconnectRef.current.add(subterminal.id)
       terminalClient.stop(subterminal.id)
     })
-    pendingSshRef.current.delete(tabId)
     setTabs((current) => {
       let next = current
       if (shouldPromote && nextRoot && closingTab) {
@@ -5075,24 +3703,22 @@ function App({
         const fallback = sameSession ?? next[0]
         if (fallback) {
           setActiveTabId(fallback.id)
-          setTerminalPage('terminal')
         } else if (next.length === 0) {
           // Closing the last tab must not strand the chat input on the
           // module-level emptyLocalTab (its id is absent from `tabs`, so the
           // controlled agentInput could never update). Keep one real local tab.
-          const localTab = createTerminalTab({ title: 'Terminal' })
+          const localTab = createTerminalTab({
+            title: locale === 'zh-CN' ? '新建对话' : 'New conversation'
+          })
           next = [localTab]
           activeTabIdRef.current = localTab.id
           setActiveTabId(localTab.id)
-          setTerminalPage('terminal')
         } else {
           setActiveTabId('')
-          setTerminalPage('connections')
         }
       }
       return next
     })
-    setTabMenu(null)
   }
 
   function performCloseOtherTabs(tabId: string): void {
@@ -5100,37 +3726,32 @@ function App({
     for (const tab of tabsRef.current) {
       if (tab.id !== tabId) {
         closedTabIds.push(tab.id, ...tab.subTerminals.map((subterminal) => subterminal.id))
-        suppressTerminalReconnectRef.current.add(tab.id)
         terminalClient.stop(tab.id)
         tab.subTerminals.forEach((subterminal) => {
-          suppressTerminalReconnectRef.current.add(subterminal.id)
           terminalClient.stop(subterminal.id)
         })
-        pendingSshRef.current.delete(tab.id)
       }
     }
 
     const keepTab = tabsRef.current.find((tab) => tab.id === tabId)
-    const remaining = keepTab ? [keepTab] : [createTerminalTab({ title: 'Terminal' })]
+    const remaining = keepTab
+      ? [keepTab]
+      : [createTerminalTab({ title: locale === 'zh-CN' ? '新建对话' : 'New conversation' })]
     cancelAgentRunsOutsideTabs(remaining)
     rejectApprovalsForClosedTabs(closedTabIds)
 
     setTabs(() => remaining)
     setActiveTabId(remaining[0]?.id ?? '')
-    setTabMenu(null)
   }
 
   function performCloseAllTabs(): void {
     const closedTabIds: string[] = []
     for (const tab of tabsRef.current) {
       closedTabIds.push(tab.id, ...tab.subTerminals.map((subterminal) => subterminal.id))
-      suppressTerminalReconnectRef.current.add(tab.id)
       terminalClient.stop(tab.id)
       tab.subTerminals.forEach((subterminal) => {
-        suppressTerminalReconnectRef.current.add(subterminal.id)
         terminalClient.stop(subterminal.id)
       })
-      pendingSshRef.current.delete(tab.id)
     }
 
     cancelAgentRunsOutsideTabs([])
@@ -5139,16 +3760,15 @@ function App({
     // Keep one real local tab so the chat input always has a live host tab;
     // an empty tab list would strand the input on the module-level
     // emptyLocalTab where controlled updates silently no-op.
-    const localTab = createTerminalTab({ title: 'Terminal' })
+    const localTab = createTerminalTab({
+      title: locale === 'zh-CN' ? '新建对话' : 'New conversation'
+    })
     setTabs([localTab])
     activeTabIdRef.current = localTab.id
     setActiveTabId(localTab.id)
-    setTerminalPage('terminal')
-    setTabMenu(null)
   }
 
   function requestCloseTabs(mode: CloseTabsConfirmRequest['mode'], tabId: string): void {
-    setTabMenu(null)
     if (!closeTerminalConfirmEnabled) {
       if (mode === 'tab') performCloseTab(tabId)
       else if (mode === 'other-tabs') performCloseOtherTabs(tabId)
@@ -5161,14 +3781,6 @@ function App({
 
   function closeTab(tabId: string): void {
     requestCloseTabs('tab', tabId)
-  }
-
-  function closeOtherTabs(tabId: string): void {
-    requestCloseTabs('other-tabs', tabId)
-  }
-
-  function closeAllTabs(tabId: string): void {
-    requestCloseTabs('all-tabs', tabId)
   }
 
   function confirmCloseTabs(): void {
@@ -5433,6 +4045,7 @@ function App({
 
   return (
     <main className="app-shell flex h-full flex-col bg-background">
+      <FileChangeReview locale={locale} />
       <Toaster
         theme="dark"
         closeButton
@@ -5448,219 +4061,96 @@ function App({
           }
         }}
       />
-      <header className="app-titlebar flex h-12 shrink-0 items-center justify-between gap-3 px-3">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <header className="app-titlebar flex h-12 shrink-0 items-center">
+        <div className="app-titlebar-brand flex h-full shrink-0 items-center px-3">
           <ProductLogo />
-          <span className="text-sm font-semibold tracking-tight text-pretty">Crescent</span>
-        </div>
-        <div className="app-commandbar flex items-center gap-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.connections.manageConnections}
-            title={t.connections.manageConnections}
-            onClick={showConnectionList}
-          >
-            <ServerIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.settings.mcpServers}
-            title={t.settings.mcpServers}
-            onClick={() => setMcpOpen(true)}
-          >
-            <PlugIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.settings.skillsManagement}
-            title={t.settings.skillsManagement}
-            onClick={() => setSkillOpen(true)}
-          >
-            <BotIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.history.title}
-            title={t.history.title}
-            onClick={() => setHistorySheetOpen(true)}
-          >
-            <HistoryIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="记忆中心"
-            title="记忆中心"
-            onClick={() => setMemoryCenterOpen(true)}
-          >
-            <BrainIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="本地资料"
-            title="本地资料"
-            onClick={() => setLocalDocumentsOpen(true)}
-          >
-            <FolderOpenIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="命令手册"
-            title="命令手册"
-            onClick={() => setCommandDirectoryOpen(true)}
-          >
-            <BookMarkedIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.wiki.title}
-            title={t.wiki.title}
-            onClick={() => setWikiSheetOpen(true)}
-          >
-            <BookOpenIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.app.swapPanes}
-            title={t.app.swapPanes}
-            onClick={() =>
-              setPaneOrder((current) =>
-                current === 'terminal-chat' ? 'chat-terminal' : 'terminal-chat'
-              )
-            }
-          >
-            <ArrowLeftRightIcon aria-hidden="true" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="w-auto min-w-8 gap-1 px-1.5"
-            aria-label={`${t.app.language}: ${localeOptions.find((option) => option.value === locale)?.label ?? locale}`}
-            title={localeOptions.find((option) => option.value === nextLocale(locale))?.label}
-            onClick={() => setLocale(nextLocale(locale))}
-          >
-            <LanguagesIcon aria-hidden="true" />
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground">
-              {localeOptions.find((option) => option.value === locale)?.shortLabel}
-            </span>
-          </Button>
-          <Button
-            id="settings-trigger"
-            variant="ghost"
-            size="icon"
-            aria-label={t.settings.title}
-            title={t.settings.title}
-            onClick={() => setSheetOpen(true)}
-          >
-            <SettingsIcon className="size-4" />
-          </Button>
-          {sheetOpen && (
-            <Suspense fallback={null}>
-              <SettingsSheet
-                open={sheetOpen}
-                onOpenChange={(open) => {
-                  setSheetOpen(open)
-                  if (!open) {
-                    flushWorkspaceCwdPersist()
-                    setProviderEditorOpen(false)
-                    setOpenApiEditorOpen(false)
-                    setInstructionEditorOpen(false)
-                  }
-                }}
-                t={t}
-                config={config}
-                settingsProvider={settingsProvider}
-                settingsProviderId={settingsProviderId}
-                modelOptions={modelOptions}
-                providerModelsText={providerModelsText}
-                commandWhitelistText={commandWhitelistText}
-                instructionFiles={instructionFiles}
-                selectedInstructionName={selectedInstructionName}
-                selectedInstructionFile={selectedInstructionFile}
-                instructionContent={instructionContent}
-                instructionSaved={instructionSaved}
-                providerEditorOpen={providerEditorOpen}
-                openApiEditorOpen={openApiEditorOpen}
-                settingsOpenApiProfile={
-                  (config.openApiProfiles ?? []).find(
-                    (profile) => profile.id === config.openApiProfileId
-                  ) ?? (config.openApiProfiles ?? [])[0]
-                }
-                instructionEditorOpen={instructionEditorOpen}
-                validation={validation}
-                saved={saved}
-                importingOpenApi={importingOpenApi}
-                closeTerminalConfirmEnabled={closeTerminalConfirmEnabled}
-                workbenchLayout={workbenchLayout}
-                onWorkbenchLayoutChange={persistAndSetWorkbenchLayout}
-                onCreateProvider={createProvider}
-                onToggleProviderDetails={toggleProviderDetails}
-                onToggleProviderEnabled={toggleProviderEnabled}
-                onDeleteProvider={deleteSettingsProvider}
-                onApplyDefaultModel={applyDefaultModel}
-                onCloseTerminalConfirmChange={setCloseTerminalConfirmEnabled}
-                onAgentStyleChange={persistAgentStyle}
-                onThinkingLevelChange={(level) =>
-                  void persistAgentConfigPatch({ thinkingLevel: level })
-                }
-                onLogLevelChange={(level) => void persistAgentConfigPatch({ logLevel: level })}
-                onShowAgentThinkingChange={persistShowAgentThinking}
-                onCommandTimeoutsChange={(commandTimeouts) =>
-                  void persistAgentConfigPatch({ commandTimeouts })
-                }
-                onWorkspaceCwdChange={scheduleWorkspaceCwdPersist}
-                onMaxActiveToolsChange={(value) => updateConfig('maxActiveTools', value)}
-                onCommandWhitelistChange={(text) => {
-                  setCommandWhitelistText(text)
-                  updateConfig('commandWhitelist', parseCommandWhitelist(text))
-                }}
-                onCreateOpenApiProfile={createOpenApiProfile}
-                onToggleOpenApiProfileDetails={toggleOpenApiProfileDetails}
-                onDeleteOpenApiProfile={deleteOpenApiProfile}
-                onOpenApiEditorOpenChange={setOpenApiEditorOpen}
-                onPatchActiveOpenApiProfile={patchActiveOpenApiProfile}
-                onImportOpenApiDocument={importOpenApiDocument}
-                onToggleInstructionDetails={toggleInstructionDetails}
-                onProviderEditorOpenChange={setProviderEditorOpen}
-                onUpdateSettingsProvider={updateSettingsProvider}
-                onUpdateSettingsProviderModels={updateSettingsProviderModels}
-                onSaveProviderEditor={async () => {
-                  await saveConfig()
-                  setProviderEditorOpen(false)
-                }}
-                onSaveOpenApiEditor={async () => {
-                  await saveConfig()
-                  setOpenApiEditorOpen(false)
-                }}
-                onInstructionEditorOpenChange={setInstructionEditorOpen}
-                onInstructionContentChange={(value) => {
-                  setInstructionContent(value)
-                  setInstructionSaved(false)
-                }}
-                onSaveInstructionFile={saveInstructionFile}
-              />
-            </Suspense>
-          )}
         </div>
       </header>
+      {sheetOpen && (
+        <Suspense fallback={null}>
+          <SettingsSheet
+            open={sheetOpen}
+            onOpenChange={(open) => {
+              setSheetOpen(open)
+              if (!open) {
+                flushWorkspaceCwdPersist()
+                setProviderEditorOpen(false)
+                setOpenApiEditorOpen(false)
+                setInstructionEditorOpen(false)
+              }
+            }}
+            t={t}
+            config={config}
+            settingsProvider={settingsProvider}
+            settingsProviderId={settingsProviderId}
+            modelOptions={modelOptions}
+            providerModelsText={providerModelsText}
+            commandWhitelistText={commandWhitelistText}
+            instructionFiles={instructionFiles}
+            selectedInstructionName={selectedInstructionName}
+            selectedInstructionFile={selectedInstructionFile}
+            instructionContent={instructionContent}
+            instructionSaved={instructionSaved}
+            providerEditorOpen={providerEditorOpen}
+            openApiEditorOpen={openApiEditorOpen}
+            settingsOpenApiProfile={
+              (config.openApiProfiles ?? []).find(
+                (profile) => profile.id === config.openApiProfileId
+              ) ?? (config.openApiProfiles ?? [])[0]
+            }
+            instructionEditorOpen={instructionEditorOpen}
+            validation={validation}
+            saved={saved}
+            importingOpenApi={importingOpenApi}
+            closeTerminalConfirmEnabled={closeTerminalConfirmEnabled}
+            onCreateProvider={createProvider}
+            onToggleProviderDetails={toggleProviderDetails}
+            onToggleProviderEnabled={toggleProviderEnabled}
+            onDeleteProvider={deleteSettingsProvider}
+            onApplyDefaultModel={applyDefaultModel}
+            onCloseTerminalConfirmChange={setCloseTerminalConfirmEnabled}
+            onAgentStyleChange={persistAgentStyle}
+            onThinkingLevelChange={(level) =>
+              void persistAgentConfigPatch({ thinkingLevel: level })
+            }
+            onLogLevelChange={(level) => void persistAgentConfigPatch({ logLevel: level })}
+            onShowAgentThinkingChange={persistShowAgentThinking}
+            onTerminalContextCharsChange={(terminalContextChars) =>
+              void persistAgentConfigPatch({ terminalContextChars })
+            }
+            onWorkspaceCwdChange={scheduleWorkspaceCwdPersist}
+            onMaxActiveToolsChange={(value) => updateConfig('maxActiveTools', value)}
+            onCommandWhitelistChange={(text) => {
+              setCommandWhitelistText(text)
+              updateConfig('commandWhitelist', parseCommandWhitelist(text))
+            }}
+            onCreateOpenApiProfile={createOpenApiProfile}
+            onToggleOpenApiProfileDetails={toggleOpenApiProfileDetails}
+            onDeleteOpenApiProfile={deleteOpenApiProfile}
+            onOpenApiEditorOpenChange={setOpenApiEditorOpen}
+            onPatchActiveOpenApiProfile={patchActiveOpenApiProfile}
+            onImportOpenApiDocument={importOpenApiDocument}
+            onToggleInstructionDetails={toggleInstructionDetails}
+            onProviderEditorOpenChange={setProviderEditorOpen}
+            onUpdateSettingsProvider={updateSettingsProvider}
+            onUpdateSettingsProviderModels={updateSettingsProviderModels}
+            onSaveProviderEditor={async () => {
+              await saveConfig()
+              setProviderEditorOpen(false)
+            }}
+            onSaveOpenApiEditor={async () => {
+              await saveConfig()
+              setOpenApiEditorOpen(false)
+            }}
+            onInstructionEditorOpenChange={setInstructionEditorOpen}
+            onInstructionContentChange={(value) => {
+              setInstructionContent(value)
+              setInstructionSaved(false)
+            }}
+            onSaveInstructionFile={saveInstructionFile}
+          />
+        </Suspense>
+      )}
       {skillOpen && <Suspense fallback={null}>{skillSheet}</Suspense>}
       {mcpOpen && <Suspense fallback={null}>{mcpSheet}</Suspense>}
       {historyOpen && <Suspense fallback={null}>{historySheet}</Suspense>}
@@ -5696,22 +4186,6 @@ function App({
           />
         </Suspense>
       )}
-      {commandDirectoryOpen && (
-        <Suspense fallback={null}>
-          <CommandDirectorySheet
-            open={commandDirectoryOpen}
-            onOpenChange={setCommandDirectoryOpen}
-            tabId={activeExecutionTabIdRef.current.get(sessionChatTab.id) ?? activeTab.id}
-            chatTabId={sessionChatTab.id}
-            connectionId={activeTab.connectionId}
-            executionMode={normalizeExecutionMode(sessionChatTab.executionMode)}
-            mutationPolicy={sessionChatTab.mutationPolicy ?? 'confirm'}
-            onInsert={(text) =>
-              updateTab(sessionChatTab.id, (tab) => ({ ...tab, agentInput: text }))
-            }
-          />
-        </Suspense>
-      )}
       {wikiOpen && <Suspense fallback={null}>{wikiSheet}</Suspense>}
       <CaptureDraftDialog
         open={Boolean(captureDialogJob)}
@@ -5735,183 +4209,109 @@ function App({
         onRefine={(fields) => void refineCaptureDraft(fields)}
         onCommit={(fields) => void commitCaptureDraft(fields)}
       />
-      <section
-        className={`app-frame relative flex min-h-0 flex-1 ${terminalPaneFirst ? 'flex-row' : 'flex-row-reverse'}`}
-      >
-        {workbenchLayout === 'terminal' && (
-          <button
-            type="button"
-            className="chat-pane-rail group absolute inset-y-0 right-2 z-20 my-auto flex h-28 w-8 items-center justify-center rounded-lg border border-border/70 bg-background shadow-sm transition-[width,border-color,background-color] duration-200 hover:w-9 hover:border-primary/40 hover:bg-accent"
-            aria-label={t.app.showChat}
-            title={t.app.showChat}
-            onClick={() => persistAndSetWorkbenchLayout('split')}
-          >
-            <span className="flex flex-col items-center gap-2 text-muted-foreground transition-colors group-hover:text-foreground">
-              <MessageSquareIcon className="h-4 w-4" aria-hidden="true" />
-              <span className="text-[10px] font-medium tracking-[0.18em] [writing-mode:vertical-rl]">
-                {t.app.chat}
-              </span>
-            </span>
-          </button>
-        )}
-        {workbenchLayout !== 'chat' && (
-          <TerminalPane
-            widthPercent={terminalPanePercent}
-            fillWidth={workbenchLayout === 'terminal'}
-            terminalTabs={terminalTabs}
-            labelTabs={tabs}
-            terminalPage={terminalPage}
-            activeTabId={activeTabId}
-            executionTerminalId={executionTerminalByChatId[sessionChatTab.id]}
-            agentPending={activeAgentPending}
-            attentionTabIds={attentionTabIds}
-            activeTab={activeTab}
-            tabMenu={tabMenu}
-            displayConnections={displayConnections}
-            filteredDisplayConnections={filteredDisplayConnections}
-            connectionSearchQuery={connectionSearchQuery}
-            connectionActionBusy={connectionActionBusy}
-            terminalHostRef={terminalHostRef}
-            subterminalCollapsed={subterminalCollapsed}
-            subterminalPanelHeight={subterminalPanelHeight}
-            subterminalResizeRef={subterminalResizeRef}
-            subterminalHeightResizeRef={subterminalHeightResizeRef}
-            connectionRecovery={connectionRecovery}
-            reconnecting={connectionRecovery.connecting}
-            t={t}
-            formatConnectionTarget={formatConnectionTarget}
-            onNewConnection={openNewConnectionForm}
-            onSelectTab={(tabId) => {
-              activeTabIdRef.current = tabId
-              setActiveTabId(tabId)
-              setTerminalPage('terminal')
-            }}
-            onOpenTabMenu={setTabMenu}
-            onCloseTab={closeTab}
-            onCloseOtherTabs={closeOtherTabs}
-            onCloseAllTabs={closeAllTabs}
-            onConnectionQueryChange={setConnectionSearchQuery}
-            onShowConnectionList={showConnectionList}
-            onConnect={connectFromConnectionCard}
-            onSubterminalCollapsedChange={setSubterminalCollapsed}
-            onCloseSubterminal={closeSubterminal}
-            onCloseAllSubterminals={closeAllSubterminals}
-            onOpenLocalSubterminal={() => void openLocalSubterminal()}
-            onResizeSubterminalHeight={setSubterminalPanelHeight}
-            onResizeSubterminalPair={resizeSubterminalPair}
-            onInterruptCommand={interruptAgentCommand}
-            commandRunning={Boolean(runningCommandTabId)}
-            agentBusy={sessionChatTab.agentBusy}
-            onReconnect={() => void reconnectActiveTerminal()}
-            onViewRecovery={viewConnectionRecovery}
-            onDismissRecovery={
-              connectionRecovery.visible
-                ? () => dismissConnectionRecovery(sessionChatTab.id)
-                : undefined
-            }
-          />
-        )}
-        {workbenchLayout === 'split' && (
-          <div
-            className="app-pane-resizer w-1.5 shrink-0 cursor-col-resize outline-none focus-visible:ring-0"
-            role="separator"
-            tabIndex={0}
-            aria-orientation="vertical"
-            aria-label="Resize terminal and chat panes"
-            onPointerDown={(event) => {
-              event.preventDefault()
-              event.currentTarget.setPointerCapture(event.pointerId)
-              splitDragRef.current = true
-              document.body.style.cursor = 'col-resize'
-              document.body.style.userSelect = 'none'
-            }}
-            onKeyDown={(event) => {
-              const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
-              if (!direction) return
-              event.preventDefault()
-              setTerminalPanePercent((current) =>
-                Math.max(
-                  35,
-                  Math.min(
-                    78,
-                    current + (paneOrder === 'terminal-chat' ? direction : -direction) * 2
-                  )
-                )
-              )
-              window.requestAnimationFrame(() => syncActiveTerminalSize())
-            }}
-          />
-        )}
-        <ChangePlanReview tabId={sessionChatTab.id} t={t} />
-        <HandoffDialog
-          key={sessionChatTab.id}
-          editor={handoff.editor}
-          sourceSessionKey={sessionChatTab.id}
-          sourcePaneId={executionTerminalByChatId[sessionChatTab.id] ?? sessionChatTab.id}
-          connections={connections.filter((connection) => !isLocalConnection(connection))}
-          sourceTarget="当前绑定的执行终端（以主进程确认结果为准）"
-          onTarget={handoff.setTarget}
-          title={getSessionDisplayTitle(sessionChatTab, tabs)}
-          cwd={handoff.status?.cwd}
-          model={config.model}
+      <section className="app-frame relative flex min-h-0 flex-1">
+        <AppSidebar
+          projectId={sessionChatTab.projectId}
+          busy={sessionChatTab.agentBusy}
+          onAttachProject={(projectId) =>
+            updateTab(sessionChatTab.id, (tab) =>
+              tab.agentBusy || (tab.projectId && tab.projectId !== projectId)
+                ? tab
+                : { ...tab, projectId }
+            )
+          }
+          onNewProjectChat={(projectId) =>
+            activateNewSession(
+              createTerminalTab({
+                title: locale === 'zh-CN' ? '新建对话' : 'New conversation',
+                projectId,
+                providerId: config.providerId,
+                model: config.model,
+                agentStyle: config.agentStyle
+              })
+            )
+          }
           t={t}
-          onGoal={handoff.setGoal}
-          onDraft={handoff.setDraft}
-          onGenerate={() => void handoff.generate()}
-          onClose={handoff.close}
-          onConfirm={() => void handoff.confirm()}
+          locale={locale}
+          sessions={sessionChatTabs}
+          tabs={tabs}
+          activeId={sessionChatTab.id}
+          history={historyItems}
+          petVisible={petVisible}
+          onTogglePet={togglePetVisible}
+          onNew={startNewSession}
+          onSelect={selectSessionTab}
+          onHistory={() => setHistorySheetOpen(true)}
+          onOpenHistory={(item) => void openHistorySession(item)}
+          onCloseSession={closeTab}
+          onConnections={showConnectionList}
+          onExternalTerminal={externalTerminals.show}
+          onMemory={() => setMemoryCenterOpen(true)}
+          onDocuments={() => setLocalDocumentsOpen(true)}
+          onWiki={() => setWikiSheetOpen(true)}
+          onSettings={() => setSheetOpen(true)}
+          onSkills={() => setSkillOpen(true)}
+          onMcp={() => setMcpOpen(true)}
+          onLanguage={() => setLocale(nextLocale(locale))}
         />
-        {workbenchLayout !== 'terminal' && (
-          <AgentPanel
+        <ExternalTerminalDialog controller={externalTerminals} t={t} />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <ConversationTerminalSelector
+            terminals={sessionTerminals.filter((tab) => tab.external)}
+            activeId={activeTab.id}
+            zh={locale === 'zh-CN'}
+            onSelect={activateTerminalTab}
+            onConnect={externalTerminals.show}
+          />
+          {activeTab.external && (
+            <ExternalTerminalControls key={activeTab.id} tab={activeTab} t={t} />
+          )}
+          <ChatWorkspace
+            onProactiveSuggestionsPausedChange={(paused) =>
+              updateTab(activeTabIdRef.current, (tab) => ({
+                ...tab,
+                proactiveSuggestionsPaused: paused
+              }))
+            }
             sessionChatTab={sessionChatTab}
-            sessionChatTabs={sessionChatTabs}
-            sessionTerminals={sessionTerminals}
+            sessionTitle={getSessionDisplayTitle(sessionChatTab, tabs)}
             activeTab={activeTab}
-            tabs={tabs}
             agentLogRef={agentLogRef}
+            followingAgentLog={followingAgentLog}
+            onFollowAgentLog={() => followAgentLog(true)}
             agentInputRef={agentInputRef}
             slashCommandListRef={slashCommandListRef}
             slashMenuVisible={slashMenuVisible}
             slashCommandOptions={slashCommandOptions}
             selectedSlashCommandIndex={selectedSlashCommandIndex}
-            terminalHidden={workbenchLayout === 'chat'}
-            terminalStartError={
-              workbenchLayout === 'chat' ? activeTab?.terminalStartError?.trim() : undefined
-            }
+            terminalStartError={activeTab?.terminalStartError?.trim()}
             activeModel={activeModel}
+            onDeclareVision={() => {
+              if (!activeModel) return
+              void saveAgentConfig({
+                ...config,
+                providers: config.providers.map((provider) =>
+                  provider.id === activeModel.providerId
+                    ? {
+                        ...provider,
+                        models: provider.models.map((model) =>
+                          model.id === activeModel.id ? { ...model, imageInput: true } : model
+                        )
+                      }
+                    : provider
+                )
+              }).catch((error) => toast.error(String(error)))
+            }}
             activeModelSelectionValue={activeModelSelectionValue}
             activeTabModelId={activeTabModelId}
             visibleModels={visibleModels}
             aiState={aiState}
             aiStatusText={aiStatusText}
             modelValidationError={modelValidationError}
-            executionMode={normalizeExecutionMode(sessionChatTab.executionMode)}
-            onExecutionModeChange={(mode) =>
-              updateTab(sessionChatTab.id, (tab) => ({ ...tab, executionMode: mode }))
-            }
-            approvalPolicy={sessionChatTab.approvalPolicy ?? 'manual'}
-            mutationPolicy={sessionChatTab.mutationPolicy ?? 'confirm'}
-            onApprovalPolicyChange={(policy) =>
-              updateTab(sessionChatTab.id, (tab) => ({ ...tab, approvalPolicy: policy }))
-            }
-            onVerifyHandoff={() =>
-              void (async () => {
-                const verified = await terminalClient.confirmLogin({ tabId: activeTab.id })
-                if (verified.ok && verified.ready)
-                  updateTab(sessionChatTab.id, (tab) => ({ ...tab, handoffBlocked: false }))
-                else toast.error(verified.error ?? '请先连接并确认交接目标；不会降级到本机。')
-              })()
-            }
-            onMutationPolicyChange={(policy) =>
-              updateTab(sessionChatTab.id, (tab) => ({ ...tab, mutationPolicy: policy }))
-            }
             agentStyle={sessionAgentStyle}
             onAgentStyleChange={applyConversationStyle}
-            thinkingCollapsedByDefault={
-              !resolveShowAgentThinking(sessionAgentStyle, config.showAgentThinking)
-            }
-            activeAgentPending={activeAgentPending || Boolean(sessionChatTab.handoffBlocked)}
-            executionTerminalId={executionTerminalByChatId[sessionChatTab.id]}
+            thinkingCollapsedByDefault={true}
+            activeAgentPending={activeAgentPending}
             pinnedWorkflows={(resolveActiveOpenApiProfile(config)?.pinnedWorkflows ?? []).filter(
               (workflow) => workflow.pinned !== false
             )}
@@ -5924,8 +4324,6 @@ function App({
             onExportTrace={(entry) => void exportLogEntryTrace(entry)}
             onExportSessionTrace={() => void exportSessionTrace()}
             onCompactContext={() => void compactCurrentSession()}
-            onHandoff={handoff.open}
-            handoffDisabledReason={handoff.disabledReason}
             compactDisabled={
               sessionChatTab.agentBusy || Boolean(contextCompactingByTabId[sessionChatTab.id])
             }
@@ -5940,8 +4338,6 @@ function App({
             feedbackBusyLogId={opsFeedbackBusyLogId}
             savingSopLogId={savingSopLogId}
             liveRunByLogId={liveRunByLogId}
-            onResolveApproval={resolveInlineCommandApproval}
-            onAddCommandToWhitelist={(command) => void addCommandToWhitelist(command)}
             onOpenModelSettings={() => {
               setSheetOpen(true)
             }}
@@ -6060,50 +4456,10 @@ function App({
             onPasswordPromptChange={setPasswordPromptValue}
             onPasswordPromptCancel={cancelPasswordPrompt}
             onPasswordPromptSubmit={submitPasswordPrompt}
-            workbenchLayout={workbenchLayout}
-            onWorkbenchLayoutChange={persistAndSetWorkbenchLayout}
-            onInterruptCommand={interruptAgentCommand}
-            runningCommandTabId={runningCommandTabId}
-            onSelectSession={(groupId) => {
-              const focusTab =
-                getSessionTerminals(tabsRef.current, groupId).find(
-                  (tab) => tab.id === activeTabIdRef.current
-                ) ??
-                getSessionChatTab(tabsRef.current, groupId) ??
-                tabsRef.current.find((tab) => getSessionGroupId(tab) === groupId)
-              if (focusTab) {
-                selectSessionTab(focusTab.id)
-                setActiveExecutionTerminal(
-                  resolveSessionChatTabId(tabsRef.current, focusTab.id),
-                  focusTab.id
-                )
-              }
-            }}
-            onSelectTerminal={(tabId) => {
-              selectSessionTab(tabId)
-              setActiveExecutionTerminal(resolveSessionChatTabId(tabsRef.current, tabId), tabId)
-            }}
             onFocusTerminal={(tabId) => {
-              const subterminal = resolveSubterminalTabState(tabsRef.current, tabId)
-              if (subterminal) {
-                selectSessionTab(subterminal.parentTabId)
-                setSubterminalCollapsed(false)
-                if (workbenchLayout === 'chat') persistAndSetWorkbenchLayout('split')
-                window.setTimeout(() => {
-                  document
-                    .querySelector<HTMLElement>(`[data-subterminal-id="${CSS.escape(tabId)}"]`)
-                    ?.querySelector<HTMLElement>('.xterm-helper-textarea')
-                    ?.focus()
-                }, 0)
-                return
-              }
-              selectSessionTab(tabId)
-              if (workbenchLayout === 'chat') persistAndSetWorkbenchLayout('split')
-              window.setTimeout(() => {
-                document
-                  .querySelector<HTMLElement>('.terminal-canvas .xterm-helper-textarea')
-                  ?.focus()
-              }, 0)
+              void terminalClient.focusITerm(tabId).then((result) => {
+                if (!result.ok) toast.error(result.error)
+              })
             }}
             onModelChange={applyConversationModel}
             onSubmit={(event) => void submitAgent(event)}
@@ -6124,23 +4480,23 @@ function App({
             onComposerCaretChange={setComposerCaret}
             onAgentInputKeyDown={handleAgentInputKeyDown}
             onAgentInputPaste={(event) => void handleAgentInputPaste(event)}
-            onRemoveSkill={removeSkillRef}
+            onAgentFiles={(files) => void handleAgentFiles(files)}
             onRemovePath={removePathRef}
-            onRemoveTool={removeToolRef}
-            onRemoveWiki={removeWikiRef}
             onPickPathReference={(kind) => void pickPathReference(kind)}
             onStopAgent={() => stopAgentRun()}
             onRetryConnection={() => void retryActiveConnection()}
-            onReinitTerminal={() => void reinitActiveTerminal()}
             onOpenConnections={showConnectionList}
           />
-        )}
+        </div>
       </section>
-      <AppUtilityToolbar
+      <ConnectionTerminalDialog
+        controller={connectionTerminalChoice}
+        target={
+          connectionTerminalChoice.connection
+            ? formatConnectionTarget(connectionTerminalChoice.connection)
+            : ''
+        }
         t={t}
-        locale={locale}
-        petVisible={petVisible}
-        onTogglePet={togglePetVisible}
       />
       <ConnectionManagerModal
         open={connectionModalOpen}
@@ -6166,14 +4522,6 @@ function App({
         onQueryChange={setConnectionSearchQuery}
         onSelectConnection={selectConnection}
         onConnect={connectFromConnectionCard}
-        onConnectInSession={(connection) => {
-          openConnectionInCurrentSession(connection)
-          setConnectionModalOpen(false)
-        }}
-        onConnectInSubterminal={(connection) => {
-          void openConnectionInSubterminal(connection)
-          setConnectionModalOpen(false)
-        }}
         onCopyConnection={(connection) => void copyConnection(connection)}
         onDuplicateConnection={duplicateConnection}
         onEditConnection={editConnection}
@@ -6256,18 +4604,5 @@ function App({
     </main>
   )
 }
-
-/**
- * Wait until the terminal shell has produced an interactive prompt (local or
- * remote host style). A freshly spawned PTY is ready only after the shell
- * finishes its startup files; pasting earlier loses the command in zsh.
- */
-
-/**
- * Poll SSOT for the REMOTE prompt during the login window. A transient local
- * prompt (fresh PTY before ssh connects) must NOT abort confirmation; only
- * when the whole window expires with the shell still at the local prompt does
- * the login count as failed.
- */
 
 export default App

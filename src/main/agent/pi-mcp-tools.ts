@@ -6,6 +6,12 @@ import { isMcpServerComplete, redactMcpUrl } from '../../shared/mcp-servers'
 import type { AgentMcpServerConfig, ToolCatalogEntry } from '../../shared/agent-types'
 import type { PiSdkFacade } from './pi-sdk'
 import { loadMcpSdk } from './mcp-sdk'
+import { denyAgentOperation } from '../security/agent-capability-policy'
+
+/** No server implementation has been audited yet. A name/annotation/allowlist is not an audit. */
+export function isReviewedMcpServer(_server: AgentMcpServerConfig): boolean {
+  return false
+}
 
 export const MCP_TOOL_RESULT_MAX_CHARS = 50 * 1024
 export const MCP_CONNECT_TIMEOUT_MS = 10_000
@@ -150,6 +156,11 @@ export async function loadMcpPiTools(
   const clients: McpRuntimeClient[] = []
 
   for (const server of servers.filter((candidate) => candidate.enabled)) {
+    if (!isReviewedMcpServer(server)) {
+      errors[server.id] =
+        'Guided Ops: MCP implementation is not audited; connection and calls disabled.'
+      continue
+    }
     let client: McpRuntimeClient | undefined
     try {
       client = await connect(server)
@@ -201,6 +212,7 @@ export function createMcpPiToolDefinition(
     parameters: mcpParametersSchema(tool.inputSchema),
     executionMode: 'sequential',
     async execute(_toolCallId, params, signal) {
+      if (!isReviewedMcpServer(server)) denyAgentOperation('mcp.unreviewed')
       if (
         signal?.aborted ||
         !authorize ||

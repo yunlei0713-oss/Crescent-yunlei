@@ -27,8 +27,8 @@ const zhSearch = {
 
 export default withMermaid(
   defineConfig({
-    title: 'Crescent',
-    description: '把 AI 放进真实终端的开源运维工作台',
+    title: '墨巡 MoXun',
+    description: '聊天优先、人工 iTerm 与可选授权观察的运维协作台',
     base,
     head: [['link', { rel: 'icon', type: 'image/x-icon', href: `${base}favicon.ico` }]],
     lastUpdated: true,
@@ -61,7 +61,7 @@ export default withMermaid(
       root: {
         label: '简体中文',
         lang: 'zh-CN',
-        description: '把 AI 放进真实终端的开源运维工作台',
+        description: '聊天优先、人工 iTerm 与可选授权观察的运维协作台',
         themeConfig: {
           nav: [
             { text: '指南', link: '/guide/why' },
@@ -72,13 +72,13 @@ export default withMermaid(
             {
               text: '指南',
               items: [
-                { text: '为什么需要 Crescent', link: '/guide/why' },
+                { text: '为什么需要墨巡', link: '/guide/why' },
                 { text: '安装', link: '/guide/install' },
                 { text: '快速开始', link: '/guide/quick-start' },
                 { text: '工作台', link: '/guide/workbench' },
                 { text: '终端与 Agent', link: '/guide/terminal' },
-                { text: '子终端与子代理', link: '/guide/subagents' },
-                { text: '命令审核', link: '/guide/command-review' },
+                { text: '只读子任务', link: '/guide/subagents' },
+                { text: '建议风险与文件审批', link: '/guide/command-review' },
                 { text: 'SSH 连接', link: '/guide/ssh' },
                 { text: 'Skills 与知识库', link: '/guide/skills' },
                 { text: 'Agent 工具', link: '/guide/tools' },
@@ -113,7 +113,7 @@ export default withMermaid(
         label: 'English',
         lang: 'en-US',
         link: '/en/',
-        description: 'An open-source operations workbench that brings AI into the real terminal.',
+        description: 'Chat-first operations with manual iTerm and optional authorized observation.',
         themeConfig: {
           nav: [
             { text: 'Guide', link: '/en/guide/why' },
@@ -124,13 +124,13 @@ export default withMermaid(
             {
               text: 'Guide',
               items: [
-                { text: 'Why Crescent', link: '/en/guide/why' },
+                { text: 'Why MoXun', link: '/en/guide/why' },
                 { text: 'Install', link: '/en/guide/install' },
                 { text: 'Quick start', link: '/en/guide/quick-start' },
                 { text: 'Workbench', link: '/en/guide/workbench' },
                 { text: 'Terminal and Agent', link: '/en/guide/terminal' },
-                { text: 'Subterminals and subagents', link: '/en/guide/subagents' },
-                { text: 'Command review', link: '/en/guide/command-review' },
+                { text: 'Read-only subtasks', link: '/en/guide/subagents' },
+                { text: 'Suggestion risk and file approval', link: '/en/guide/command-review' },
                 { text: 'SSH connections', link: '/en/guide/ssh' },
                 { text: 'Skills and knowledge', link: '/en/guide/skills' },
                 { text: 'Agent tools', link: '/en/guide/tools' },

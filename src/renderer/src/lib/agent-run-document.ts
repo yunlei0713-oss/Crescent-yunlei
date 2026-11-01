@@ -1,4 +1,5 @@
 import type { Dictionary } from '@renderer/i18n'
+import { parseAgentErrorKind, type AgentErrorKind } from '../../../shared/agent-errors'
 import {
   AGENT_LIVE_RUN_MAX_FULL_STEPS,
   AGENT_LOG_ENTRY_MAX_CHARS,
@@ -26,7 +27,7 @@ export interface ParsedAgentRunDocument {
   steps: AgentRunStep[]
   resultMarkdown: string
   errorMarkdown: string
-  errorKind?: 'quota' | 'transient' | 'other'
+  errorKind?: AgentErrorKind
   errorProvider?: string
   errorResetHint?: string
   elapsedMs?: number
@@ -43,7 +44,7 @@ interface SerializedAgentRunDocument {
   steps: AgentRunStep[]
   result?: string
   error?: string
-  errorKind?: 'quota' | 'transient' | 'other'
+  errorKind?: AgentErrorKind
   errorProvider?: string
   errorResetHint?: string
   elapsedMs?: number
@@ -718,9 +719,8 @@ export function agentRunViewToDocument(run: AgentRunViewState): ParsedAgentRunDo
   }
 }
 
-function parseErrorKind(value: unknown): 'quota' | 'transient' | 'other' | undefined {
-  if (value === 'quota' || value === 'transient' || value === 'other') return value
-  return undefined
+function parseErrorKind(value: unknown): AgentErrorKind | undefined {
+  return parseAgentErrorKind(value)
 }
 
 function escapeRegExp(value: string): string {

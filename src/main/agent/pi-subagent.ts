@@ -1,15 +1,7 @@
 import { createPiRuntime } from './runtime/pi/runtime'
 import { Type } from 'typebox'
-import type { WebContents } from 'electron'
-
-import { safeWebContentsSend } from '../safe-ipc-send'
-import {
-  closeTemporarySubterminal,
-  listTemporarySubterminalNames,
-  MAX_TEMPORARY_SUBTERMINALS,
-  readTerminalSessionHealth,
-  readTerminalExecutionTarget
-} from '../terminal/ipc'
+import { readTerminalSessionHealth } from '../terminal/ipc'
+import { createLocalFileTools } from './pi-local-files'
 import {
   MAIN_TERMINAL_RESTORING_ERROR,
   shouldBlockToolsWhileMainRestoring
@@ -28,10 +20,9 @@ import { buildLocalInstructionContext } from './instruction-files'
 import {
   bindPtyBashExecContextClone,
   clearPtyBashExecContext,
-  createPtyBashToolDefinition,
   getPtyBashExecContext
 } from './pi-terminal-bash'
-import { openAgentSubterminal, resolveOpenSubterminalParentTabId } from './pi-open-subterminal'
+import { resolveOpenSubterminalParentTabId } from './pi-open-subterminal'
 import {
   childProfileOmitsHostTools,
   profileHasWriters,
@@ -52,22 +43,20 @@ export const SUBAGENT_DISCIPLINE = [
   '',
   'Stay solo when:',
   '- Single-path sequential work, one environment, one command sequence',
-  '- Short Q&A, small edit, or a single bash/read',
-  '- No remaining docked panes (max 3)',
+  '- Short Q&A or a single local document read',
+  '- More than three concurrent child analyses would be needed',
   '',
-  'If multi-agent: you MUST call the subagent tool. The host binds each child to its own docked subterminal; parent bash stays on the current pane.',
-  'The main task always finishes on the main terminal pane. Children are only auxiliary gather, or work that would block the main pane.',
-  'The host closes each child pane when that child finishes. Do not keep using a closed child pane; continue on the main pane.',
-  'Never spawn a child to replace a dead or reconnecting main SSH session. Wait for the host to restore the main pane, then retry bash there.',
-  'Never fake multi-agent with concurrent bash on one pane.',
-  'Never spawn child agents via open_subterminal alone — that tool is extra panes for THIS agent (local hosts / extra SSH).',
+  'Use the subagent tool for focused read-only analysis. Children have no terminal pane, shell, SSH login, terminal input or file mutation capability.',
+  'Child results return to the parent, which synthesizes them into the current conversation.',
+  'If terminal evidence is unavailable, ask the operator to reconnect or supply evidence; children cannot repair or replace a connection.',
   '',
   'Parallel tasks[] only for independent read-only work (scout, reviewer, oracle, researcher).',
-  'Run worker / delegate sequentially — do not parallelize writers.',
+  'All profiles, including worker and delegate, are read-only.',
   'Children must not spawn further subagents.'
 ].join('\n')
 
 const MAX_CHILD_RESULT_CHARS = 8_000
+const MAX_READ_ONLY_SUBAGENTS = 3
 
 export interface SubagentTask {
   agent: SubagentProfileName
@@ -153,7 +142,7 @@ export function allocateSubagentPaneNames(input: {
   existingNames: string[]
   max?: number
 }): { ok: true; names: string[] } | { ok: false; error: string } {
-  const max = input.max ?? MAX_TEMPORARY_SUBTERMINALS
+  const max = input.max ?? MAX_READ_ONLY_SUBAGENTS
   const existing = new Set(input.existingNames.map(normalizeSubterminalPaneName))
   const batch = new Set<string>()
   const names: string[] = []
@@ -162,7 +151,7 @@ export function allocateSubagentPaneNames(input: {
     const base = normalizeSubterminalPaneName(agent)
     let candidate = base
     let suffix = 2
-    // Never reuse an existing pane name — wrong mode / busy / user panes are unsafe.
+    // Keep independent child result labels unambiguous.
     while (existing.has(candidate) || batch.has(candidate)) {
       candidate = normalizeSubterminalPaneName(`${base}-${suffix}`)
       suffix += 1
@@ -174,7 +163,7 @@ export function allocateSubagentPaneNames(input: {
   if (existing.size + names.length > max) {
     return {
       ok: false,
-      error: `At most ${max} sub-terminals per terminal. Reuse or close a pane, then retry.`
+      error: `At most ${max} concurrent child analyses. Split the tasks and retry.`
     }
   }
   return { ok: true, names }
@@ -248,26 +237,6 @@ export async function abortChildSessionsForRun(runId: string): Promise<void> {
   )
 }
 
-export function emitSubagentPaneStatus(input: {
-  webContents: WebContents
-  parentTabId: string
-  tabId: string
-  name: string
-  agentName: string
-  agentStatus: 'running' | 'done' | 'error'
-  close?: boolean
-}): void {
-  if (!input.webContents || input.webContents.isDestroyed()) return
-  safeWebContentsSend(input.webContents, 'agent:subagent-status', {
-    parentTabId: input.parentTabId,
-    tabId: input.tabId,
-    name: input.name,
-    agentName: input.agentName,
-    agentStatus: input.agentStatus,
-    close: input.close === true
-  })
-}
-
 export async function createSubagentToolDefinition(
   pi: PiSdkFacade,
   parentSessionKey: string
@@ -283,7 +252,7 @@ export async function createSubagentToolDefinition(
     task: Type.Optional(Type.String({ description: 'Task to delegate (single mode).' })),
     tasks: Type.Optional(
       Type.Array(taskItem, {
-        description: 'Parallel independent tasks. Each child gets its own subterminal.'
+        description: 'Parallel independent read-only analyses; results return to the parent.'
       })
     )
   })
@@ -292,19 +261,17 @@ export async function createSubagentToolDefinition(
     name: 'subagent',
     label: 'Subagent',
     description: [
-      'Decide solo vs multi-agent first. Multi-agent MUST use this tool: each child gets its own docked subterminal. Parent bash stays on the current pane.',
-      'Single: { agent, task }. Parallel: { tasks: [{ agent, task }, ...] } (max 3 panes).',
+      'Delegate focused independent read-only analysis. Children have no terminal UI or command execution capability; results return to the parent conversation.',
+      'Single: { agent, task }. Parallel: { tasks: [{ agent, task }, ...] } (max 3 children).',
       `Agents: ${SUBAGENT_PROFILE_NAMES.join(', ')}.`,
-      'Use parallel only for independent read-only work. Run worker sequentially. Do not spawn agents via open_subterminal.'
+      'Use parallel only for independent read-only work. All profiles have the same read-only capability boundary.'
     ].join(' '),
-    promptSnippet: 'subagent — run a focused child agent in a dedicated docked subterminal',
+    promptSnippet: 'subagent — focused read-only analysis returning findings to the parent',
     promptGuidelines: [
-      'Before acting, decide solo vs multi-agent. If multi-agent, call subagent — never open_subterminal merely to fan out agents.',
-      'Each child already has its own docked subterminal; parent bash stays on the current pane.',
-      'Finish the main task on the main pane. Children are auxiliary; the host closes their panes when they finish.',
-      'Never spawn a child to replace a dead main SSH session — wait for host restore, then retry bash on the main pane.',
-      'Call subagent with tasks[] only for independent read-only workstreams; keep worker sequential.',
-      'Never run concurrent bash on the same terminal pane.'
+      'Use subagent only when focused independent analysis improves the answer.',
+      'Children can read authorized local documents and provided evidence only.',
+      'No child can execute commands, modify files, connect to a host or create further children.',
+      'Combine child findings in the parent answer and provide at most one current operator step.'
     ],
     parameters,
     executionMode: 'sequential',
@@ -348,7 +315,7 @@ async function runSubagentTool(input: {
     return {
       ok: false,
       results: [],
-      error: 'No active agent terminal context. Start a run in a terminal session first.'
+      error: 'No active parent conversation context. Start a chat run first.'
     }
   }
 
@@ -357,10 +324,9 @@ async function runSubagentTool(input: {
   if (shouldBlockToolsWhileMainRestoring(health)) {
     return { ok: false, results: [], error: MAIN_TERMINAL_RESTORING_ERROR }
   }
-  const existingNames = listTemporarySubterminalNames(parent.webContents, parentTabId)
   const allocated = allocateSubagentPaneNames({
     agents: parsed.tasks.map((task) => task.agent),
-    existingNames
+    existingNames: []
   })
   if (!allocated.ok) return { ok: false, results: [], error: allocated.error }
 
@@ -413,45 +379,21 @@ async function runChildSubagent(input: {
     }
   }
 
-  const target = readTerminalExecutionTarget(parent.webContents.id, parent.executionTabId)
-  if (target.executionMode === 'ssh' && (!target.connectionId || (target.sshHops?.length ?? 0) > 1))
-    return {
-      agent: profile.name,
-      pane: input.paneName,
-      ok: false,
-      error:
-        'Current SSH target has no independent saved login route. Select a saved target explicitly; subagent cannot fall back to a local shell or the original host.'
-    }
-  const mode = target.executionMode
-  const opened = await openAgentSubterminal({
-    sessionKey: input.parentSessionKey,
-    params: {
-      mode,
-      name: input.paneName,
-      connectionId: mode === 'ssh' ? target.connectionId : undefined
-    },
-    signal: input.signal,
-    rerouteParentBash: false,
-    agentName: profile.name
-  })
-  if (!opened.ok || !opened.tabId) {
-    return {
-      agent: profile.name,
-      pane: input.paneName,
-      ok: false,
-      error: opened.error || 'Failed to open subterminal.'
-    }
+  // Legacy result keys identify a child analysis, not a visible terminal or process.
+  const opened = {
+    tabId: `observation-${parent.runId}-${input.childId}`,
+    name: input.paneName,
+    parentTabId: resolveOpenSubterminalParentTabId(parent.executionTabId)
   }
 
   const childKey = childSubagentSessionKey(input.parentSessionKey, input.childId)
   const bound = bindPtyBashExecContextClone({
     fromSessionKey: input.parentSessionKey,
     toSessionKey: childKey,
-    executionTabId: opened.tabId,
+    executionTabId: parent.executionTabId,
     fromSubagent: true
   })
   if (!bound) {
-    closeTemporarySubterminal(parent.webContents, opened.tabId)
     return {
       agent: profile.name,
       pane: opened.name || input.paneName,
@@ -461,17 +403,6 @@ async function runChildSubagent(input: {
     }
   }
 
-  const parentTabId = opened.parentTabId || resolveOpenSubterminalParentTabId(parent.executionTabId)
-  emitSubagentPaneStatus({
-    webContents: parent.webContents,
-    parentTabId,
-    tabId: opened.tabId,
-    name: opened.name || input.paneName,
-    agentName: profile.name,
-    agentStatus: 'running'
-  })
-
-  let childStatus: 'done' | 'error' = 'error'
   try {
     const result = await runChildPiSession({
       parentSessionKey: input.parentSessionKey,
@@ -480,7 +411,6 @@ async function runChildSubagent(input: {
       task: input.task.task,
       signal: input.signal
     })
-    childStatus = result.ok ? 'done' : 'error'
     return {
       agent: profile.name,
       pane: opened.name || input.paneName,
@@ -490,16 +420,6 @@ async function runChildSubagent(input: {
       error: result.error
     }
   } finally {
-    closeTemporarySubterminal(parent.webContents, opened.tabId)
-    emitSubagentPaneStatus({
-      webContents: parent.webContents,
-      parentTabId,
-      tabId: opened.tabId,
-      name: opened.name || input.paneName,
-      agentName: profile.name,
-      agentStatus: childStatus,
-      close: true
-    })
     clearPtyBashExecContext(childKey)
   }
 }
@@ -524,7 +444,9 @@ async function runChildPiSession(input: {
     return { ok: false, error: 'No model available for the child agent.' }
   }
 
-  const ptyBashTool = createPtyBashToolDefinition(pi, cwd, input.childSessionKey)
+  const readTools = createLocalFileTools(pi, cwd, input.childSessionKey).filter(
+    (tool) => tool.name === 'read'
+  )
   const instructionContext = buildLocalInstructionContext()
   const resourceLoader = new pi.DefaultResourceLoader({
     cwd,
@@ -546,8 +468,8 @@ async function runChildPiSession(input: {
     thinkingLevel: resolveThinkingLevelForModel(model, parent.config.thinkingLevel),
     modelRuntime,
     resourceLoader,
-    tools: [...input.profile.tools],
-    customTools: [ptyBashTool as never],
+    tools: ['read'],
+    customTools: readTools,
     sessionManager: pi.SessionManager.inMemory(cwd),
     settingsManager
   })

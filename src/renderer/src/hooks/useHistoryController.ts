@@ -2,7 +2,7 @@ import { storageClient } from '@renderer/clients'
 import type { Dictionary } from '@renderer/i18n'
 import { type AgentTerminalTab } from '@renderer/lib/terminal-tabs'
 import type { Dispatch, SetStateAction } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { type StoredSessionHistoryItem } from '../../../shared/agent-types'
 
 interface Parameters {
@@ -13,7 +13,7 @@ interface Parameters {
 export function useHistoryController({ t, setTabs }: Parameters) {
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(true)
 
   const [historyError, setHistoryError] = useState<string | null>(null)
 
@@ -35,6 +35,26 @@ export function useHistoryController({ t, setTabs }: Parameters) {
       setHistoryError(t.history.loadFailed)
     } finally {
       setHistoryLoading(false)
+    }
+  }, [t.history.loadFailed])
+
+  useEffect(() => {
+    let canceled = false
+    void storageClient.listSessionHistory(100).then(
+      (items) => {
+        if (canceled) return
+        setHistoryItems(items)
+        setHistoryError(null)
+        setHistoryLoading(false)
+      },
+      () => {
+        if (canceled) return
+        setHistoryError(t.history.loadFailed)
+        setHistoryLoading(false)
+      }
+    )
+    return () => {
+      canceled = true
     }
   }, [t.history.loadFailed])
 

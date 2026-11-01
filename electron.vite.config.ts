@@ -51,9 +51,6 @@ function rendererManualChunks(id: string): string | undefined {
   const pkg = nodeModuleName(id)
   if (pkg) {
     if (pkg === 'react' || pkg === 'react-dom' || pkg === 'scheduler') return 'react-vendor'
-    if (pkg === '@xterm/xterm' || pkg === '@xterm/addon-fit' || pkg === 'xterm') {
-      return 'xterm-vendor'
-    }
     if (pkg === 'lucide-react') return 'lucide-vendor'
     if (pkg === 'radix-ui' || pkg.startsWith('@radix-ui/')) return 'radix-vendor'
     if (pkg === 'recharts') return 'recharts-vendor'
@@ -66,7 +63,7 @@ function rendererManualChunks(id: string): string | undefined {
   const normalized = posixId(id)
   // Keep optional surfaces and their media outside the initial UI chunk.
   if (
-    /\/components\/(WhaleMonitor|whale\/|WikiSheet|SkillManager|SettingsSheet|McpServersSheet|HistoryPanel|CommandDirectorySheet|LocalDocumentsSheet|LocalPdfPreview|MemoryCenter|CodeIntelligenceSettings)/.test(
+    /\/components\/(WhaleMonitor|whale\/|WikiSheet|SkillManager|SettingsSheet|McpServersSheet|HistoryPanel|LocalDocumentsSheet|LocalPdfPreview|MemoryCenter|CodeIntelligenceSettings)/.test(
       normalized
     )
   ) {

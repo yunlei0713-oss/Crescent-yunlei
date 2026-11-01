@@ -27,15 +27,18 @@ git show 0ca23c0:src/shared/capture-intent.test.ts > src/shared/capture-intent.t
 | -------------------- | ------------------------------------------------------------------------- |
 | `npm run test`       | CI / hook step — runs security boundary policy checks; no unit-test claim |
 | `npm run test:local` | Local gate — runs gitignored tests (`CRESCENT_LOCAL_TESTS=1`)             |
-| `npm run ci`         | lint → test → typecheck → build (CI equivalent)                           |
+| `npm run ci`         | lint → static security checks → build (build includes typecheck)          |
+| `npm run verify:local` | CI followed by local-only behavioral tests; the complete local gate    |
 
 **Before commit**, run:
 
 ```bash
-npm run lint && npm run test:local && npm run typecheck && npm run build
+npm run verify:local
 ```
 
 ## Where to put tests
+
+`.githooks/pre-commit` automatically runs `npm run ci`, not local Vitest suites. When local tests exist, developers must run `test:local` before committing (or use `verify:local` above). Do not skip hooks or count the CI/build typecheck twice.
 
 Colocate with the module under test:
 
@@ -44,6 +47,39 @@ Colocate with the module under test:
 - `src/renderer/src/lib/*.test.ts`
 
 Vitest config: [`vitest.config.ts`](../vitest.config.ts).
+
+Local verification uses two isolated projects: Node-only suites keep their normal
+parallel workers; `desktop` fixtures run one at a time because they share the macOS
+display, focus and GPU. Per-file forks, sandboxing, assertions and test timeouts stay
+unchanged. This scheduling isolation is not proof of improved product performance.
+
+Native/complete-app tests require explicit opt-in flags and disposable app data.
+`MOXUN_FULL_QUALITY_LIVE=1` exercises synthetic 100/500/1000-message history,
+loopback streaming, zoom, Chromium accessibility and reduced motion.
+The full-app matrix records actual CSS and native content dimensions. macOS may
+clamp tall windows to the current display; those large viewports are explicitly
+marked as Chromium device-metrics emulation within the real app, not physical
+high-resolution/native-window acceptance. `MOXUN_FULL_QUALITY_DIAGNOSTIC=1` adds
+per-evaluation phases and native process metrics without changing timeouts.
+Provider regression evidence defaults to a per-run directory. Its screenshot gate
+waits for real animations and three identical consecutive compositor bitmaps within
+the existing 2-second settling window; it does not disable animations or use pixel
+tolerances. The foreground fixture labels display-clamped viewports as emulated.
+`capture-focus.jsonl` records actual native-window focus separately from document
+focus and the active element/focus ring; showing a window is not proof of OS focus.
+`MOXUN_PROVIDER_NATIVE_FOCUS_LIVE=1` additionally requires the actual native focus
+event before every capture and verifies that focus survives it. This native check
+remains separate from the original isolated-Renderer behavior assertions. A native
+focus failure is not accepted, including when the ordinary behavior suite passes.
+`MOXUN_PROVIDER_SETTINGS_SOURCE` can read archived pre-extraction Settings source
+without replacing workspace files; `MOXUN_PROVIDER_CAPTURE_DIAGNOSTIC=1` preserves
+changed capture frames. Cross-run strict PNG comparisons remain separate evidence
+and must not be reported green when native-control pixels differ.
+`MOXUN_FULL_LIFECYCLE_LIVE=1` checks real Renderer crash recovery, window close and
+Main exit with fixture-owned iTerm UUIDs/PTYs/sockets; its observation consent is
+simulated. Neither is packaged/VoiceOver or real native-consent acceptance.
+Never enable `MOXUN_VISION_LIVE` without approval: it reads saved provider credentials
+and sends a paid external request. Only close UUIDs and processes created by the test.
 
 ## Priority suites (restore first)
 
@@ -67,4 +103,4 @@ UI and main-process acceptance can use `CRESCENT_DATA_DIR` and `CRESCENT_USER_DA
 
 Runtime alternatives are evaluated in `experiments/agent-runtime`; they have their own lockfile, typecheck, benchmark and audit. Their simulated host transport results must not be reported as real SSH/MCP or model acceptance. Local test files remain gitignored and are not part of GitHub CI. Release quality checks use lint, static security checks, types, build and audit before packaging.
 
-The 2026-10-10 host execution regression uses per-line PTY acknowledgements, isolated bash/zsh/sh and ephemeral loopback SSH fixtures. See [the专项 acceptance record](Crescent_v1.0.11_专项改造验收记录_20261010.md) for the A–H evidence and limitations. `CRESCENT_OFFLINE_BUILD=1` enables local cache prechecks and prohibits native prebuild network fallback; prepare the locked Electron, DMG tooling and esbuild caches before disconnecting. `CRESCENT_LOCAL_BUILD_DIR` can select a separate directory under `dist/`. Never rebuild `out/` while packaging is reading it.
+The 2026-10-10 host execution regression is historical evidence, not current Agent permission or this round's acceptance. Its original `Crescent_v1.0.11_专项改造验收记录_20261010.md` is preserved externally; see [archive map](archive/README.md). `CRESCENT_OFFLINE_BUILD=1` enables local cache prechecks and prohibits native prebuild network fallback; prepare the locked Electron, DMG tooling and esbuild caches before disconnecting. `CRESCENT_LOCAL_BUILD_DIR` can select a separate directory under `dist/`. Never rebuild `out/` while packaging is reading it.

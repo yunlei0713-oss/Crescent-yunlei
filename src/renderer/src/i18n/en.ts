@@ -1,4 +1,25 @@
 const en = {
+  executionSettings: {
+    title: 'Execution method',
+    triggerPrefix: 'Run: ',
+    replyStyle: 'Reply style',
+    replyPrefix: 'Reply: ',
+    confirm: 'Confirm changes',
+    confirmHint: 'Allow low-risk read-only checks; approve changes individually.',
+    planned: 'Review a plan',
+    plannedHint:
+      'Approve an exact plan before its changes run. Selecting this does not approve it.',
+    manual: 'Manual changes',
+    manualHint:
+      'AI continues read-only checks and suggests commands. You execute changes yourself.',
+    advanced: 'Advanced permissions',
+    readonlyTitle: 'Read-only authorization',
+    basic: 'Basic read-only',
+    expanded: 'Extended read-only',
+    expandedSelected: 'Extended read-only authorization selected',
+    expandedHint:
+      'Allow additional low-risk read-only operations on the next task, limited to that task and target for 10 minutes. Sensitive reads and changes still need approval.'
+  },
   plan: {
     expires: 'Approval expires',
     binding: 'Audit binding',
@@ -20,25 +41,23 @@ const en = {
       change: 'Change',
       verify: 'Verification'
     },
-    mode: 'Execution mode',
-    immediate: 'Immediate',
-    planned: 'Planned',
-    immediateHint: 'Read-only commands run automatically; changes require individual approval.',
-    plannedHint:
-      'Review and approve a plan, then execute its exact steps. Out-of-plan operations stop.',
-    notApproval: 'Selecting planned execution does not approve a plan.',
-    title: 'Review change plan',
+    mode: 'Historical plan mode',
+    immediate: 'Immediate suggestions',
+    planned: 'Planned suggestions',
+    immediateHint: 'Agent analyzes and suggests. You operate the terminal manually.',
+    plannedHint: 'Historical plans are reference only. Verify each step and operate manually.',
+    notApproval: 'Historical execution settings grant no terminal permissions.',
+    title: 'Historical change plan',
     target: 'Target and scope',
     excluded: 'Excluded scope',
     identity: 'Target identity check',
     backup: 'Backups and protection',
     steps: 'Exact execution steps',
     recovery: 'Recovery steps',
-    recoveryConsent:
-      'Also approve these recovery steps (only after the specified step fails normally)',
+    recoveryConsent: 'Review recovery suggestions (manual operator steps)',
     impact: 'Impact and stop conditions',
     note: 'Approval / rejection note',
-    approve: 'Approve and execute plan',
+    approve: 'Historical plan execution unavailable',
     reject: 'Reject plan',
     pending: 'Awaiting review',
     expired: 'Approval expired. Submit a new plan.',
@@ -118,11 +137,9 @@ const en = {
     shellRetry: 'Retry shell start',
     swapPanes: 'Swap terminal and chat panes',
     themeSwitcher: 'Appearance',
-    themeOriginal: 'Crescent Original',
-    themeNightShift: 'Night Shift',
-    themeRouteSurvey: 'Route Survey',
-    themeInkSignal: 'Ink Signal',
-    title: 'Crescent',
+    themeInkWashLight: 'MoXun · Paper (Light)',
+    themeInkWashDark: 'MoXun · Night Ink (Dark)',
+    title: 'MoXun',
     titleDescription: 'Terminal + SSH + AI command workbench',
     workingDirectory: 'cwd',
     versionLabel: 'Version {version}',
@@ -135,15 +152,15 @@ const en = {
     updateSaved: 'Installer saved to Downloads'
   },
   onboarding: {
-    title: 'Welcome to Crescent',
+    title: 'Welcome to MoXun',
     description:
       'A short first-run tour: configure a model, connect a host, and open Skills when you need reusable playbooks.',
     stepModelTitle: 'Agent model',
     stepModelBody:
-      'Configure a model provider and API key in Settings. The agent uses the current terminal and configured MCP tools.',
+      'Configure a model provider and API key in Settings. The agent analyzes terminal evidence, logs and images, one suggestion at a time.',
     stepConnectionTitle: 'Terminal connections',
     stepConnectionBody:
-      'Connect to a local shell or SSH host. Agent commands run in the active terminal session.',
+      'Connect to a local shell or SSH host and enter commands yourself. The agent observes; local file changes require approval.',
     stepSkillsTitle: 'Skills',
     stepSkillsBody:
       'Skills are reusable Markdown playbooks. Browse local skills or install from a registry when ready.',
@@ -317,6 +334,13 @@ const en = {
     whitelistSuggestIgnore: 'Ignore'
   },
   connections: {
+    chooseTerminal: 'Choose login terminal',
+    connectWithIterm: 'Open iTerm and connect',
+    builtinTerminal: 'Built-in terminal',
+    builtinTerminalHint: 'Open a terminal in Moxun and run this connection’s login flow.',
+    itermTerminal: 'External terminal · iTerm',
+    itermTerminalHint:
+      'Create a shared iTerm session with the same login flow, synchronized terminal operations and Agent context.',
     actionsCount: 'login actions',
     connect: 'Connect',
     connectInSession: 'Open in session',
@@ -354,7 +378,7 @@ const en = {
     importAsNew: 'Import as new',
     loginActions: 'Login actions',
     loginActionsDescription:
-      'One line per terminal input after ssh starts. Crescent types these lines in order.',
+      'Your configured login inputs, sent in order when you connect using the connection UI.',
     localTerminal: 'Local terminal',
     manageConnections: 'Manage connections',
     namePlaceholder: 'production…',
@@ -366,12 +390,12 @@ const en = {
     passwordEnvVarDescription:
       'When password is empty, dev and installed builds both read this variable from the same place (~/.zprofile / ~/.zshrc on macOS/Linux; User/Machine env on Windows). Temporary terminal exports are ignored. Only the variable name is stored.',
     passwordEnvVarMissing:
-      'Could not read the password environment variable. Dev and installed builds ignore temporary terminal exports — on macOS/Linux define it in ~/.zprofile or ~/.zshrc; on Windows set a User environment variable, then relaunch Crescent',
+      'Could not read the password environment variable. Dev and installed builds ignore temporary terminal exports — on macOS/Linux define it in ~/.zprofile or ~/.zshrc; on Windows set a User environment variable, then relaunch MoXun',
     passwordEnvVarPlaceholder: 'e.g. CRESCENT_SSH_PASSWORD…',
     passwordPlaceholder: 'Optional; leave empty to skip automatic password input…',
     rootPassword: 'Root password',
     rootPasswordDescription:
-      'Automatically typed for sudo and other privilege password prompts. If empty, Crescent asks you instead.',
+      'Used by your manual connection for privilege password prompts. If empty, MoXun asks you instead.',
     rootPasswordPlaceholder: 'Optional; leave empty to type sudo passwords manually…',
     port: 'Port',
     readOnlyHint: 'Selected connections are read-only. Click Edit to change this copy.',
@@ -390,7 +414,7 @@ const en = {
     sshOptions: 'SSH options',
     sshOptionsCount: 'SSH options',
     sshOptionsDescription:
-      'One SSH argument per line. Crescent appends these to the generated ssh command before the host.',
+      'One SSH argument per line. MoXun appends these when you connect manually.',
     user: 'User',
     opsFeedbackTitle: 'Like/dislike ops feedback',
     opsFeedbackDescription:
@@ -409,6 +433,20 @@ const en = {
     opsFeedbackDeleteFailed: 'Failed to delete like/dislike feedback'
   },
   terminal: {
+    externalConnect: 'Connect external terminal',
+    externalShared: 'New local iTerm',
+    externalExisting: 'Existing session · read-only snapshots',
+    externalDescription:
+      'Select an iTerm session for terminal-aware assistance. Allow macOS Automation access on first connection.',
+    externalSharedHint:
+      'Operate manually in iTerm through a background PTY. AI observes only after permission for this session. Closing the owning MoXun conversation or quitting the app ends this shared session.',
+    externalExistingHint:
+      'Reads accessible text snapshots only after permission, possibly including some scrollback. Full history, command boundaries and exit codes are not guaranteed. Type in iTerm; detaching preserves the original session.',
+    externalEmpty:
+      'No iTerm sessions available. Create a shared terminal, or open an iTerm tab and refresh.',
+    externalRefresh: 'Refresh sessions',
+    externalOpen: 'Open in iTerm',
+    externalConnecting: 'Connecting to iTerm…',
     connectionAction: 'Typed login action',
     connectionActionSkipped: 'Skipped login action',
     connectionActionSkippedReason: 'Already at a host prompt; secret not required.',
@@ -459,7 +497,7 @@ const en = {
     connectionStarting: 'Starting connection with login actions',
     connectionTarget: 'Connection target',
     currentTerminalInstruction:
-      'The current terminal is already in a usable target environment. Do not rematch a Crescent connection; analyze the user request, create working steps, then continue execution and verification in the current terminal. If the task involves a non-current host, use SSH from this terminal with a concrete command for that host. If a password, passphrase, or verification code is needed, wait for the user to provide it through the terminal secret-input prompt.',
+      'Analyze the request using current Main-owned terminal evidence. Suggest one current step and wait for the operator to type it and observe real results. Ask the operator to connect when another host is needed. Never send terminal input or request credentials.',
     commandExecuted: 'Executed',
     commandFailed: 'Command failed',
     commandExitCode: 'Exit code',
@@ -516,7 +554,7 @@ const en = {
       'The local shell did not become ready within {ms}s. The SSH command was not sent. Retry the connection.',
     terminalSpawnTimeout: 'Terminal start timed out (10s).',
     postLoginAgentInstruction:
-      'The current terminal has already completed the Crescent target connection login. Do not rematch a Crescent connection; first understand the user goal through the requirement breakdown below, then continue in this terminal to complete the requested post-login inspection, verification, summary, and necessary handling until the user goal is complete. If the task involves a non-current host, use SSH from this terminal with a concrete command for that host. If a password, passphrase, or verification code is needed, wait for the user to provide it through the terminal secret-input prompt. If deleting or cleaning files is involved, inspect scope and impact first, clean only logs that are safe to remove, and summarize the result.',
+      'The operator connected through the connection UI. Use Main-owned target/session evidence, analyze the goal and suggest one current step. Wait for manual operation. Terminal execution belongs to the operator; local file changes require exact Diff approval.',
     requirementBreakdown: 'User requirement breakdown (must complete accordingly)',
     breakdownActions: 'Work steps',
     breakdownArtifact: 'Artifact requirement',
@@ -554,6 +592,8 @@ const en = {
     resizeSubterminalHeight: 'Resize sub-terminal height',
     resizeSubterminals: 'Resize sub-terminals',
     shellExited: 'Shell exited with code',
+    connectionDisconnected:
+      'The external terminal disconnected. Choose the connection and AI permission again; reconnection is never automatic.',
     inputLocked: 'Input locked',
     agentExecuting: 'AI executing',
     interruptCommand: 'Interrupt command (Ctrl+C)',
@@ -586,7 +626,7 @@ const en = {
     connectionMissing:
       'The connection configuration linked to this history session no longer exists; automatic reconnect is unavailable',
     description:
-      'Switching to a history session restores the chat. If it was linked to SSH, Crescent opens a terminal and logs in using the current connection configuration.',
+      'Switching to a history session restores the chat. If it was linked to SSH, MoXun opens a terminal using your current connection configuration.',
     empty: 'No history sessions yet.',
     loading: 'Loading history sessions…',
     loadFailed: 'Failed to load session history.',
@@ -671,7 +711,7 @@ const en = {
       'This history entry only has a preview; full steps may have been overwritten by an older slim snapshot.',
     fullRunNoSteps: 'No process steps to show.',
     fullRunNoResult: 'No result text to show.',
-    askPlaceholder: 'Ask AI, or type /command to check the current terminal…',
+    askPlaceholder: 'Ask AI, or add logs, screenshots and files to analyze…',
     chatNoTools: 'Configure a model to start chatting',
     contextAdded: 'Added to current run context',
     contextAdd: 'Add context',
@@ -679,16 +719,17 @@ const en = {
     contextSupplement: 'Runtime context supplement',
     contextSupplementDetail: 'User added during the running session:',
     currentTerminal:
-      'Agent bash commands run in this terminal pane so you can see them. File tools use the agent workspace.',
+      'You operate this terminal. Agent observes and suggests; local file changes require approval.',
     sessionTerminalLabel: 'Session terminal',
     sessionTerminalExecuting: 'Agent executing on this terminal',
     sessionPeerCount: '{count} peers',
     pinnedWorkflows: 'Pinned workflows',
     insertPinnedWorkflow: 'Insert workflow prompt',
-    emptyConversationTitle: 'No conversation yet',
+    emptyConversationTitle: 'Start a troubleshooting collaboration',
     emptyConversationHint:
-      'Ask Crescent about your cluster or workspace. Bash commands appear in the terminal pane; approve high-risk commands in the chat.',
+      'Describe a problem or attach logs, screenshots and configuration files. MoXun analyzes the evidence and suggests one step at a time. You operate the terminal; local file changes require your approval.',
     loadEarlierLogs: 'Load earlier messages',
+    backToLatest: 'Back to latest',
     loadEarlierLogsFailed: 'Failed to load earlier messages.',
     loadingEarlierLogs: 'Loading…',
     markdownExpandLarge: 'Expand all',
@@ -734,7 +775,7 @@ const en = {
     voiceEmpty:
       'No usable speech recognized. If your provider lacks Whisper, system speech recognition is required — check mic permission and network.',
     voicePermissionDenied:
-      'Microphone access denied. Allow Crescent to use the microphone in system settings.',
+      'Microphone access denied. Allow MoXun to use the microphone in system settings.',
     voiceFailed: 'Speech recognition failed',
     voiceProviderUnsupported:
       'Provider does not expose /audio/transcriptions. A multimodal chat model (vision, etc.) is not the same as microphone transcription.',
@@ -854,7 +895,7 @@ const en = {
     usedTool: 'Tool'
   },
   roles: {
-    assistant: 'Crescent',
+    assistant: 'MoXun',
     command: 'Command',
     error: 'Error',
     plan: 'Plan',
@@ -944,7 +985,7 @@ const en = {
   settings: {
     agentStyle: 'Working style',
     agentStyleHint:
-      'Controls how much Crescent says. It does not slow down work, skip checks, or change safety rules.',
+      'Controls explanation density. Every style only analyzes and suggests; file changes require approval.',
     agentStyleSwift: 'Swift',
     agentStyleSwiftHint:
       'Silent while working; 1–3 sentence result. Best for experts watching the terminal.',
@@ -976,18 +1017,18 @@ const en = {
       'OpenAI-compatible endpoint. For DeepSeek use https://api.deepseek.com (/v1 is added automatically).',
     closeTerminalConfirm: 'Warn before closing terminals',
     closeTerminalConfirmHint:
-      'When enabled, Crescent confirms before closing one or more terminal tabs. When disabled, it stops the matching terminal sessions immediately.',
+      'When enabled, MoXun confirms before closing one or more terminal tabs. When disabled, it stops the matching terminal sessions immediately.',
     workbenchLayout: 'Workbench layout',
-    workbenchLayoutHint: 'Applies immediately and is restored the next time Crescent opens.',
+    workbenchLayoutHint: 'Applies immediately and is restored the next time MoXun opens.',
     commandWhitelist: 'Command whitelist',
     commandWhitelistHint:
-      'One rule per line. Plain text is exact match; trailing * is prefix match; /.../ is regex match. Matching commands skip AI risk review and run directly.',
+      'Retained for historical compatibility only. No rule can grant the agent terminal input or execution permissions.',
     workspaceCwd: 'Agent workspace',
     workspaceCwdHint:
-      'Pi read/write/edit tools run in this directory. Bash commands run in the visible terminal pane. Leave empty to use ~/.crescent/workspace.',
+      'The agent reads and searches local files here; changes require complete Diff approval. Leave empty to use ~/.crescent/workspace.',
     piToolsTitle: 'Pi tools',
     piToolsHint:
-      'The agent uses Pi built-in tools: read/write/edit in the workspace cwd, and bash in the visible terminal (main or subterminal). High-risk commands require in-chat approval.',
+      'Reviewed host tools provide file reads, terminal evidence, single-step suggestions and file change requests. Main and child agents cannot execute commands. Unaudited MCP implementations are disabled.',
     copySkillInstallCommand: 'Copy install command',
     copySkillInstallLog: 'Copy install log',
     document: 'OpenAPI URL, JSON, or local file path',
@@ -1048,7 +1089,7 @@ const en = {
     instructionFileCharCount: '{n} chars',
     instructionFiles: 'Advanced: identity and principles',
     instructionFilesHint:
-      'Working style controls how much Crescent says. These files still shape judgment and identity; they do not override working-style density or safety rules.',
+      'Working style controls how much MoXun says. These files shape judgment and identity; they cannot change tool permissions.',
     maxToolsHint: 'Legacy compatibility field; the current Pi agent does not use it.',
     mcpArgs: 'MCP arguments',
     mcpArgsHint: 'One argument per line. Values are passed to the MCP command in order.',
@@ -1182,7 +1223,7 @@ const en = {
       'Configure model providers, MCP tools, command review, and local instruction files.',
     updateSection: 'App updates',
     updateSectionHint:
-      'Check GitHub Releases for a newer Crescent build. Download and install when an update is available.',
+      'Check the configured release channel for updates. Download and install when an update is available.',
     updateStatus: 'Status',
     updateStatusIdle: 'No update check yet.',
     updateStatusChecking: 'Checking for updates…',
@@ -1200,11 +1241,11 @@ const en = {
   },
   notifications: {
     approvalTitle: 'Command approval needed',
-    approvalBody: 'A high-risk command is waiting for your decision in Crescent.',
+    approvalBody: 'A local file change is waiting for review in MoXun.',
     passwordTitle: 'Terminal secret input needed',
     passwordBody: 'The terminal is waiting for a password or verification code.',
     clarifyTitle: 'Connection confirmation needed',
-    clarifyBody: 'Crescent needs you to confirm the connection target.',
+    clarifyBody: 'MoXun needs you to confirm the connection target.',
     runCompleteTitle: 'Task complete',
     runFailedTitle: 'Task ended (error)',
     attentionTabLabel: 'Needs your attention',

@@ -2,14 +2,11 @@ import { type FormEvent, type KeyboardEvent, useRef } from 'react'
 import { TriangleAlertIcon } from 'lucide-react'
 
 import { ImeSafeInput } from '@renderer/components/ImeSafeFields'
-import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@renderer/components/ui/field'
 import { Input } from '@renderer/components/ui/input'
-import { Textarea } from '@renderer/components/ui/textarea'
 import { useAppModalA11y } from '@renderer/hooks/useAppModalA11y'
 import type { Dictionary } from '@renderer/i18n'
-import type { CommandApprovalRequest, CommandRiskLevel } from '../../../shared/agent-types'
 
 export interface CloseTabsConfirmRequest {
   mode: 'tab' | 'other-tabs' | 'all-tabs'
@@ -99,7 +96,7 @@ export function CloseTabsConfirmModal({
   )
 }
 
-/** Inline password prompt in the conversation pane (command-approval style). */
+/** Operator-only SSH password prompt in the conversation pane. */
 export function PasswordPromptInlineCard({
   request,
   t,
@@ -181,142 +178,4 @@ export function PasswordPromptInlineCard({
       </div>
     </form>
   )
-}
-
-export function CommandApprovalModal({
-  commandApproval,
-  sessionLabel,
-  isCurrentSession,
-  t,
-  riskLabel,
-  rejectionReason,
-  onRejectionReasonChange,
-  onResolve
-}: {
-  commandApproval: CommandApprovalRequest | null
-  sessionLabel: string
-  isCurrentSession: boolean
-  t: Dictionary
-  riskLabel: string
-  rejectionReason: string
-  onRejectionReasonChange: (value: string) => void
-  onResolve: (approved: boolean) => void
-}): React.JSX.Element | null {
-  const panelRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useAppModalA11y(Boolean(commandApproval), {
-    onEscape: () => onResolve(false),
-    panelRef
-  })
-
-  if (!commandApproval) return null
-
-  return (
-    <div
-      ref={overlayRef}
-      className="app-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 overscroll-contain"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="command-review-title"
-    >
-      <div
-        ref={panelRef}
-        className="app-modal-panel flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border bg-background"
-      >
-        <div className="app-modal-header flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <TriangleAlertIcon className="size-4 text-destructive" aria-hidden="true" />
-              <h2 id="command-review-title" className="text-sm font-semibold">
-                {t.commandReview.title}
-              </h2>
-              <Badge variant={riskBadgeVariant(commandApproval.audit.risk)}>{riskLabel}</Badge>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{t.commandReview.description}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">{t.commandReview.sourceSession}</span>
-              <Badge variant={isCurrentSession ? 'secondary' : 'outline'} className="font-medium">
-                {sessionLabel}
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                {isCurrentSession ? t.commandReview.currentSession : t.commandReview.otherSession}
-              </Badge>
-            </div>
-          </div>
-        </div>
-        <div className="select-text min-h-0 flex-1 space-y-4 overflow-auto p-4 text-sm">
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.command}
-            </h3>
-            <Textarea
-              readOnly
-              value={commandApproval.command}
-              className="min-h-24 max-h-64 resize-y bg-muted/30 font-mono text-xs"
-            />
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.auditSummary}
-            </h3>
-            <p className="text-sm">{commandApproval.audit.summary}</p>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.operationReason}
-            </h3>
-            <p className="text-sm">{commandApproval.audit.operationReason}</p>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.riskPoints}
-            </h3>
-            <ul className="space-y-1 text-sm">
-              {commandApproval.audit.riskPoints.map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-md bg-muted/30 px-3 py-2">
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.impactAnalysis}
-            </h3>
-            <p className="text-sm">{commandApproval.audit.impactAnalysis}</p>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.recommendation}
-            </h3>
-            <p className="text-sm">{commandApproval.audit.recommendation}</p>
-          </section>
-          <section className="space-y-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-              {t.commandReview.decisionNote}
-            </h3>
-            <Textarea
-              value={rejectionReason}
-              onChange={(event) => onRejectionReasonChange(event.target.value)}
-              placeholder={t.commandReview.decisionNotePlaceholder}
-              className="min-h-20 resize-y text-sm"
-            />
-          </section>
-        </div>
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
-          <Button type="button" variant="destructive" onClick={() => onResolve(false)}>
-            {t.commandReview.reject}
-          </Button>
-          <Button type="button" onClick={() => onResolve(true)}>
-            {t.commandReview.approve}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function riskBadgeVariant(risk: CommandRiskLevel): 'outline' | 'secondary' | 'destructive' {
-  if (risk === 'high') return 'destructive'
-  if (risk === 'medium') return 'secondary'
-  return 'outline'
 }

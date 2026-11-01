@@ -139,8 +139,11 @@ export function initializeCrescentDatabase(): void {
   `)
 
   ensureColumn(db, 'session_tabs', 'summary', 'TEXT')
+  // Chat is the only workspace; do not retain the retired split/terminal preference.
+  db.prepare('DELETE FROM app_metadata WHERE key = ?').run('workbench_layout')
   ensureColumn(db, 'session_tabs', 'title_locked', 'INTEGER NOT NULL DEFAULT 0')
   ensureColumn(db, 'session_tabs', 'agent_style', 'TEXT')
+  ensureColumn(db, 'session_tabs', 'project_id', 'TEXT')
   ensureColumn(db, 'session_tabs', 'execution_mode', 'TEXT')
   ensureColumn(db, 'session_tabs', 'handoff_blocked', 'INTEGER NOT NULL DEFAULT 0')
   ensureColumn(db, 'session_tabs', 'expected_target', 'TEXT')
@@ -196,8 +199,8 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
   const now = new Date().toISOString()
   const statement = db.prepare(`
     INSERT INTO session_tabs (
-      tab_id, title, connection_id, connection_name, is_ssh, terminal_cwd, terminal_mode, agent_style, execution_mode, handoff_blocked, expected_target, connection_origin, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      tab_id, title, connection_id, connection_name, is_ssh, terminal_cwd, terminal_mode, agent_style, execution_mode, handoff_blocked, expected_target, connection_origin, updated_at, project_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(tab_id) DO UPDATE SET
       title = CASE
         WHEN session_tabs.title_locked = 1 THEN session_tabs.title
@@ -213,6 +216,7 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
       handoff_blocked = excluded.handoff_blocked,
       expected_target = excluded.expected_target,
       connection_origin = excluded.connection_origin,
+      project_id = excluded.project_id,
       updated_at = excluded.updated_at
   `)
 
@@ -230,7 +234,8 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
       tab.handoffBlocked ? 1 : 0,
       tab.expectedTarget ?? null,
       tab.connectionOrigin ?? null,
-      now
+      now,
+      typeof tab.projectId === 'string' ? tab.projectId.slice(0, 100) : null
     )
   }
 }
@@ -726,6 +731,7 @@ export function listSessionHistory(limit = 80): StoredSessionHistoryItem[] {
         tab.terminal_cwd AS terminalCwd,
         tab.terminal_mode AS terminalMode,
         tab.agent_style AS agentStyle,
+        tab.project_id AS projectId,
         tab.execution_mode AS executionMode,
         tab.handoff_blocked AS handoffBlocked,
         tab.expected_target AS expectedTarget,
@@ -769,6 +775,7 @@ export function listSessionHistory(limit = 80): StoredSessionHistoryItem[] {
   return rows.map((row) => ({
     tabId: row.tabId,
     title: row.title,
+    projectId: row.projectId ?? undefined,
     connectionId: row.connectionId ?? undefined,
     connectionName: row.connectionName ?? undefined,
     isSsh: Boolean(row.isSsh),
@@ -801,6 +808,7 @@ export function readSessionHistoryDetail(tabId: string): StoredSessionHistoryDet
         terminal_cwd AS terminalCwd,
         terminal_mode AS terminalMode,
         agent_style AS agentStyle,
+        project_id AS projectId,
         execution_mode AS executionMode,
         handoff_blocked AS handoffBlocked,
         expected_target AS expectedTarget,
@@ -843,6 +851,7 @@ export function readSessionHistoryDetail(tabId: string): StoredSessionHistoryDet
   return {
     tabId: tab.tabId,
     title: tab.title,
+    projectId: tab.projectId ?? undefined,
     connectionId: tab.connectionId ?? undefined,
     connectionName: tab.connectionName ?? undefined,
     isSsh: Boolean(tab.isSsh),
