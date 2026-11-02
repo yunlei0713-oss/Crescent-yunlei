@@ -5,6 +5,7 @@ import type {
   TerminalObservation
 } from '../../../shared/terminal-observation-types'
 import { redactSensitiveText } from '../../../shared/secret-redaction'
+import { TerminalTextStream } from '../terminal-text-stream'
 import {
   normalizeTerminalContextChars,
   terminalObservationBindingKey
@@ -36,10 +37,31 @@ export class TerminalObserver {
   private atPrompt = false
   private sensitive = false
   private uncertainInput = false
-  private escape = ''
-  private discardEscape = false
   private alternateScreen = false
-  private outputLine = ''
+  private readonly output = new TerminalTextStream(
+    (line) => this.appendLine(line),
+    (sequence) => {
+      // eslint-disable-next-line no-control-regex -- OSC 133 is a terminal control protocol.
+      const marker = /^\x1b\]133;([ABCD])(?:;(-?\d+))?(?:\x07|\x1b\\)$/.exec(sequence)
+      if (marker) this.marker(marker[1], marker[2])
+      if (/\?1049h$/.test(sequence)) {
+        this.alternateScreen = true
+        this.atPrompt = false
+        if (!this.current) this.begin('interactive')
+        if (this.current) this.current.status = 'interactive'
+      }
+      if (/\?1049l$/.test(sequence)) this.alternateScreen = false
+    },
+    (line) => {
+      if (/-----BEGIN .*PRIVATE KEY-----/.test(line)) this.privateKey = true
+      if (SENSITIVE_PROMPT.test(line) || line === '[Long line withheld]') {
+        this.sensitive = true
+        this.atPrompt = false
+        this.input = ''
+        if (this.current) this.current.sensitive = true
+      }
+    }
+  )
   private privateKey = false
   private unavailable = false
 
@@ -67,8 +89,9 @@ export class TerminalObserver {
   private reset(): void {
     this.records = []
     this.current = undefined
-    this.input = this.escape = this.outputLine = ''
-    this.discardEscape = this.alternateScreen = false
+    this.input = ''
+    this.output.reset()
+    this.alternateScreen = false
     this.atPrompt = this.sensitive = this.uncertainInput = this.privateKey = false
     this.unavailable = false
   }
@@ -161,65 +184,16 @@ export class TerminalObserver {
       this.sensitive ||= this.current.sensitive
       this.current = undefined
     }
-    // Parse control sequences across arbitrary transport chunk boundaries.
-    for (const char of data) {
-      if (this.escape) {
-        this.escape += char
-        if (this.escape.startsWith('\x1b]')) {
-          if (char === '\x07' || this.escape.endsWith('\x1b\\')) {
-            const marker =
-              !this.discardEscape &&
-              // eslint-disable-next-line no-control-regex -- OSC 133 is a terminal control protocol.
-              /^\x1b\]133;([ABCD])(?:;(-?\d+))?(?:\x07|\x1b\\)$/.exec(this.escape)
-            if (marker) this.marker(marker[1], marker[2])
-            this.escape = ''
-            this.discardEscape = false
-          }
-        } else if (this.escape.startsWith('\x1b[')) {
-          if (this.escape.length > 2 && /[@-~]/.test(char)) {
-            if (/\?1049h$/.test(this.escape)) {
-              this.alternateScreen = true
-              this.atPrompt = false
-              if (!this.current) this.begin('interactive')
-              if (this.current) this.current.status = 'interactive'
-            }
-            if (/\?1049l$/.test(this.escape)) this.alternateScreen = false
-            this.escape = ''
-          }
-        } else if (this.escape.length > 2) this.escape = ''
-        if (this.escape.length > 2048) {
-          // Keep consuming an overlong OSC until its terminator, never expose its payload.
-          this.discardEscape = true
-          this.escape = this.escape.slice(0, 2) + (char === '\x1b' ? char : '')
-        }
-        continue
-      }
-      if (char === '\x1b') {
-        this.escape = char
-        continue
-      }
-      if (char === '\n') {
-        this.flushLine()
-        continue
-      }
-      if (char === '\r') continue
-      if (char >= ' ' || char === '\t') this.outputLine += char
-      if (SENSITIVE_PROMPT.test(this.outputLine)) {
-        this.sensitive = true
-        this.atPrompt = false
-        this.input = ''
-        if (this.current) this.current.sensitive = true
-      }
-      if (this.outputLine.length > MAX_OUTPUT) {
-        this.outputLine = '[Long line withheld]'
-        this.sensitive = true
-        this.input = ''
-      }
-    }
+    this.output.write(data)
   }
   private flushLine(): void {
-    const line = this.outputLine
-    this.outputLine = ''
+    this.output.flushLine()
+  }
+  private appendLine(line: string): void {
+    // A readline redraw/wrap can emit LF before the operator submits. Those
+    // apparent complete lines are still editable input, not output evidence.
+    if (this.atPrompt) return
+    if (SENSITIVE_PROMPT.test(line)) this.sensitive = true
     if (/-----BEGIN .*PRIVATE KEY-----/.test(line)) this.privateKey = true
     const text =
       this.privateKey || this.sensitive ? '[Sensitive content withheld]' : redactSensitiveText(line)
@@ -235,12 +209,15 @@ export class TerminalObserver {
       this.current = undefined
       this.atPrompt = false
     } else if (marker === 'B') {
-      this.outputLine = '' // Prompt itself is not command output.
+      this.output.clearLine() // Prompt itself is not command output.
       this.atPrompt = !this.alternateScreen
       this.sensitive = false
       this.uncertainInput = false
       this.input = ''
     } else if (marker === 'C') {
+      // Pre-execution marks the end of the editable echo. Never attach a draft
+      // (or a history/completion redraw) to the command's output evidence.
+      this.output.clearLine()
       if (!this.current) this.begin('running')
       if (this.current) {
         this.current.boundary = 'osc133'

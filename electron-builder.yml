@@ -33,6 +33,15 @@ asarUnpack:
   - '**/node-pty/prebuilds/**'
   # Pi is ESM-only and loaded via dynamic import(); keep it outside asar.
   - '**/@earendil-works/**'
+  # Finite runtime import closure of the Pi SDK facade and MCP client transports.
+  # Builder hoists nested dependencies; unpacking only @earendil-works loses them.
+  # Keep this list covered by the local macos-esm-packaging test, not **/node_modules/**.
+  - '**/{chalk,diff,grok-mermaid,highlight.js,marked,get-east-asian-width,ignore,hosted-git-info,lru-cache,minimatch,balanced-match,brace-expansion,semver,yaml}/**'
+  - '**/{typebox,jiti,proper-lockfile,graceful-fs,retry,p-retry,cross-spawn,path-key,shebang-command,shebang-regex,which,isexe,signal-exit}/**'
+  - '**/{@anthropic-ai/sdk,@google/genai,@stablelib/base64,openai,undici,partial-json,fast-sha256,standardwebhooks}/**'
+  - '**/{google-auth-library,google-logging-utils,gaxios,gcp-metadata,json-bigint,bignumber.js,base64-js,jws,jwa,ecdsa-sig-formatter,buffer-equal-constant-time,safe-buffer}/**'
+  - '**/{node-fetch,data-uri-to-buffer,fetch-blob,formdata-polyfill,node-domexception,web-streams-polyfill,extend,https-proxy-agent,agent-base,debug,ms,has-flag,supports-color,ws}/**'
+  - '**/{zod,zod-to-json-schema,ajv,ajv-formats,fast-deep-equal,fast-uri,json-schema-traverse,eventsource,eventsource-parser,content-type,pkce-challenge}/**'
   # MCP SDK is ESM-first and loaded via dynamic import().
   - '**/@modelcontextprotocol/**'
   # Pi optional image tooling (WASM) must be readable outside asar.

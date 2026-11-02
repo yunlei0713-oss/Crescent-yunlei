@@ -16,7 +16,7 @@
 - macOS ICNS 山水图铺满方形画布，不额外添加透明安全边、灰色底板、圆角或阴影。macOS 26 会自动将图标适配到标准 Dock 外框；为直角图额外留边会触发系统二次缩小，形成“灰色底板里的小图”。以系统实际渲染而非源 PNG 尺寸验收；更早的 macOS 版本仍需独立人工验收，不声明自动外框行为相同。
 - `npm start` 是已构建产物的预览，不会编译源码；源码改动先运行 `npm run build`，或直接使用 `npm run dev`。
 - `prestart`、`predev` 和 `postinstall` 在 Electron 启动前生成并写入原生开发 bundle 图标。原生名称为“墨巡”，开发 bundle id 为 `com.crescent.moxun.dev`，图标文件名包含内容摘要，避免复用旧 Crescent 图标缓存。Main 不再运行时切换 Dock PNG，启动、运行与最小化徽标统一使用 bundle ICNS。
-- 正式包继续使用 `com.crescent.app`，原数据目录不变。`build:mac`、`build:mac:local` 和 `build:unpack` 都先生成图标；历史 `dist/` 安装包不会被自动覆盖或删除，必须重新打包才有新图标。
+- 正式包继续使用 `com.crescent.app`，原数据目录不变。`build:mac`、`build:mac:local` 和 `build:unpack` 都先生成图标；`afterPack` 在签名前将原生 `CFBundleIconFile` 改为带内容摘要的山水 ICNS，同时替换原引用文件，避免最小化徽标沿用旧文件名缓存。历史 `dist/` 安装包不会被自动覆盖或删除，必须重新打包才有新图标。
 - 已运行的旧进程需要完全退出后重启。若 Dock 固定的是旧安装包，应移除该旧快捷入口、重新固定新应用；不要通过清空系统缓存、重启 Dock 或删除用户数据代替资源修复。
 
 ## 标准打包入口
@@ -42,6 +42,8 @@ dist/local-macos/x64/moxun-<version>-x64-mac.zip
 ## Intel 原生依赖约束
 
 保留 `asarUnpack` 对 node-pty、Pi、MCP SDK、Pi WASM 等运行资源的规则。移除已不适用的 Universal 合并配置，不删除运行时原生依赖或粗放扩大 unpack 范围。
+
+Pi SDK facade 和 MCP client transport 的实际 import 依赖闭包也必须 unpack；electron-builder 会提升嵌套依赖，只有 `@earendil-works/**` 不足以覆盖 `highlight.js` 等运行模块。`electron-builder.yml` 使用有限包名清单，本地 `scripts/macos-esm-packaging.test.ts` 对当前安装依赖的 import 图做回归检查，不把整个 `node_modules` unpack。包内运行核验必须在仓库外的独立 `.app` 副本执行，避免向上解析到开发机 `node_modules` 而假通过。
 
 node-pty 和 Pi 必须保留 x64 native prebuilds；依赖自带的其他平台 prebuild 不代表交付其他架构应用。原生准备脚本只准备锁定的 x64 esbuild，并拒绝其他 Mac 架构；即使在 Apple Silicon 主机打包，也不得误用宿主 arm64 可执行文件。Electron 主程序和 esbuild 的 `lipo -archs` 都应仅为 `x86_64`。PDF.js 预览和 worker 打入 renderer；Main 文本提取另需保留 legacy 模块及 worker。可选 native canvas 不进入运行包，必须验证该条件下的文本提取。
 

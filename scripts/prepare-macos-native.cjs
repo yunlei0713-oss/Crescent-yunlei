@@ -5,6 +5,7 @@ const { homedir } = require('node:os')
 const { execFile } = require('node:child_process')
 const { promisify } = require('node:util')
 const { Arch } = require('builder-util')
+const { patchMacosAppIcon } = require('./patch-macos-app-icon.cjs')
 
 const run = promisify(execFile)
 
@@ -90,6 +91,11 @@ module.exports = async function prepareMacosNative(context) {
   if (context.electronPlatformName !== 'darwin') return
   const arch = Arch[context.arch]
   if (arch !== 'x64') throw new Error('Only macOS Intel (x64) packaging is supported')
+  // afterPack runs before signing and before DMG/ZIP read the bundle. Preserve
+  // the release appId/data identity, but invalidate the legacy icon filename.
+  const appPath = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
+  const icon = patchMacosAppIcon(appPath, path.join(context.packager.projectDir, 'build/icon.icns'))
+  console.log(`[mac-icon] packaged native icon: ${icon.iconName}`)
   const modules = path.join(
     context.appOutDir,
     `${context.packager.appInfo.productFilename}.app`,

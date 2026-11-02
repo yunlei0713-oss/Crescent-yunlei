@@ -1,13 +1,8 @@
+import { renderedTerminalText } from '../terminal-text-stream'
+
 /** Screen snapshots are plain text, never a trustworthy terminal control stream. */
 export function plainTerminalCache(text: string): string {
-  return (
-    text
-      // eslint-disable-next-line no-control-regex -- Drop OSC (BEL/ST terminated) and CSI from cached PTY text.
-      .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\][^\x07\x1b]*$|\x1b\[[0-?]*[ -/]*[@-~]/g, '')
-      .replace(/\r\n?/g, '\n')
-      // eslint-disable-next-line no-control-regex -- Preserve newline/tab only; cache snapshots never replay control bytes.
-      .replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '')
-  )
+  return renderedTerminalText(text)
 }
 
 /** Bounded iTerm screen text; not a full terminal emulator. */
