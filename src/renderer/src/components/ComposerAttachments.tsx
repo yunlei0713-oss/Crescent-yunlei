@@ -20,23 +20,28 @@ export function ComposerAttachments({
   const mismatch = hasImageAttachments(references) && !model?.capabilities?.imageInput
   return (
     <>
-      <div className="text-[10px] text-muted-foreground">
-        {model?.capabilities?.imageInput
-          ? zh
-            ? '视觉 · PNG / JPEG / WebP'
-            : 'Vision · PNG / JPEG / WebP'
-          : zh
-            ? '纯文本 · 未启用图片输入'
-            : 'Text only · image input disabled'}
-        {' · '}
-        {zh ? '文本 / PDF 文本提取' : 'Text / PDF text extraction'}
-        {' · '}
-        {ATTACHMENT_LIMITS.fileBytes / 1024 / 1024} MiB/{zh ? '文件' : 'file'} ·{' '}
-        {ATTACHMENT_LIMITS.files} {zh ? '个文件' : 'files'} · {zh ? '合计' : 'total'}{' '}
-        {ATTACHMENT_LIMITS.totalBytes / 1024 / 1024} MiB
-        {' · '}PDF ≤ {ATTACHMENT_LIMITS.pdfBytes / 1024 / 1024} MiB / {ATTACHMENT_LIMITS.pdfPages}{' '}
-        {zh ? '页' : 'pages'}
-      </div>
+      <details className="text-[10px] text-muted-foreground">
+        <summary className="w-fit cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+          {zh ? '附件说明' : 'Attachment info'}
+        </summary>
+        <div className="py-1 leading-relaxed">
+          {model?.capabilities?.imageInput
+            ? zh
+              ? '视觉 · PNG / JPEG / WebP'
+              : 'Vision · PNG / JPEG / WebP'
+            : zh
+              ? '纯文本 · 未启用图片输入'
+              : 'Text only · image input disabled'}
+          {' · '}
+          {zh ? '文本 / PDF 文本提取' : 'Text / PDF text extraction'}
+          {' · '}
+          {ATTACHMENT_LIMITS.fileBytes / 1024 / 1024} MiB/{zh ? '文件' : 'file'} ·{' '}
+          {ATTACHMENT_LIMITS.files} {zh ? '个文件' : 'files'} · {zh ? '合计' : 'total'}{' '}
+          {ATTACHMENT_LIMITS.totalBytes / 1024 / 1024} MiB
+          {' · '}PDF ≤ {ATTACHMENT_LIMITS.pdfBytes / 1024 / 1024} MiB / {ATTACHMENT_LIMITS.pdfPages}{' '}
+          {zh ? '页' : 'pages'}
+        </div>
+      </details>
       {mismatch && (
         <div
           role="alert"

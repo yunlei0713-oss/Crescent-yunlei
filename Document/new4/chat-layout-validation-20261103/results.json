@@ -1,0 +1,41 @@
+{
+  "scope": "Real ChatWorkspace/AgentLogList/timeline in isolated Electron; synthetic data; no model or terminal",
+  "checks": [
+    "actual tool components render",
+    "tool details are initially collapsed",
+    "suggestion chooser initially collapsed",
+    "legacy reference title derives from the actual user message",
+    "assistant prose has no vertical rule",
+    "success replies have no surrounding result card",
+    "raw tool result remains available after expansion",
+    "suggestions render Markdown emphasis",
+    "selected suggestion still inserts into composer callback",
+    "renderer has no runtime errors"
+  ],
+  "layouts": [
+    {
+      "width": 800,
+      "bodyWidth": 800,
+      "logWidth": 800,
+      "logScrollWidth": 800,
+      "dockBottom": 700,
+      "logBottom": 520.5,
+      "dockTop": 520.5,
+      "height": 700,
+      "userWidth": 312,
+      "assistantWidth": 752
+    },
+    {
+      "width": 1440,
+      "bodyWidth": 1440,
+      "logWidth": 1440,
+      "logScrollWidth": 1440,
+      "dockBottom": 900,
+      "logBottom": 720.5,
+      "dockTop": 720.5,
+      "height": 900,
+      "userWidth": 312,
+      "assistantWidth": 1040
+    }
+  ]
+}

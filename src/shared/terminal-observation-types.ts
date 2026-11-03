@@ -4,8 +4,16 @@ export interface TerminalIdentity {
   itermSessionId?: string
   tabId: string
   connectionId?: string
+  connectionName?: string
+  connectionOrigin?: import('./connection-state').ConnectionOrigin
+  /** Saved connection entry point; a cluster's current node may differ. */
+  configuredHost?: string
+  targetScope?: 'host' | 'cluster'
+  connectionPhase?: import('./connection-state').ConnectionPhase
   sessionGeneration: number
   host?: string
+  hostSource?: 'prompt' | 'configured-target' | 'local-shell'
+  /** Current-host directory only. Never the local PTY launch cwd for SSH. */
   cwd?: string
 }
 export interface TerminalObservation extends TerminalIdentity {

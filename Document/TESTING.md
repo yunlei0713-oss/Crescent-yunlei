@@ -28,6 +28,8 @@
 
 连接卡片中的观察选择经原生确认后，先显示「已授权 · 登录完成后开始观察」。Main 验证该保存连接的登录成功后，才开始观察；登录阶段不采集证据。等待期间更换 owner、连接、PTY 代次或 iTerm UUID，以及主动结束协作，都会使等待授权失效。登录后主机变化保留观察授权和带主机标签的历史，但不继承旧 Shell 的部分输入、命令边界或提示符信任；旧主机的建议及触发 token 失效。主机标签来自提示符，不是服务器身份验证。
 
+AI 上下文分别携带侧栏连接名称、入口主机、当前提示符主机、主机信息来源及登录状态。集群节点可以与入口主机不同；命令边界不确定或 `cd` 没有完成证据，只表示命令结果／目录变化未确认，不代表已知主机也未知。共享 PTY 的本地启动目录不作为远端 cwd 发送；远端目录未知时省略。多个 iTerm 窗口按当前目标的 tabId、Session UUID 和 PTY 代次区分，其他已授权终端仅提供各自带标签的参考证据，最新输出不会替换当前目标。
+
 Agent 永远不能写入、粘贴、执行或中断终端。建议只能复制后在 iTerm 手动执行；文件修改另走完整 Diff 人工审批。
 
 ## 同一对话连接多个终端
@@ -96,3 +98,27 @@ is available. Never substitute mock consent or static bundle hashes for that che
 See the [2026-11-03 report](new4/MOXUN_ISSUE_REFACTOR_IMPLEMENTATION_REPORT_20261103.md)
 for the actual complete-gate results, retained screenshot-stability failures and
 native Automation limitations. Tests remain gitignored and are not committed.
+
+## 内置文档写作 Skill 与命令块主题（2026-11-03）
+
+`src/shared/document-writing.test.ts` 和
+`src/main/agent/builtin-document-writing.test.ts` 为本地测试，覆盖中英文自动触发、
+普通问答和代码任务排除、相邻任务续接、完整 Prompt 注入、手动 Skill 合并去重及资源失败降级。
+运行 `npm run ci` 和 `npm run test:local`；结果与 Electron 目录/ASAR 资源夹具、
+深浅主题截图见 [文档写作实施记录](new4/MOXUN_DOCUMENT_WRITING_IMPLEMENTATION_REPORT_20261103.md)。
+ASAR 夹具不代表正式 macOS 安装包验收；本轮未创建安装包，未使用付费模型或业务终端。
+
+2026-11-03 对话区布局优化、引用元数据标题修复，以及工具/建议折叠交互的
+Electron 视觉验证和完整回归结果，见 [对话区优化记录](new4/MOXUN_CHAT_LAYOUT_OPTIMIZATION_REPORT_20261103.md)。
+新增 `src/shared/conversation-title.test.ts` 保持本地 gitignored；视觉夹具使用合成消息，
+不代表真实文件变更、业务终端或原生授权验收。
+
+首字断段、Pi 内容块身份和 Codex 风格阅读区/定位条回归见
+[流式与导航实施记录](new4/MOXUN_CONVERSATION_STREAM_AND_NAVIGATION_REPORT_20261103.md)。
+本地 `agent-stream-steps.test.ts`、`runtime-stream.test.ts` 与
+`conversation-refinement.browser.test.ts` 分别检查纯拼接、Pi 订阅身份和真实 Electron 组件链路；
+桌面测试使用独立 Profile、合成事件和测试自有窗口，不接业务终端或付费模型。
+
+该组件回归还覆盖定位条贴边及悬停波形、消息角色/时间/复制按钮的悬停显示、
+回复用时分割线和行内代码跨行边框；最新视觉与完整回归结果见
+[对话区细节打磨记录](new4/MOXUN_CHAT_DETAIL_POLISH_REPORT_20261103.md)。

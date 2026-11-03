@@ -38,8 +38,21 @@ export function ToolCallRow({
     : undefined
   const batchParts = observation ? parseBatchedToolOutput(observation) : null
   const showObservation = Boolean(observation && observation !== command && !batchParts)
-  const observationLong = Boolean(showObservation && observation && observation.length > 240)
-  const toolLabel = isPtyCommand ? t.input.toolCommandLabel : step.name
+  const toolNames: Record<string, string> =
+    t.locale === 'zh-CN'
+      ? {
+          request_file_change: '文件变更',
+          read: '读取文件',
+          code_search: '搜索代码',
+          symbol_lookup: '查找符号'
+        }
+      : {
+          request_file_change: 'File changes',
+          read: 'Read file',
+          code_search: 'Search code',
+          symbol_lookup: 'Find symbol'
+        }
+  const toolLabel = isPtyCommand ? t.input.toolCommandLabel : (toolNames[step.name] ?? step.name)
   const executionTarget = step.executionTarget
   const executionLabel = executionTarget
     ? [
@@ -79,79 +92,55 @@ export function ToolCallRow({
   const warnFinish = Boolean(step.interrupted || step.timedOut)
 
   return (
-    <div className="app-agent-tool-step min-w-0 space-y-1.5">
-      <div className="flex items-start gap-2 min-w-0">
+    <details className="app-agent-tool-step group/tool min-w-0">
+      <summary className="flex cursor-pointer select-none items-center gap-2 text-xs text-muted-foreground marker:content-none focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
         {running ? (
-          <Loader2Icon
-            className="mt-0.5 size-3 shrink-0 animate-spin text-primary"
-            aria-hidden="true"
-          />
-        ) : warnFinish ? (
-          <TriangleAlertIcon
-            className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
-            aria-hidden="true"
-          />
+          <Loader2Icon className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden="true" />
+        ) : warnFinish || step.isError ? (
+          <TriangleAlertIcon className="size-3.5 shrink-0 text-destructive" aria-hidden="true" />
         ) : (
-          <span
-            className={`mt-1.5 size-1.5 shrink-0 rounded-full ${
-              step.isError ? 'bg-destructive' : 'bg-primary/70'
-            }`}
-            aria-hidden="true"
-          />
+          <CheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
         )}
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-xs font-medium text-foreground/80">{toolLabel}</span>
-            <span className="text-[11px] text-muted-foreground">{statusLabel}</span>
-            {executionLabel && (
-              <button
-                type="button"
-                className="max-w-full truncate text-[11px] text-primary underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-primary"
-                title={executionLabel}
-                onClick={() => onFocusTerminal?.(executionTarget!.paneId)}
-              >
-                {executionLabel}
-              </button>
-            )}
-          </div>
-          {batchParts ? (
-            <BatchCommandGroupCard
-              parts={batchParts}
-              isError={Boolean(step.isError)}
-              running={running}
-              t={t}
-            />
-          ) : preview ? (
-            <CommandBlock command={preview} t={t} tone="command" />
-          ) : null}
-        </div>
-      </div>
-
-      {showObservation && observation ? (
-        observationLong ? (
-          <details className="group ml-5 min-w-0">
-            <summary className="flex cursor-pointer select-none items-center gap-1.5 text-[11px] font-medium text-muted-foreground outline-none marker:content-none focus-visible:ring-2 focus-visible:ring-ring/50">
-              <ChevronRightIcon
-                className="size-3 shrink-0 transition-transform group-open:rotate-90"
-                aria-hidden="true"
-              />
-              <span className="truncate font-mono group-open:hidden">
-                {observation.slice(0, 120)}
-                {observation.length > 120 ? '…' : ''}
-              </span>
-              <span className="hidden group-open:inline">{t.input.toolFinished}</span>
-            </summary>
-            <pre className="mt-1 max-h-56 overflow-auto rounded-md border border-border/60 bg-muted/15 p-2 font-mono text-[11px] whitespace-pre-wrap break-words text-foreground/90">
-              {observation}
-            </pre>
-          </details>
-        ) : (
-          <pre className="ml-5 max-h-56 overflow-auto rounded-md border border-border/60 bg-muted/15 p-2 font-mono text-[11px] whitespace-pre-wrap break-words text-foreground/90">
+        <span className="min-w-0 truncate font-medium">{toolLabel}</span>
+        <span
+          className={`shrink-0 text-[11px] ${step.isError || warnFinish ? 'text-destructive' : ''}`}
+        >
+          {statusLabel}
+        </span>
+        <ChevronRightIcon
+          className="size-3 shrink-0 transition-transform group-open/tool:rotate-90"
+          aria-hidden="true"
+        />
+      </summary>
+      <div className="app-agent-tool-details min-w-0 space-y-2">
+        <p className="text-[11px] text-muted-foreground">{step.name}</p>
+        {executionLabel && (
+          <button
+            type="button"
+            className="max-w-full truncate text-[11px] text-primary underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-primary"
+            title={executionLabel}
+            onClick={() => onFocusTerminal?.(executionTarget!.paneId)}
+          >
+            {executionLabel}
+          </button>
+        )}
+        {batchParts ? (
+          <BatchCommandGroupCard
+            parts={batchParts}
+            isError={Boolean(step.isError)}
+            running={running}
+            t={t}
+          />
+        ) : preview ? (
+          <CommandBlock command={preview} t={t} tone="command" />
+        ) : null}
+        {showObservation && observation ? (
+          <pre className="max-h-56 overflow-auto rounded-md border border-border/60 bg-muted/15 p-2 font-mono text-[11px] whitespace-pre-wrap break-words text-foreground/90">
             {observation}
           </pre>
-        )
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </details>
   )
 }
 

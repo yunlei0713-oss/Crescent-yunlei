@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 
 import { AgentLogList } from '@renderer/components/AgentLogList'
+import { ConversationNavigator } from './ConversationNavigator'
 import { CaptureDraftPin } from '@renderer/components/CaptureDraftPin'
 import { ComposerEditor, type ComposerInputHandle } from '@renderer/components/ComposerEditor'
 import { ConnectionClarifyCard } from '@renderer/components/ConnectionClarifyCard'
@@ -330,6 +331,12 @@ export function ChatWorkspace({
               />
             ) : undefined
           }
+        />
+        <ConversationNavigator
+          key={sessionChatTab.id}
+          entries={sessionChatTab.agentLog}
+          logRef={agentLogRef}
+          t={t}
         />
         {!followingAgentLog ? (
           <Button

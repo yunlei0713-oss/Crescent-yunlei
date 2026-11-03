@@ -13,6 +13,7 @@ import {
   type OpsHistoryRow
 } from './sqlite/rows'
 import { normalizeExecutionMode } from '../shared/execution-plan'
+import { conversationTitleFromMessage, conversationTitleText } from '../shared/conversation-title'
 import { existsSync, mkdirSync } from 'fs'
 import type { DatabaseSync } from 'node:sqlite'
 
@@ -273,7 +274,7 @@ export function saveAgentLog(entry: StoredAgentLogEntry): void {
     ensureConversation(
       db,
       entry.tabId,
-      entry.kind === 'user' ? entry.text.slice(0, 80) : undefined
+      entry.kind === 'user' ? conversationTitleFromMessage(entry.text) : undefined
     ),
     entry.logId,
     entry.kind,
@@ -390,7 +391,7 @@ export function saveAgentRun(run: StoredAgentRun): void {
   `
   ).run(
     run.runId,
-    ensureConversation(db, run.tabId, run.input.slice(0, 80)),
+    ensureConversation(db, run.tabId, conversationTitleFromMessage(run.input)),
     run.input,
     run.status,
     run.connectionId ?? null,
@@ -767,7 +768,7 @@ function mapConversation(row: SessionHistoryRow): StoredSessionHistoryItem {
   return {
     tabId: row.tabId,
     conversationId: row.tabId,
-    title: row.title,
+    title: conversationTitleText(row.title),
     projectId: row.projectId ?? undefined,
     summary: row.summary ?? undefined,
     updatedAt: row.updatedAt,

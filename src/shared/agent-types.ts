@@ -662,7 +662,7 @@ export interface LocalInstructionDocument {
 
 export type AgentEvent =
   | ({ type: 'status'; message: string } & AgentEventMeta)
-  | ({ type: 'thought'; message: string } & AgentEventMeta)
+  | ({ type: 'thought'; message: string; streamId?: string } & AgentEventMeta)
   | ({ type: 'plan'; steps: string[] } & AgentEventMeta)
   | ({ type: 'skills'; message: string; skills: AgentSkillUsage[] } & AgentEventMeta)
   | ({
@@ -690,7 +690,7 @@ export type AgentEvent =
       elapsedMs?: number
     } & AgentEventMeta)
   | ({ type: 'command-review'; command: string; audit: CommandAuditResult } & AgentEventMeta)
-  | ({ type: 'token'; text: string } & AgentEventMeta)
+  | ({ type: 'token'; text: string; streamId?: string } & AgentEventMeta)
   | ({
       type: 'usage'
       input: number

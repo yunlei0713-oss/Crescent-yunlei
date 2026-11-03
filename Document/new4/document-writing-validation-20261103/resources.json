@@ -1,0 +1,16 @@
+{
+  "scope": "Actual Electron directory and ASAR/unpacked resource fixtures; not a macOS application package or installer",
+  "packagingRules": true,
+  "directory": {
+    "appPath": "/var/folders/9b/zxdf7gd103xfwmrbskqdgq640000gn/T/moxun-document-validation-cJuD9e/app",
+    "skillPath": "/var/folders/9b/zxdf7gd103xfwmrbskqdgq640000gn/T/moxun-document-validation-cJuD9e/app/resources/skills/document-writing/SKILL.md",
+    "characters": 1056,
+    "fullInjection": true
+  },
+  "asar": {
+    "appPath": "/var/folders/9b/zxdf7gd103xfwmrbskqdgq640000gn/T/moxun-document-validation-cJuD9e/app.asar",
+    "skillPath": "/var/folders/9b/zxdf7gd103xfwmrbskqdgq640000gn/T/moxun-document-validation-cJuD9e/app.asar/resources/skills/document-writing/SKILL.md",
+    "characters": 1056,
+    "fullInjection": true
+  }
+}

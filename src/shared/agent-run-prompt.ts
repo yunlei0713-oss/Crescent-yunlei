@@ -18,6 +18,69 @@ export interface SkillPromptPart {
   content: string
 }
 
+/** Route the request itself, never quoted documents, code or terminal evidence. */
+export function shouldUseDocumentWriting(input: string, previousDocumentTask = false): boolean {
+  const request = input
+    .replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g, '')
+    .replace(/^\s*>.*$/gm, '')
+    .trim()
+  if (!request) return false
+  const lead = request.replace(
+    /^(?:(?:请问?|帮我|告诉我|我想(?:了解|知道))\s*|(?:please|can you|could you)\s+)*/i,
+    ''
+  )
+  if (
+    /^(?:如何|怎么|怎样|为什么|什么是)|^(?:how\s+(?:to|do|can|should)|what\s+(?:is|are)|explain\b)|^(?:SOP|文档|方案|报告)\s*(?:应该|要)?(?:怎么|如何|怎样)(?:写|编写|修改|排版)/i.test(
+      lead
+    ) ||
+    /(?:不要|不用|无需|别)(?:再|帮我)?\s*(?:写|生成|整理|修改|润色|排版)|\b(?:do not|don't)\s+(?:write|draft|create|generate|revise|format)\b/i.test(
+      request
+    )
+  )
+    return false
+
+  const document =
+    /文档|方案|项目.{0,8}计划|改造计划|故障报告|研究报告|报告|架构说明|操作手册|会议纪要|会议记录|聊天记录|论文|规范|指南|\b(?:documents?|reports?|proposals?|sop|runbooks?|guides?|readme|papers?|manuals?|meeting\s+(?:minutes|notes)|project\s+plans?)\b|\.(?:md|docx?|pdf)\b/i
+  const action =
+    /创建|撰写|编写|起草|生成|写|整理|修改|重写|润色|完善|校对|规范化|排版|转换|转成|转为|导出|制定|补充|优化|做一份|需要一份|\b(?:write|draft|create|generate|organize|revise|rewrite|polish|format|convert|export|edit|update|prepare|improve)\b/i
+  // Both noun-first revisions and verb-first creation are common in Chinese/English.
+  if (
+    request
+      .split(/[。！？!?，,;；\n]/)
+      .some(
+        (sentence) =>
+          document.test(sentence) &&
+          action.test(sentence) &&
+          !/(?:写|创建|修改|完善|优化).{0,60}(?:代码|脚本|函数|组件|接口|生成器|解析器)\s*$|\b(?:write|create|edit|update|improve)\b.{0,80}\b(?:script|function|component|endpoint|generator|parser)\b(?: code)?\s*$/i.test(
+            sentence
+          )
+      )
+  )
+    return true
+
+  // Short elliptical turns inherit only the immediately preceding task. An unrelated
+  // request returns false and clears continuity in the host; old keywords cannot latch it.
+  return (
+    (previousDocumentTask &&
+      request.length <= 120 &&
+      /^(?:请\s*|帮我\s*)?(?:(?:继续|再)(?:修改|完善|润色|整理|排版|校对|补充|优化|重写)(?:一下)?|按(?:照)?(?:上面|刚才|这个|原来)的?(?:结构|大纲|模板)(?:来)?(?:整理|修改|重写|排版)|(?:导出|转成|转为)(?:\s*(?:Word|PDF|Markdown|docx?)\b))\s*[。！!]?$/i.test(
+        request
+      )) ||
+    (previousDocumentTask &&
+      /^(?:please\s+)?(?:continue\s+(?:editing|revising|writing)|(?:revise|polish|rewrite|improve|format)\s+(?:it|that|the above)|(?:export|convert)\s+(?:it|that)\s+(?:as|to)\s+(?:pdf|word|markdown|docx))\s*[.!]?$/i.test(
+        request
+      ))
+  )
+}
+
+/** Cold UI context is labelled; inspect recent user turns, never assistant output. */
+export function documentWritingFromRecentContext(context: string | undefined): boolean {
+  const turns = [
+    ...(context ?? '').matchAll(/^\[(你|You|用户|User)\] ([\s\S]*?)(?=^\[|$(?![\s\S]))/gim)
+  ]
+  return turns.slice(-3).reduce((active, turn) => shouldUseDocumentWriting(turn[2], active), false)
+}
+
 export interface BuildPromptTextInput {
   diagnosticGoal?: string
   proactiveToken?: string

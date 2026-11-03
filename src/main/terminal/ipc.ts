@@ -862,28 +862,51 @@ function observationIdentity(
 ): TerminalIdentity {
   const target = readTerminalExecutionTarget(senderId, tabId)
   const session = sessions.get(getSessionKey(senderId, tabId))
+  const state = connectionStates.get(getSessionKey(senderId, tabId))
   const unavailable =
     session?.detached ||
     (session?.external?.kind === 'shared' &&
       Boolean(session.external.windowState) &&
       session.external.windowState !== 'attached')
-  const observedHost =
-    sessions.get(getSessionKey(senderId, tabId))?.external?.kind === 'existing'
-      ? undefined
-      : (connectionStates.get(getSessionKey(senderId, tabId))?.promptHost ??
-        target.expectedTarget ??
-        (target.executionMode === 'local' ? hostname() : undefined))
+  const existing = session?.external?.kind === 'existing'
+  const observedHost = existing
+    ? undefined
+    : (state?.promptHost ??
+      target.expectedTarget ??
+      (target.executionMode === 'local' ? hostname() : undefined))
+  const local = isLocalMachinePromptHost(observedHost, hostname())
   return {
     ownerId: senderId,
     conversationId: session?.conversationId,
     itermSessionId: sessions.get(getSessionKey(senderId, tabId))?.external?.sessionId,
     tabId,
     connectionId: target.connectionId,
+    connectionName: target.connectionName,
+    connectionOrigin: target.connectionOrigin,
+    configuredHost: existing ? undefined : state?.expectedHost,
+    targetScope: existing ? undefined : state?.targetScope,
+    connectionPhase: existing
+      ? undefined
+      : connectionPhase(
+          state,
+          target.readiness?.alignment ?? 'unknown',
+          Boolean(session),
+          target.readiness?.restoring ?? false
+        ),
     sessionGeneration: unavailable ? 0 : (generation ?? target.sessionGeneration ?? 0),
     // A local zsh may alternate a bare % with its hostname prompt in one result.
     // Those are one host, not evidence-segment changes on every command.
-    host: isLocalMachinePromptHost(observedHost, hostname()) ? 'local-shell' : observedHost,
-    cwd: target.cwd
+    host: local ? 'local-shell' : observedHost,
+    hostSource: !observedHost
+      ? undefined
+      : local
+        ? 'local-shell'
+        : state?.promptHost
+          ? 'prompt'
+          : 'configured-target',
+    // session.cwd belongs to the local PTY process. SSH does not update it;
+    // exposing it beside a remote host creates a false identity conflict.
+    cwd: local ? target.cwd : undefined
   }
 }
 

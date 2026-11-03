@@ -39,7 +39,10 @@ export const AgentLogMessage = memo(function AgentLogMessage({
     >
       {conversation ? (
         <>
-          <div className="app-agent-message-meta mb-1.5 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+          <div className="app-agent-message-content">
+            <AgentLogContent {...content} />
+          </div>
+          <div className="app-agent-message-meta mt-1 flex items-center justify-start gap-3 text-[11px] text-muted-foreground">
             <div className="flex min-w-0 items-center gap-2">
               <span className="font-medium text-foreground/70">{logRoleLabel(entry.kind, t)}</span>
               <time className="tabular-nums text-muted-foreground/70" dateTime={entry.createdAt}>
@@ -60,9 +63,6 @@ export const AgentLogMessage = memo(function AgentLogMessage({
                 {copied ? <CheckIcon aria-hidden="true" /> : <CopyIcon aria-hidden="true" />}
               </Button>
             </div>
-          </div>
-          <div className="app-agent-message-content">
-            <AgentLogContent {...content} />
           </div>
         </>
       ) : readyKind && onOpenCaptureDraft ? (

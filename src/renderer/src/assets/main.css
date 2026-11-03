@@ -599,6 +599,14 @@
   padding: 0;
 }
 
+.markdown-body .app-inline-code {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: break-spaces;
+}
+
 .markdown-body blockquote {
   background: color-mix(in srgb, var(--app-markdown-surface) 88%, transparent);
   border-left: 2px solid color-mix(in srgb, var(--app-markdown-accent) 55%, transparent);

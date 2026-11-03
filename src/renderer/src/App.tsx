@@ -4115,9 +4115,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
         <div className="app-titlebar-brand flex h-full shrink-0 items-center px-3">
           <ProductLogo />
         </div>
-        <span className="min-w-0 flex-1 truncate px-3 text-xs text-muted-foreground">
-          {sessionChatTab.title}
-        </span>
+        <div className="min-w-0 flex-1" />
         <Button
           size="xs"
           variant="ghost"

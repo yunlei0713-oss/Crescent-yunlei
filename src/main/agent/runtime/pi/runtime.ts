@@ -69,10 +69,15 @@ export function createPiRuntime(pi: PiSdkFacade): AgentRuntimeAdapter<Options> {
         getContextUsage: () => session.getContextUsage(),
         getContext: () => session.sessionManager.buildSessionContext().messages,
         getRevision: () => session.sessionManager.getLeafId() ?? undefined,
-        subscribe: (listener, meta) =>
-          session.subscribe((event) =>
+        subscribe: (listener, meta) => {
+          let messageSequence = 0
+          return session.subscribe((event) => {
+            if (event.type === 'message_start') messageSequence += 1
             listener({
-              events: mapPiSessionEventToAgentEvents(event, meta),
+              events: mapPiSessionEventToAgentEvents(event, {
+                ...meta,
+                streamMessageId: `${meta.runId}:message:${messageSequence}`
+              }),
               usageChanged: ['compaction_end', 'turn_end', 'message_end'].includes(event.type),
               retryError: event.type === 'auto_retry_start' ? event.errorMessage : undefined,
               compaction:
@@ -80,7 +85,8 @@ export function createPiRuntime(pi: PiSdkFacade): AgentRuntimeAdapter<Options> {
                   ? { reason: event.reason, aborted: event.aborted }
                   : undefined
             })
-          ),
+          })
+        },
         dispose: () => session.dispose()
       }
       return adapter

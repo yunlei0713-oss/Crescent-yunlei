@@ -4,6 +4,7 @@ import { localizeAgentEventMessage } from '@renderer/lib/agent-event-formatters'
 import type { AgentRunStep } from '@renderer/lib/terminal-tabs'
 import { Button } from '../ui/button'
 import { formatDuration } from './helpers'
+import { ChevronRightIcon } from 'lucide-react'
 
 /** Unknown/internal statuses stay inspectable, but never become conversation prose. */
 export function visibleStatus(step: AgentRunStep, t: Dictionary): string | undefined {
@@ -79,9 +80,20 @@ export function RunDiagnostics({
   const zh = t.locale === 'zh-CN'
   const statuses = document.steps.filter((step) => step.kind === 'status')
   return (
-    <details className="min-w-0 px-3 py-2 text-xs text-muted-foreground">
-      <summary className="cursor-pointer focus-visible:outline-ring">
-        {zh ? '运行详情' : 'Run details'}
+    <details className="app-agent-run-diagnostics group/diagnostics min-w-0 text-xs text-muted-foreground">
+      <summary
+        className="flex cursor-pointer items-center gap-1.5 marker:content-none focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+        aria-label={zh ? '运行详情' : 'Run details'}
+      >
+        {typeof document.elapsedMs === 'number' && !document.errorMarkdown
+          ? `${zh ? '用时' : 'Worked for'} ${formatDuration(document.elapsedMs)}`
+          : zh
+            ? '运行详情'
+            : 'Run details'}
+        <ChevronRightIcon
+          className="size-3 transition-transform group-open/diagnostics:rotate-90"
+          aria-hidden="true"
+        />
       </summary>
       <div className="mt-2 min-w-0 space-y-2">
         {typeof document.elapsedMs === 'number' && (

@@ -10,6 +10,10 @@ import type {
 } from '../../../shared/agent-types'
 import type { AgentStyle } from '../../../shared/agent-style'
 import { normalizeAgentStyle } from '../../../shared/agent-style'
+import {
+  conversationTitleText,
+  conversationTitleFromMessage
+} from '../../../shared/conversation-title'
 
 import type { AgentMessageReferences } from './agent-message-refs'
 
@@ -84,6 +88,7 @@ export type AgentRunStep =
   | {
       id: string
       kind: 'thought'
+      streamId?: string
       text: string
       phase: 'streaming' | 'done'
       seq?: number
@@ -91,6 +96,7 @@ export type AgentRunStep =
   | {
       id: string
       kind: 'message'
+      streamId?: string
       text: string
       phase: 'streaming' | 'done'
       seq?: number
@@ -501,7 +507,9 @@ export function getSessionDisplayTitle(
   _activeTabId?: string
 ): string {
   const chat = getSessionChatTab(tabs, tab.id) ?? tab
-  return sanitizeTerminalDisplayTitle(chat.title, 'Conversation')
+  const firstUser = chat.agentLog.find((entry) => entry.kind === 'user')
+  const fallback = firstUser ? conversationTitleFromMessage(firstUser.text) : 'Conversation'
+  return sanitizeTerminalDisplayTitle(chat.title, fallback)
 }
 
 export function getNextTerminalTitle(baseTitle: string, tabs: AgentTerminalTab[]): string {
@@ -517,7 +525,7 @@ export function getNextTerminalTitle(baseTitle: string, tabs: AgentTerminalTab[]
 }
 
 export function sanitizeTerminalDisplayTitle(value: string | undefined, fallback: string): string {
-  const title = value?.trim() ?? ''
+  const title = conversationTitleText(value, '')
   if (!title || BLOCKED_TERMINAL_TITLE_PATTERN.test(title)) return fallback
   return title
 }

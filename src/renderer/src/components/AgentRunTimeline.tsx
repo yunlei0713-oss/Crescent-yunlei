@@ -8,10 +8,11 @@ import {
   shouldShowAgentRunResult
 } from '@renderer/lib/agent-run-document'
 import { hasAgentTextTruncationMarker } from '@renderer/lib/agent-text-limits'
-import { CheckIcon, Loader2Icon, TriangleAlertIcon } from 'lucide-react'
+import { Loader2Icon, TriangleAlertIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { OpsHistoryRating } from '../../../shared/agent-types'
 import { sortTimelineBySeq } from '../../../shared/connection-state'
+import { coalesceLegacyMessageFragments } from '@renderer/lib/agent-stream-steps'
 import { ApprovalStepCard } from './timeline/ApprovalStepCard'
 import { ConnectionFlowGroup, LoginResultCard } from './timeline/ConnectionRows'
 import {
@@ -66,17 +67,19 @@ export function AgentRunTimeline({
     typeof document.elapsedMs === 'number' || Boolean(document.errorMarkdown?.trim())
   const hasApprovalStep = document.steps.some((step) => step.kind === 'approval')
   const visibleSteps = omitDuplicateTrailingMessage(
-    sortTimelineBySeq(
-      coalesceVisiblePtyToolSteps(
-        document.steps.filter(
-          (step) =>
-            !isNoiseStatusStep(step, t, hasApprovalStep) &&
-            (step.kind !== 'status' ||
-              (Boolean(visibleStatus(step, t)) &&
-                (!document.errorMarkdown ||
-                  ![step.title, step.detail].some((text) =>
-                    text?.includes(document.errorMarkdown)
-                  ))))
+    coalesceLegacyMessageFragments(
+      sortTimelineBySeq(
+        coalesceVisiblePtyToolSteps(
+          document.steps.filter(
+            (step) =>
+              !isNoiseStatusStep(step, t, hasApprovalStep) &&
+              (step.kind !== 'status' ||
+                (Boolean(visibleStatus(step, t)) &&
+                  (!document.errorMarkdown ||
+                    ![step.title, step.detail].some((text) =>
+                      text?.includes(document.errorMarkdown)
+                    ))))
+          )
         )
       )
     ),
@@ -94,6 +97,11 @@ export function AgentRunTimeline({
   const resultTruncated = hasAgentTextTruncationMarker(resultBodyMarkdown)
   const canOpenFullRun = Boolean(storageRef && runFinished)
   const activity = resolveActivity(document, visibleSteps, t)
+  const activityAlreadyVisible = visibleSteps.some(
+    (step) =>
+      (step.kind === 'thought' && step.phase === 'streaming') ||
+      (step.kind === 'tool' && step.phase === 'started')
+  )
   return (
     <div className="app-agent-run min-w-0 space-y-2.5">
       {timelineItems.length > 0 && (
@@ -165,32 +173,39 @@ export function AgentRunTimeline({
           })}
         </div>
       )}
-      {activity && !runFinished && !document.loginMeta && (
+      {activity && !activityAlreadyVisible && !runFinished && !document.loginMeta && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Loader2Icon className="size-3.5 animate-spin" aria-hidden="true" />
           <span>{activity}</span>
         </div>
       )}
+      {runFinished && (
+        <RunDiagnostics
+          document={document}
+          t={t}
+          onView={canOpenFullRun ? () => setFullOverlayTab('steps') : undefined}
+          onExportFull={onExportFull}
+          onExportTrace={onExportTrace}
+        />
+      )}
       {loginFinished && !errorBodyMarkdown ? (
         <LoginResultCard document={document} t={t} />
       ) : (
         showResult && (
-          <div className="app-agent-result min-w-0 rounded-xl border border-border/70 bg-card/50">
-            <div className="flex items-center gap-2 border-b border-border/60 bg-muted/20 px-3 py-2">
-              {errorBodyMarkdown ? (
+          <div
+            className={`app-agent-result min-w-0 ${errorBodyMarkdown ? 'rounded-lg border border-destructive/30 bg-destructive/5' : ''}`}
+          >
+            {errorBodyMarkdown && (
+              <div className="flex items-center gap-2 px-3 pt-3 text-destructive">
                 <TriangleAlertIcon
                   className="size-3.5 shrink-0 text-destructive"
                   aria-hidden="true"
                 />
-              ) : (
-                <CheckIcon className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-              )}
-              <span className="text-xs font-semibold tracking-wide text-foreground/85">
-                {errorBodyMarkdown ? t.input.error : t.input.result}
-              </span>
-            </div>
+                <span className="text-xs font-semibold">{t.input.error}</span>
+              </div>
+            )}
             {resultBodyMarkdown && (
-              <div className="min-w-0 space-y-2 px-3 py-2.5">
+              <div className={`min-w-0 space-y-3 ${errorBodyMarkdown ? 'px-3 py-2.5' : ''}`}>
                 {resultTruncated && canOpenFullRun && (
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span>{t.input.resultTruncatedHint}</span>
@@ -222,13 +237,7 @@ export function AgentRunTimeline({
           </div>
         )
       )}
-      <RunDiagnostics
-        document={document}
-        t={t}
-        onView={canOpenFullRun ? () => setFullOverlayTab('steps') : undefined}
-        onExportFull={onExportFull}
-        onExportTrace={onExportTrace}
-      />
+
       {fullOverlayTab && storageRef && (
         <FullAgentRunOverlay
           tabId={storageRef.tabId}

@@ -18,9 +18,9 @@ export {
 export function logClassName(kind: AgentLogEntry['kind']): string {
   switch (kind) {
     case 'user':
-      return 'ml-auto max-w-[92%] rounded-2xl rounded-br-md bg-primary/10 px-3.5 py-2.5 shadow-[0_4px_18px_color-mix(in_srgb,var(--primary)_6%,transparent)]'
+      return 'ml-auto w-fit max-w-[85%]'
     case 'assistant':
-      return 'mr-1 max-w-[min(100%,54rem)] px-0.5 py-1'
+      return 'w-full py-1'
     case 'error':
       return 'max-w-[min(100%,54rem)] rounded-xl border border-destructive/30 bg-destructive/8 px-3.5 py-3 text-destructive'
     case 'tool':
@@ -185,12 +185,12 @@ export function logListItemSpacingClass(
   previousKind: AgentLogEntry['kind'] | undefined,
   isFirst: boolean
 ): string {
-  if (isFirst) return 'mt-4'
+  if (isFirst) return 'mt-1'
 
   const conversation = isConversationLog(kind)
   const previousConversation = previousKind ? isConversationLog(previousKind) : false
 
-  if (conversation) return previousConversation ? 'mt-3' : 'mt-4'
+  if (conversation) return previousConversation ? 'mt-7' : 'mt-5'
   return previousConversation ? 'mt-2' : 'mt-1'
 }
 

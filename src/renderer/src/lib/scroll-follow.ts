@@ -1,4 +1,6 @@
 export const DEFAULT_SCROLL_FOLLOW_THRESHOLD_PX = 48
+/** Explicit history navigation pauses pending streaming follow frames. */
+export const CONVERSATION_JUMP_EVENT = 'moxun:conversation-jump'
 
 export interface ScrollFollowDecisionInput {
   force: boolean

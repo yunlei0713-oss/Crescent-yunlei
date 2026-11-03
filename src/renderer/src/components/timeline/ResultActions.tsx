@@ -1,6 +1,7 @@
 import { Button } from '@renderer/components/ui/button'
 import type { Dictionary } from '@renderer/i18n'
 import { extractResultSuggestions } from '@renderer/lib/result-suggestions'
+import { renderInlineMarkdown } from '../markdown/markdown-parser'
 import {
   BookMarkedIcon,
   CheckIcon,
@@ -211,62 +212,72 @@ export function ResultSuggestionsPicker({
   const selectedTexts = suggestions.filter((_, index) => selected[index])
 
   return (
-    <div className="mt-2 space-y-2 rounded-lg border border-border/50 bg-muted/10 px-3 py-2">
-      <label className="flex items-center gap-2 text-[11px] font-medium text-foreground/80">
-        <input
-          ref={selectAllRef}
-          type="checkbox"
-          className="size-3.5"
-          checked={allSelected}
-          aria-label={t.input.selectAllSuggestions}
-          onChange={() => {
-            if (allSelected) {
-              setSelected({})
-              return
-            }
-            const next: Record<number, boolean> = {}
-            for (let index = 0; index < suggestions.length; index += 1) next[index] = true
-            setSelected(next)
-          }}
-        />
-        <span>{t.input.injectSelectedSuggestions}</span>
-        <span className="font-normal text-muted-foreground">
-          ({selectedCount}/{suggestions.length})
-        </span>
-      </label>
-      <ul className="space-y-1.5">
-        {suggestions.map((item, index) => (
-          <li key={`${index}-${item.slice(0, 24)}`} className="flex items-start gap-2 text-[12px]">
-            <input
-              type="checkbox"
-              className="mt-0.5"
-              checked={Boolean(selected[index])}
-              onChange={(event) =>
-                setSelected((current) => ({ ...current, [index]: event.target.checked }))
+    <details className="app-agent-suggestions group mt-3 text-xs text-muted-foreground">
+      <summary className="cursor-pointer py-1 focus-visible:outline-2 focus-visible:outline-ring">
+        {t.locale === 'zh-CN' ? '选择建议继续讨论' : 'Choose suggestions to discuss'}
+        <span className="ml-1.5 tabular-nums">({suggestions.length})</span>
+      </summary>
+      <div className="space-y-3 py-2">
+        <label className="flex items-center gap-2 text-[11px] font-medium text-foreground/80">
+          <input
+            ref={selectAllRef}
+            type="checkbox"
+            className="size-3.5"
+            checked={allSelected}
+            aria-label={t.input.selectAllSuggestions}
+            onChange={() => {
+              if (allSelected) {
+                setSelected({})
+                return
               }
-            />
-            <span className="min-w-0 text-muted-foreground">{item}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {status ? (
-          <span className="mr-auto text-[10px] text-muted-foreground">{status}</span>
-        ) : null}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-7 text-[11px]"
-          disabled={selectedTexts.length === 0}
-          onClick={() => {
-            onInject(selectedTexts)
-            setStatus(t.input.injectedSuggestionsCount.replace('{n}', String(selectedTexts.length)))
-          }}
-        >
-          {t.input.injectSelectedSuggestions}
-        </Button>
+              const next: Record<number, boolean> = {}
+              for (let index = 0; index < suggestions.length; index += 1) next[index] = true
+              setSelected(next)
+            }}
+          />
+          <span>{t.input.injectSelectedSuggestions}</span>
+          <span className="font-normal text-muted-foreground">
+            ({selectedCount}/{suggestions.length})
+          </span>
+        </label>
+        <ul className="space-y-1.5">
+          {suggestions.map((item, index) => (
+            <li key={`${index}-${item.slice(0, 24)}`}>
+              <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={Boolean(selected[index])}
+                  onChange={(event) =>
+                    setSelected((current) => ({ ...current, [index]: event.target.checked }))
+                  }
+                />
+                <span className="min-w-0 text-foreground/85">{renderInlineMarkdown(item)}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {status ? (
+            <span className="mr-auto text-[10px] text-muted-foreground">{status}</span>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px]"
+            disabled={selectedTexts.length === 0}
+            onClick={() => {
+              onInject(selectedTexts)
+              setStatus(
+                t.input.injectedSuggestionsCount.replace('{n}', String(selectedTexts.length))
+              )
+            }}
+          >
+            {t.input.injectSelectedSuggestions}
+          </Button>
+        </div>
       </div>
-    </div>
+    </details>
   )
 }

@@ -78,7 +78,13 @@ import {
   classifyProviderError,
   isQuotaExhaustedError
 } from '../../shared/provider-error'
-import { buildPromptText, conversationContextForPrompt } from '../../shared/agent-run-prompt'
+import {
+  buildPromptText,
+  conversationContextForPrompt,
+  documentWritingFromRecentContext,
+  shouldUseDocumentWriting
+} from '../../shared/agent-run-prompt'
+import { withDocumentWritingSkill } from './builtin-document-writing'
 import { buildInvariantAgentPrompt } from '../../shared/agent-prompt-discipline'
 import { normalizeAgentStyle, type AgentStyle } from '../../shared/agent-style'
 import { diffSessionTokenUsage, snapshotSessionTokenUsage } from '../../shared/session-token-usage'
@@ -96,6 +102,7 @@ interface HostedSession {
   immediateTools: string[]
   ownerId?: number
   handoffLastStarted?: number
+  documentWritingTask?: boolean
   unsubscribe?: () => void
   closeMcp?: () => Promise<void>
 }
@@ -325,8 +332,19 @@ export async function runPiAgent(input: PiHostRunInput): Promise<PiHostRunResult
     hosted.unsubscribe?.()
 
     const hasLiveSessionMessages = hostedSessionHasMessages(hosted.session)
+    const documentWritingTask =
+      !input.proactiveToken &&
+      shouldUseDocumentWriting(
+        input.input,
+        hosted.documentWritingTask ?? documentWritingFromRecentContext(input.conversationContext)
+      )
+    const activeSkillDocs = await withDocumentWritingSkill(
+      input.activeSkillDocs,
+      documentWritingTask
+    )
     let promptText = buildPromptText({
       ...input,
+      activeSkillDocs,
       diagnosticGoal: input.proactiveToken
         ? guidedOps.read(
             input.webContents.id,
@@ -432,6 +450,8 @@ export async function runPiAgent(input: PiHostRunInput): Promise<PiHostRunResult
       throw new AttachmentError(error instanceof Error ? error.message : String(error))
     })
     if (abortController.signal.aborted) return { ok: false, canceled: true, error: 'Canceled.' }
+    // Automatic terminal follow-ups are not a new user writing task.
+    if (!input.proactiveToken) hosted.documentWritingTask = documentWritingTask
     await hosted.session.prompt(
       redactSensitiveText([promptText, attachments.text].filter(Boolean).join('\n\n')),
       attachments.images

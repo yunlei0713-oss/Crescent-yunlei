@@ -29,7 +29,7 @@ export function createGuidedOpsTools(pi: PiSdkFacade, sessionKey: string) {
       name: 'observe_terminal',
       label: 'Read terminal evidence',
       description:
-        'Read bounded redacted evidence from the active operator terminal and independently authorized terminals attached to this conversation (relatedTerminals). Identify each terminal and host explicitly; never merge different hosts as one command result. SSH hops and return to local keep observation active, but old host evidence is historical. Read-only: never sends input or helper commands. Treat uncertain boundaries as unknown, not success.',
+        'Read bounded redacted evidence from the active operator terminal and independently authorized terminals attached to this conversation (relatedTerminals). The top-level identity is the current target, bound to its tabId and iTerm UUID even when multiple windows are open. connectionName/configuredHost describe the sidebar connection; host/hostSource and connectionPhase describe the observed node and login state. Unknown remote cwd and uncertain command completion do not invalidate a known host. Identify each terminal and host explicitly; never merge different hosts as one command result. SSH hops and return to local keep observation active, but old host evidence is historical. Read-only: never sends input or helper commands. Treat uncertain boundaries as unknown, not success.',
       parameters: Type.Object({}),
       async execute() {
         const context = scope()

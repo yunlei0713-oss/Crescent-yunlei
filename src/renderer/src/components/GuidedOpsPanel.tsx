@@ -186,7 +186,10 @@ export function GuidedOpsPanel({
         <div className="mt-3">
           <p className="text-xs text-muted-foreground" role="status">
             {zh ? labels[snapshot.state] : snapshot.state} ·{' '}
-            {snapshot.evidence.identity.host ?? '?'} · {snapshot.evidence.identity.cwd}
+            {snapshot.evidence.identity.connectionName &&
+              `${snapshot.evidence.identity.connectionName} · `}
+            {snapshot.evidence.identity.host ?? '?'}
+            {snapshot.evidence.identity.cwd && ` · ${snapshot.evidence.identity.cwd}`}
           </p>
           {!snapshot.evidence.available && (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -207,7 +210,9 @@ export function GuidedOpsPanel({
                     {zh ? '目标会话与安全边界' : 'Target and safety boundary'}
                   </summary>
                   <p className="pt-2">
-                    {proposal.target.host ?? '?'} · {proposal.target.tabId} · #
+                    {proposal.target.connectionName && `${proposal.target.connectionName} · `}
+                    {proposal.target.host ?? '?'} ·{' '}
+                    {proposal.target.itermSessionId ?? proposal.target.tabId} · #
                     {proposal.target.sessionGeneration} ·{' '}
                     {zh
                       ? '人工执行；未知安全性不等于只读'

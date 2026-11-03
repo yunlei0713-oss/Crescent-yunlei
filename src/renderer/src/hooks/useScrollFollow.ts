@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 import {
   DEFAULT_SCROLL_FOLLOW_THRESHOLD_PX,
+  CONVERSATION_JUMP_EVENT,
   scrollFollowTargetTop,
   scrollToBottom
 } from '@renderer/lib/scroll-follow'
@@ -112,12 +113,14 @@ export function useScrollFollow(
     resizeObserver.observe(el)
     if (el.firstElementChild) resizeObserver.observe(el.firstElementChild)
     const mutationObserver = new MutationObserver(() => followNow())
+    const handleHistoryJump = (): void => updateFollowing(false)
     mutationObserver.observe(el, { childList: true, characterData: true, subtree: true })
     el.addEventListener('scroll', handleScroll, { passive: true })
     el.addEventListener('wheel', handleWheel, { passive: true })
     el.addEventListener('touchstart', handleTouchStart, { passive: true })
     el.addEventListener('touchmove', handleTouchMove, { passive: true })
     el.addEventListener('keydown', handleKeyDown)
+    el.addEventListener(CONVERSATION_JUMP_EVENT, handleHistoryJump)
     followNow(true)
 
     return () => {
@@ -126,6 +129,7 @@ export function useScrollFollow(
       el.removeEventListener('touchstart', handleTouchStart)
       el.removeEventListener('touchmove', handleTouchMove)
       el.removeEventListener('keydown', handleKeyDown)
+      el.removeEventListener(CONVERSATION_JUMP_EVENT, handleHistoryJump)
       mutationObserver.disconnect()
       resizeObserver.disconnect()
       cancelScrollRef.current?.()

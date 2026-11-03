@@ -15,6 +15,8 @@ export interface PiEventBridgeMeta {
   /** Host locale for resetHint / waiting status (`zh*` → zh). */
   locale?: string
   fromSubagent?: boolean
+  /** Per-subscription message identity supplied by the Pi runtime adapter. */
+  streamMessageId?: string
 }
 
 const MAX_TOOL_RESULT_CHARS = 8_000
@@ -39,10 +41,28 @@ export function mapPiSessionEventToAgentEvents(
     case 'message_update': {
       const assistantEvent = event.assistantMessageEvent
       if (assistantEvent.type === 'text_delta' && assistantEvent.delta) {
-        return [{ type: 'token', text: assistantEvent.delta, ...base }]
+        return [
+          {
+            type: 'token',
+            text: assistantEvent.delta,
+            streamId: meta.streamMessageId
+              ? `${meta.streamMessageId}:text:${assistantEvent.contentIndex}`
+              : undefined,
+            ...base
+          }
+        ]
       }
       if (assistantEvent.type === 'thinking_delta' && assistantEvent.delta) {
-        return [{ type: 'thought', message: assistantEvent.delta, ...base }]
+        return [
+          {
+            type: 'thought',
+            message: assistantEvent.delta,
+            streamId: meta.streamMessageId
+              ? `${meta.streamMessageId}:thinking:${assistantEvent.contentIndex}`
+              : undefined,
+            ...base
+          }
+        ]
       }
       return []
     }

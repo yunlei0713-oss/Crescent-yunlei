@@ -1,0 +1,77 @@
+[
+  {
+    "theme": "ink-wash-light",
+    "colors": [
+      {
+        "text": "pwd; ls -la /home/work/script-exporter/ | head -50",
+        "color": "rgb(23, 25, 24)",
+        "background": "rgb(240, 240, 234)",
+        "parentBackground": "rgb(252, 252, 249)",
+        "border": "rgb(191, 196, 188)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 15.443425147693393
+      },
+      {
+        "text": "git -C /home/work/script-exporter/ log --oneline -5 2>&1; git -C /home/work/script-exporter/ status -sb 2>&1",
+        "color": "rgb(23, 25, 24)",
+        "background": "rgb(240, 240, 234)",
+        "parentBackground": "rgb(252, 252, 249)",
+        "border": "rgb(191, 196, 188)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 15.443425147693393
+      }
+    ]
+  },
+  {
+    "theme": "ink-wash-dark",
+    "colors": [
+      {
+        "text": "pwd; ls -la /home/work/script-exporter/ | head -50",
+        "color": "rgb(241, 242, 237)",
+        "background": "rgb(17, 19, 18)",
+        "parentBackground": "rgb(32, 36, 33)",
+        "border": "rgb(80, 88, 80)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 16.57955056883284
+      },
+      {
+        "text": "git -C /home/work/script-exporter/ log --oneline -5 2>&1; git -C /home/work/script-exporter/ status -sb 2>&1",
+        "color": "rgb(241, 242, 237)",
+        "background": "rgb(17, 19, 18)",
+        "parentBackground": "rgb(32, 36, 33)",
+        "border": "rgb(80, 88, 80)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 16.57955056883284
+      }
+    ]
+  },
+  {
+    "theme": "ink-wash-light",
+    "colors": [
+      {
+        "text": "pwd; ls -la /home/work/script-exporter/ | head -50",
+        "color": "rgb(23, 25, 24)",
+        "background": "rgb(240, 240, 234)",
+        "parentBackground": "rgb(252, 252, 249)",
+        "border": "rgb(191, 196, 188)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 15.443425147693393
+      },
+      {
+        "text": "git -C /home/work/script-exporter/ log --oneline -5 2>&1; git -C /home/work/script-exporter/ status -sb 2>&1",
+        "color": "rgb(23, 25, 24)",
+        "background": "rgb(240, 240, 234)",
+        "parentBackground": "rgb(252, 252, 249)",
+        "border": "rgb(191, 196, 188)",
+        "borderWidth": "1px",
+        "maxHeight": "none",
+        "contrast": 15.443425147693393
+      }
+    ]
+  }
+]

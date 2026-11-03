@@ -13,7 +13,6 @@ import {
 } from '@renderer/lib/agent-event-formatters'
 import {
   clampAgentRunEnvelopeText,
-  closeStreamingMessages,
   closeStreamingOpenSteps,
   closeStreamingThoughts,
   formatAgentRunDocumentCompact,
@@ -29,6 +28,7 @@ import {
   trimAgentLogEntries
 } from '@renderer/lib/agent-log'
 import { encodeUserMessageText } from '@renderer/lib/agent-message-refs'
+import { appendAgentStreamDelta } from '@renderer/lib/agent-stream-steps'
 import { AGENT_STREAM_LIVE_FLUSH } from '@renderer/lib/agent-text-limits'
 import type {
   AgentLogEntry,
@@ -349,28 +349,16 @@ export function useAgentRuns({
       if (event.type === 'token') {
         updateAgentRun(
           tabId,
-          (run) => {
-            let steps = closeStreamingThoughts(run.steps ?? [])
-            const last = steps[steps.length - 1]
-            if (last?.kind === 'message' && last.phase === 'streaming') {
-              steps = [...steps]
-              steps[steps.length - 1] = {
-                ...last,
-                text: clampAgentText(`${last.text}${event.text}`, AGENT_RUN_STREAM_MAX_CHARS)
-              }
-            } else {
-              steps = [
-                ...steps,
-                {
-                  id: createStepId('message'),
-                  kind: 'message',
-                  text: clampAgentText(event.text, AGENT_RUN_STREAM_MAX_CHARS),
-                  phase: 'streaming'
-                }
-              ]
-            }
-            return { ...run, steps }
-          },
+          (run) => ({
+            ...run,
+            steps: appendAgentStreamDelta(
+              closeStreamingThoughts(run.steps ?? []),
+              'message',
+              event.text,
+              event.streamId,
+              () => createStepId('message')
+            )
+          }),
           { streaming: true }
         )
         return
@@ -386,35 +374,16 @@ export function useAgentRuns({
         if (!delta) return
         updateAgentRun(
           tabId,
-          (run) => {
-            let steps = closeStreamingMessages(run.steps ?? [])
-            const last = steps[steps.length - 1]
-            if (last?.kind === 'thought' && last.phase === 'streaming') {
-              steps = [...steps]
-              steps[steps.length - 1] = {
-                ...last,
-                text: clampAgentText(`${last.text}${delta}`, AGENT_RUN_STREAM_MAX_CHARS)
-              }
-            } else {
-              steps = [
-                ...steps,
-                {
-                  id: createStepId('thought'),
-                  kind: 'thought',
-                  text: clampAgentText(delta, AGENT_RUN_STREAM_MAX_CHARS),
-                  phase: 'streaming'
-                }
-              ]
-            }
-            return {
-              ...run,
-              steps,
-              thinkingText: clampAgentText(
-                `${run.thinkingText ?? ''}${delta}`,
-                AGENT_RUN_STREAM_MAX_CHARS
-              )
-            }
-          },
+          (run) => ({
+            ...run,
+            steps: appendAgentStreamDelta(run.steps ?? [], 'thought', delta, event.streamId, () =>
+              createStepId('thought')
+            ),
+            thinkingText: clampAgentText(
+              `${run.thinkingText ?? ''}${delta}`,
+              AGENT_RUN_STREAM_MAX_CHARS
+            )
+          }),
           { streaming: true }
         )
         return

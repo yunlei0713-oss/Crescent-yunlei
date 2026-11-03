@@ -263,7 +263,10 @@ export function renderInlineMarkdown(value: string): React.ReactNode[] {
     const token = match[0]
     if (token.startsWith('`')) {
       nodes.push(
-        <code key={nodes.length} className="break-all rounded px-1 py-0.5 font-mono text-[0.9em]">
+        <code
+          key={nodes.length}
+          className="app-inline-code rounded px-1 py-0.5 font-mono text-[0.9em]"
+        >
           {token.slice(1, -1)}
         </code>
       )
