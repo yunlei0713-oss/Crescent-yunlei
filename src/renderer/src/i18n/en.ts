@@ -265,9 +265,10 @@ const en = {
   },
   confirm: {
     closeAllTabs: 'Close all tabs? All terminal sessions will be stopped.',
-    closeTab: 'Close this tab? The terminal session in this tab will be stopped.',
+    closeTab:
+      'End this conversation? Agent runs and pending approvals will end; history is retained. Shared terminals remain available under Independently running terminals. Existing iTerm sessions are only detached.',
     closeOtherTabs: 'Close all other tabs? Their terminal sessions will be stopped.',
-    closeTabsTitle: 'Close tabs',
+    closeTabsTitle: 'End conversation',
     deleteConnection: 'Delete this custom connection? This action cannot be undone.',
     deleteHistory:
       'Delete this history session? This will not close any currently open terminal, but saved chat records will be removed.',

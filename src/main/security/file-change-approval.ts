@@ -265,11 +265,15 @@ export class FileChangeApprovalService {
     )
       return { ok: false }
     const { request } = pending
+    const requiredPaths = new Set(
+      request.changes.filter((change) => change.strongApproval).map((change) => change.path)
+    )
+    const approvedPaths = new Set(decision.strongPaths)
     if (
       decision.approved &&
-      request.changes.some(
-        (change) => change.strongApproval && !decision.strongPaths.includes(change.path)
-      )
+      (approvedPaths.size !== decision.strongPaths.length ||
+        approvedPaths.size !== requiredPaths.size ||
+        [...approvedPaths].some((path) => !requiredPaths.has(path)))
     )
       return { ok: false }
     pending.state = 'queued' // Consume BEFORE waiting for the mutation queue; retain lifecycle tracking.

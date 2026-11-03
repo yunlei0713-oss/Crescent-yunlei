@@ -65,6 +65,9 @@ export function createObservedITermSession(
       events.onSnapshot?.(mode === 'live' ? liveText : text)
     }
   }
+  let failures = 0
+  const missing = (error: unknown): boolean =>
+    error instanceof Error && /ITERM_SESSION_MISSING|ITERM_NOT_RUNNING/.test(error.message)
   const fail = (error: unknown): void => {
     if (stopped) return
     stopped = true
@@ -78,10 +81,25 @@ export function createObservedITermSession(
     reading = reading.then(async () => {
       if (stopped || version !== epoch || mode === 'off') return
       try {
+        failures = 0
         publish(await itermRequest<ITermScreen>({ action: 'read', id }, request.signal), version)
         if (!stopped && version === epoch) timer = setTimeout(() => poll(version), 750)
       } catch (error) {
-        if (version === epoch) fail(error)
+        if (version === epoch && !request.signal.aborted) {
+          if (missing(error)) fail(error)
+          else {
+            failures++
+            events.onExternalWindow?.({
+              ...external,
+              windowState: 'status-unknown',
+              statusError: error instanceof Error ? error.message : 'iTerm unavailable'
+            })
+            timer = setTimeout(
+              () => poll(version),
+              Math.min(30000, 750 * 2 ** Math.min(failures, 6))
+            )
+          }
+        }
       }
     })
   }
@@ -130,11 +148,29 @@ export function createObservedITermSession(
       const version = epoch
       try {
         // No content is fetched when observation is off. Session-specific metadata only.
-        if (mode === 'off') await itermRequest({ action: 'size', id }, controller.signal)
+        if (mode === 'off') {
+          await itermRequest({ action: 'size', id }, controller.signal)
+          failures = 0
+          events.onExternalWindow?.({ ...external, windowState: 'attached' })
+        }
       } catch (error) {
-        if (!controller.signal.aborted && version === epoch) fail(error)
+        if (!controller.signal.aborted && version === epoch) {
+          if (missing(error)) fail(error)
+          else {
+            failures++
+            events.onExternalWindow?.({
+              ...external,
+              windowState: 'status-unknown',
+              statusError: error instanceof Error ? error.message : 'iTerm unavailable'
+            })
+          }
+        }
       }
-      if (!stopped) livenessTimer = setTimeout(checkLiveness, 5000)
+      if (!stopped)
+        livenessTimer = setTimeout(
+          checkLiveness,
+          Math.min(30000, 5000 * 2 ** Math.min(failures, 3))
+        )
     })
   }
   livenessTimer = setTimeout(checkLiveness, 5000)

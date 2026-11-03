@@ -91,7 +91,11 @@ export function useHistoryController({ t, setTabs }: Parameters) {
         )
       )
       setTabs((current) =>
-        current.map((tab) => (tab.id === item.tabId ? { ...tab, title: nextTitle } : tab))
+        current.map((tab) =>
+          tab.conversationId === (item.conversationId ?? item.tabId)
+            ? { ...tab, title: nextTitle }
+            : tab
+        )
       )
       cancelRenameHistorySession()
     } finally {

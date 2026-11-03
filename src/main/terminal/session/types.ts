@@ -1,6 +1,8 @@
 import type { connectionPhase } from '../../../shared/connection-state'
 
 export interface TerminalSession {
+  conversationId?: string
+  detached?: boolean
   external?: import('../../../shared/external-terminal').ExternalTerminalBinding
   openExternal?: () => Promise<void>
   setObservation?: (
@@ -78,6 +80,9 @@ export interface TerminalTransportInput {
   rows: number
 }
 export interface TerminalSessionEvents {
+  onExternalWindow?(
+    binding: import('../../../shared/external-terminal').ExternalTerminalBinding
+  ): void
   onExternalBinding?(
     binding: import('../../../shared/external-terminal').ExternalTerminalBinding
   ): void

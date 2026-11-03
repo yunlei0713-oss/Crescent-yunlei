@@ -165,6 +165,8 @@ export interface AgentToolReference {
 }
 
 export interface AgentTerminalTab {
+  /** Stable conversation identity independent of the currently hosting terminal. */
+  conversationId: string
   projectId?: string
   /** UI-only preference. Does not grant observation or terminal execution. */
   proactiveSuggestionsPaused?: boolean
@@ -323,6 +325,7 @@ export function createTerminalTab(input?: Partial<AgentTerminalTab>): AgentTermi
     projectId: input?.projectId,
     external: input?.external,
     sessionGroupId,
+    conversationId: input?.conversationId ?? (requestedGroupId || `conversation-${id}`),
     providerId: input?.providerId,
     model: input?.model,
     agentStyle: input?.agentStyle,
@@ -426,25 +429,25 @@ export function resolveTerminalDisconnectStrip(input: {
 }
 
 export function toStoredSessionTabs(tabs: AgentTerminalTab[]): StoredSessionTab[] {
-  // External bindings are process-local. Never restore one as an unrelated local shell.
-  return tabs
-    .filter((tab) => !tab.external)
-    .map((tab) => ({
-      tabId: tab.id,
-      projectId: tab.projectId,
-      sessionGroupId: getSessionGroupId(tab),
-      title: tab.title,
-      connectionId: tab.connectionId,
-      connectionName: tab.connectionName,
-      isSsh: tab.isSsh,
-      terminalCwd: tab.terminalCwd,
-      terminalMode: tab.terminalMode,
-      executionMode: normalizeExecutionMode(tab.executionMode),
-      agentStyle: tab.agentStyle,
-      handoffBlocked: tab.handoffBlocked,
-      expectedTarget: tab.expectedTarget,
-      connectionOrigin: tab.connectionOrigin
-    }))
+  // Save chat/terminal descriptions, never native UUIDs, live PTYs or grants.
+  return tabs.map((tab) => ({
+    tabId: tab.id,
+    conversationId: tab.conversationId,
+    conversationTitle: getSessionChatTab(tabs, tab.id)?.title ?? tab.title,
+    projectId: tab.projectId,
+    sessionGroupId: getSessionGroupId(tab),
+    title: tab.title,
+    connectionId: tab.connectionId,
+    connectionName: tab.connectionName,
+    isSsh: tab.isSsh,
+    terminalCwd: tab.terminalCwd,
+    terminalMode: tab.terminalMode,
+    executionMode: normalizeExecutionMode(tab.executionMode),
+    agentStyle: tab.agentStyle,
+    handoffBlocked: tab.handoffBlocked,
+    expectedTarget: tab.expectedTarget,
+    connectionOrigin: tab.connectionOrigin
+  }))
 }
 
 /** Chat/session id shared by peer comparison terminals. */
@@ -495,18 +498,10 @@ export function listSessionChatTabs(tabs: AgentTerminalTab[]): AgentTerminalTab[
 export function getSessionDisplayTitle(
   tab: AgentTerminalTab,
   tabs: AgentTerminalTab[],
-  activeTabId?: string
+  _activeTabId?: string
 ): string {
-  const groupId = getSessionGroupId(tab)
-  const peers = getSessionTerminals(tabs, groupId)
-  const focused =
-    activeTabId != null && activeTabId.length > 0
-      ? peers.find((peer) => peer.id === activeTabId)
-      : undefined
-  const baseTab = focused ?? getSessionChatTab(tabs, groupId) ?? tab
-  const base = getTerminalDisplayTitle(baseTab, tabs)
-  if (peers.length <= 1) return base
-  return `${base} · ${peers.length}`
+  const chat = getSessionChatTab(tabs, tab.id) ?? tab
+  return sanitizeTerminalDisplayTitle(chat.title, 'Conversation')
 }
 
 export function getNextTerminalTitle(baseTitle: string, tabs: AgentTerminalTab[]): string {

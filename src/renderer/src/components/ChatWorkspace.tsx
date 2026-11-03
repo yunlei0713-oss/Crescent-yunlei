@@ -1,3 +1,4 @@
+import { GuidedOpsHistory } from './GuidedOpsHistory'
 import { GuidedOpsPanel } from './GuidedOpsPanel'
 import { ComposerAttachments } from './ComposerAttachments'
 import { hasImageAttachments } from '../../../shared/model-capabilities'
@@ -258,6 +259,7 @@ export function ChatWorkspace({
   return (
     <section
       data-chat-id={sessionChatTab.id}
+      data-conversation-id={sessionChatTab.conversationId}
       className="app-agent-pane chat-workspace relative flex min-h-0 min-w-0 flex-1 flex-col"
       aria-label={t.app.chat}
     >
@@ -307,8 +309,9 @@ export function ChatWorkspace({
           primaryContent={
             activeTab.external ? (
               <GuidedOpsPanel
-                key={sessionChatTab.id + ':' + activeTab.id}
-                chatId={sessionChatTab.id}
+                key={sessionChatTab.conversationId}
+                chatId={sessionChatTab.conversationId}
+                eventChatId={sessionChatTab.id}
                 terminalId={activeTab.id}
                 zh={zh}
                 onAsk={(text) => {
@@ -318,6 +321,12 @@ export function ChatWorkspace({
                 onStart={() => agentInputRef?.current?.focus()}
                 paused={Boolean(activeTab.proactiveSuggestionsPaused)}
                 onPausedChange={onProactiveSuggestionsPausedChange}
+              />
+            ) : sessionChatTab.agentLog.length > 0 ? (
+              <GuidedOpsHistory
+                key={sessionChatTab.conversationId}
+                conversationId={sessionChatTab.conversationId}
+                zh={zh}
               />
             ) : undefined
           }

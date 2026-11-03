@@ -15,6 +15,10 @@ import type {
 } from '../../shared/agent-types'
 
 export const storageApi = {
+  activateConversation: (id: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('storage:activate-conversation', id),
+  archiveConversation: (id: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('storage:archive-conversation', id),
   saveTabs: (tabs: StoredSessionTab[]): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('storage:save-tabs', tabs),
   saveAgentLog: (entry: StoredAgentLogEntry): Promise<{ ok: boolean }> =>

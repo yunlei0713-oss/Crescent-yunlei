@@ -43,3 +43,23 @@ export interface GuidedOpsSnapshot {
   evidence: TerminalEvidence
 }
 export type GuidedOpsAction = 'wait' | 'skip' | 'interrupt' | 'complete'
+
+/** History never carries a usable authorization or raw terminal evidence. */
+export interface GuidedOpsHistoryItem {
+  proposal: CommandProposal
+  runId: string
+  state: GuidedOpsState
+  terminalTabId: string
+}
+export interface GuidedOpsHistoryQuery {
+  conversationId: string
+  terminalTabId?: string
+  beforeCursor?: { createdAt: number; proposalId: string }
+  limit?: number
+}
+export interface GuidedOpsHistoryPage {
+  totalCount: number
+  items: GuidedOpsHistoryItem[]
+  hasMore: boolean
+  nextCursor?: { createdAt: number; proposalId: string }
+}

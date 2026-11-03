@@ -1,4 +1,5 @@
 export interface TerminalIdentity {
+  conversationId?: string
   ownerId?: number
   itermSessionId?: string
   tabId: string
@@ -31,6 +32,7 @@ export interface TerminalEvidence {
 export function terminalObservationBindingKey(identity: TerminalIdentity): string {
   return JSON.stringify([
     identity.ownerId,
+    identity.conversationId,
     identity.tabId,
     identity.itermSessionId,
     identity.connectionId,

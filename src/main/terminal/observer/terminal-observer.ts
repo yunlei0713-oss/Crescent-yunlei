@@ -20,6 +20,7 @@ const SENSITIVE_PROMPT =
 export function terminalIdentityKey(identity: TerminalIdentity): string {
   return JSON.stringify([
     identity.ownerId,
+    identity.conversationId,
     identity.itermSessionId,
     identity.tabId,
     identity.sessionGeneration,

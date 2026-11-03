@@ -1,3 +1,5 @@
+import { storageClient } from '@renderer/clients'
+import { toStoredSessionTabs } from '@renderer/lib/terminal-tabs'
 import { agentClient } from '@renderer/clients'
 import { hasImageAttachments } from '../../../shared/model-capabilities'
 import type { AgentLogEntryInput } from '@renderer/lib/terminal-tabs'
@@ -121,13 +123,13 @@ export function useAgentController({
     proactiveRunRef.current = (terminal, chatId, token) =>
       runAgentConversation(
         locale === 'en'
-          ? 'Analyze the latest authorized terminal output and suggest the three most useful next-command choices. Continue the current diagnostic goal if any. Do not execute commands.'
-          : '分析最新授权的终端输出，主动给出最可能用到的三个下一步命令选项；已有排查目标时围绕该目标继续。不要执行命令。',
+          ? 'Analyze the latest authorized terminal output and suggest one to three useful next-command choices, without padding. Continue the current diagnostic goal if any. Do not execute commands.'
+          : '分析最新授权的终端输出，主动给出1～3 个确有价值的下一步命令选项，不为数量凑数；已有排查目标时围绕该目标继续。不要执行命令。',
         terminal.id,
         terminal.connectionId,
         locale === 'en'
-          ? 'Terminal follow-up · three next-command choices'
-          : '终端主动建议 · 三个下一步命令选项',
+          ? 'Terminal follow-up · next-command choices'
+          : '终端主动建议 · 下一步命令选项',
         false,
         Date.now(),
         { chatTabId: chatId, proactiveToken: token }
@@ -361,6 +363,8 @@ export function useAgentController({
       const runTab = tabsRef.current.find((candidate) => candidate.id === terminalTabId)
       const chatTab = tabsRef.current.find((candidate) => candidate.id === chatTabId)
       const selection = resolveTabModelSelection(chatTab ?? runTab, config, visibleModels)
+      await storageClient.saveTabs(toStoredSessionTabs(tabsRef.current))
+      if (!isCurrent()) return
       const result = await agentClient.run({
         proactiveToken: options.proactiveToken,
         attachments: options.attachments,

@@ -2,6 +2,9 @@ import { rendererIpc } from '../ipc-security'
 import { type WebContents } from 'electron'
 
 import {
+  archiveConversation,
+  activateConversation,
+  resolveConversationId,
   deleteAgentLogs,
   deleteOpsHistoryRecord,
   deleteSessionHistory,
@@ -46,6 +49,16 @@ import type {
 const pendingSessionSummaryTimers = new Map<string, NodeJS.Timeout>()
 
 export function registerStorageIpc(): void {
+  rendererIpc.handle('storage:activate-conversation', (_, id: string) => {
+    if (typeof id !== 'string' || !id.trim()) throw new Error('Invalid conversation')
+    activateConversation(id)
+    return { ok: true }
+  })
+  rendererIpc.handle('storage:archive-conversation', (_, id: string) => {
+    if (typeof id !== 'string' || !id.trim()) throw new Error('Invalid conversation')
+    archiveConversation(id)
+    return { ok: true }
+  })
   rendererIpc.handle('storage:save-tabs', (_, tabs: StoredSessionTab[]) => {
     saveSessionTabs(tabs)
     return { ok: true }
@@ -196,7 +209,8 @@ async function submitOpsFeedback(
 
   const run = getAgentRun(runId)
   if (!run) return { ok: false, error: 'Agent run not found.' }
-  if (run.tabId !== tabId) return { ok: false, error: 'Run does not belong to this session.' }
+  if (resolveConversationId(run.tabId) !== resolveConversationId(tabId))
+    return { ok: false, error: 'Run does not belong to this session.' }
 
   const connectionId = resolveOpsConnectionId(payload.connectionId || run.connectionId)
 
@@ -276,7 +290,7 @@ async function summarizeOpsFeedback(
 }
 
 function scheduleSessionSummary(tabId: string, webContents: WebContents): void {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = resolveConversationId(tabId.trim())
   if (!normalizedTabId) return
 
   const existing = pendingSessionSummaryTimers.get(normalizedTabId)

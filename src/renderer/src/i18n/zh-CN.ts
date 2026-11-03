@@ -255,9 +255,10 @@ const zhCN = {
   },
   confirm: {
     closeAllTabs: '关闭所有 Tab？这些终端会话都会被停止。',
-    closeTab: '关闭这个 Tab？该 Tab 的终端会话会被停止。',
+    closeTab:
+      '结束此对话？运行中的 Agent 和待处理审批将结束，聊天记录保留。shared 终端继续运行，可从“独立运行的终端会话”管理；已有 iTerm 仅解除关联。',
     closeOtherTabs: '关闭其他所有 Tab？这些 Tab 的终端会话会被停止。',
-    closeTabsTitle: '关闭 Tab',
+    closeTabsTitle: '结束对话',
     deleteConnection: '删除这个自定义连接？此操作不可恢复。',
     deleteHistory: '删除这条历史会话记录？这不会关闭当前已打开的终端，但会移除保存的对话记录。',
     deleteMcpServer: '删除这个自定义 MCP 服务？对应工具将不再可用。',

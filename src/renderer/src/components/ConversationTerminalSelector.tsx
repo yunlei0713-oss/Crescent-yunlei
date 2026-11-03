@@ -21,8 +21,9 @@ export function ConversationTerminalSelector({
     <div
       className="flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1"
       role="group"
-      aria-label={zh ? '本轮对话的终端' : 'Conversation terminals'}
+      aria-label={zh ? '终端目标' : 'Terminal targets'}
     >
+      <span className="text-xs text-muted-foreground">{zh ? '终端目标' : 'Terminal target'}</span>
       {terminals.map((tab) => (
         <Button
           key={tab.id}
@@ -30,11 +31,29 @@ export function ConversationTerminalSelector({
           variant={tab.id === activeId ? 'secondary' : 'ghost'}
           data-conversation-terminal={tab.id}
           aria-pressed={tab.id === activeId}
-          title={tab.title}
+          title={
+            tab.connectionName ??
+            (tab.external?.kind === 'existing' ? tab.title : zh ? '本地 iTerm' : 'Local iTerm')
+          }
           onClick={() => onSelect(tab.id)}
         >
-          <span className="max-w-48 truncate">{tab.title}</span>
-          {!tab.sessionId ? (zh ? ' · 已断开' : ' · disconnected') : null}
+          <span className="max-w-48 truncate">
+            {tab.connectionName ??
+              (tab.external?.kind === 'existing'
+                ? tab.title.replace(/^iTerm · /, '')
+                : zh
+                  ? '本地 iTerm'
+                  : 'Local iTerm')}
+          </span>
+          {tab.external?.windowState === 'window-closed'
+            ? zh
+              ? ' · 窗口已关闭'
+              : ' · window closed'
+            : !tab.sessionId
+              ? zh
+                ? ' · 已断开'
+                : ' · disconnected'
+              : null}
         </Button>
       ))}
       <Button size="xs" variant="ghost" onClick={onConnect} data-add-conversation-terminal>

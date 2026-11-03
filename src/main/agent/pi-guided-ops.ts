@@ -51,14 +51,12 @@ export function createGuidedOpsTools(pi: PiSdkFacade, sessionKey: string) {
       name: 'propose_command',
       label: 'Suggest next operator commands',
       description:
-        'Publish one focused command or coherent multiline diagnostic snippet, or a recommended command plus two alternatives for proactive guidance, bound to the current host/session. Complex pipelines, jq/awk, SQL, custom CLIs and scripts are supported as suggestion text; unknown syntax is marked for manual safety review, not rejected by an execution whitelist. Prefer non-mutating, bounded diagnostics and explain shell/tool prerequisites and side effects. With observation off, use the user question and current target metadata without inventing prior output. Alternatives are choices, NEVER an execution sequence. No execution. Call once, then wait for operator evidence.',
+        'Publish one focused command or coherent multiline diagnostic snippet, or a recommended command plus up to two substantively different alternatives (one to three choices total; never pad the count), bound to the current host/session. Complex pipelines, jq/awk, SQL, custom CLIs and scripts are supported as suggestion text; unknown syntax is marked for manual safety review, not rejected by an execution whitelist. Prefer non-mutating, bounded diagnostics and explain shell/tool prerequisites and side effects. With observation off, use the user question and current target metadata without inventing prior output. Alternatives are choices, NEVER an execution sequence. No execution. Call once, then wait for operator evidence.',
       parameters: Type.Object({
         judgment: Type.String({ maxLength: 2000 }),
         goal: Type.String({ maxLength: 1000 }),
         ...suggestionFields,
-        alternatives: Type.Optional(
-          Type.Array(Type.Object(suggestionFields), { minItems: 2, maxItems: 2 })
-        )
+        alternatives: Type.Optional(Type.Array(Type.Object(suggestionFields), { maxItems: 2 }))
       }),
       executionMode: 'sequential',
       async execute(_id, params) {

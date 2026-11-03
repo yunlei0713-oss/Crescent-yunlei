@@ -1,3 +1,4 @@
+import { migrateConversations, conversationIdFor, ensureConversation } from './sqlite/conversations'
 import {
   readRow,
   readRows,
@@ -8,6 +9,7 @@ import {
   operationRow,
   memoryRow,
   type AgentRunRow,
+  type SessionHistoryRow,
   type OpsHistoryRow
 } from './sqlite/rows'
 import { normalizeExecutionMode } from '../shared/execution-plan'
@@ -161,6 +163,7 @@ export function initializeCrescentDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_ops_history_connection_updated_at
       ON ops_history_records (connection_id, updated_at);
   `)
+  migrateConversations(db)
 }
 
 /** Main-only metadata read: restore execution intent before any PTY can be used. No logs/credentials. */
@@ -199,8 +202,8 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
   const now = new Date().toISOString()
   const statement = db.prepare(`
     INSERT INTO session_tabs (
-      tab_id, title, connection_id, connection_name, is_ssh, terminal_cwd, terminal_mode, agent_style, execution_mode, handoff_blocked, expected_target, connection_origin, updated_at, project_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      tab_id, title, connection_id, connection_name, is_ssh, terminal_cwd, terminal_mode, agent_style, execution_mode, handoff_blocked, expected_target, connection_origin, updated_at, project_id, conversation_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(tab_id) DO UPDATE SET
       title = CASE
         WHEN session_tabs.title_locked = 1 THEN session_tabs.title
@@ -217,6 +220,7 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
       expected_target = excluded.expected_target,
       connection_origin = excluded.connection_origin,
       project_id = excluded.project_id,
+      conversation_id = excluded.conversation_id,
       updated_at = excluded.updated_at
   `)
 
@@ -235,8 +239,18 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
       tab.expectedTarget ?? null,
       tab.connectionOrigin ?? null,
       now,
-      typeof tab.projectId === 'string' ? tab.projectId.slice(0, 100) : null
+      typeof tab.projectId === 'string' ? tab.projectId.slice(0, 100) : null,
+      tab.conversationId ?? tab.tabId
     )
+    const id = ensureConversation(
+      db,
+      tab.conversationId ?? tab.tabId,
+      tab.conversationTitle ?? tab.title
+    )
+    db.prepare(
+      `UPDATE conversations SET title=CASE WHEN title_locked=1 THEN title ELSE ? END,
+      project_id=?,updated_at=? WHERE conversation_id=?`
+    ).run(tab.conversationTitle ?? tab.title, tab.projectId ?? null, now, id)
   }
 }
 
@@ -247,15 +261,28 @@ export function saveAgentLog(entry: StoredAgentLogEntry): void {
 
   db.prepare(
     `
-    INSERT INTO agent_logs (tab_id, log_id, kind, text, created_at, updated_at, run_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO agent_logs (tab_id, log_id, kind, text, created_at, updated_at, run_id, conversation_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(tab_id, log_id) DO UPDATE SET
       kind = excluded.kind,
       text = excluded.text,
       updated_at = excluded.updated_at,
       run_id = excluded.run_id
   `
-  ).run(entry.tabId, entry.logId, entry.kind, entry.text, entry.createdAt, now, runId)
+  ).run(
+    ensureConversation(
+      db,
+      entry.tabId,
+      entry.kind === 'user' ? entry.text.slice(0, 80) : undefined
+    ),
+    entry.logId,
+    entry.kind,
+    entry.text,
+    entry.createdAt,
+    now,
+    runId,
+    conversationIdFor(db, entry.tabId)
+  )
 }
 
 export function updateAgentLog(input: Pick<StoredAgentLogEntry, 'tabId' | 'logId' | 'text'>): void {
@@ -264,14 +291,19 @@ export function updateAgentLog(input: Pick<StoredAgentLogEntry, 'tabId' | 'logId
       `
       UPDATE agent_logs
       SET text = ?, updated_at = ?
-      WHERE tab_id = ? AND log_id = ?
+      WHERE conversation_id = ? AND log_id = ?
     `
     )
-    .run(input.text, new Date().toISOString(), input.tabId, input.logId)
+    .run(
+      input.text,
+      new Date().toISOString(),
+      conversationIdFor(getDatabase(), input.tabId),
+      input.logId
+    )
 }
 
 export function getAgentLog(tabId: string, logId: number): StoredAgentLogEntry | undefined {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId || !Number.isFinite(logId)) return undefined
   const row = readRow(
     getDatabase()
@@ -285,7 +317,7 @@ export function getAgentLog(tabId: string, logId: number): StoredAgentLogEntry |
         created_at AS createdAt,
         run_id AS runId
       FROM agent_logs
-      WHERE tab_id = ? AND log_id = ?
+      WHERE conversation_id = ? AND log_id = ?
     `
       )
       .get(normalizedTabId, logId),
@@ -295,12 +327,12 @@ export function getAgentLog(tabId: string, logId: number): StoredAgentLogEntry |
 }
 
 export function deleteAgentLogs(tabId: string, logIds: number[]): number {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   const ids = logIds.filter((id) => Number.isFinite(id))
   if (!normalizedTabId || ids.length === 0) return 0
 
   const db = getDatabase()
-  const deleteOne = db.prepare('DELETE FROM agent_logs WHERE tab_id = ? AND log_id = ?')
+  const deleteOne = db.prepare('DELETE FROM agent_logs WHERE conversation_id = ? AND log_id = ?')
   let removed = 0
   for (const logId of ids) {
     const result = deleteOne.run(normalizedTabId, logId)
@@ -340,8 +372,8 @@ export function saveAgentRun(run: StoredAgentRun): void {
     `
     INSERT INTO agent_runs (
       run_id, tab_id, input, status, connection_id, output, error,
-      started_at, elapsed_ms, trace_json, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      started_at, elapsed_ms, trace_json, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, created_at, updated_at, conversation_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(run_id) DO UPDATE SET
       status = excluded.status,
       connection_id = excluded.connection_id,
@@ -358,7 +390,7 @@ export function saveAgentRun(run: StoredAgentRun): void {
   `
   ).run(
     run.runId,
-    run.tabId,
+    ensureConversation(db, run.tabId, run.input.slice(0, 80)),
     run.input,
     run.status,
     run.connectionId ?? null,
@@ -372,7 +404,8 @@ export function saveAgentRun(run: StoredAgentRun): void {
     cacheReadTokens,
     cacheWriteTokens,
     now,
-    now
+    now,
+    conversationIdFor(db, run.tabId)
   )
 }
 
@@ -398,7 +431,7 @@ export function getAgentRun(runId: string): StoredAgentRun | undefined {
 }
 
 export function listAgentRunsForTab(tabId: string, limit = 50): StoredAgentRun[] {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return []
 
   const rows = readRows(
@@ -407,7 +440,7 @@ export function listAgentRunsForTab(tabId: string, limit = 50): StoredAgentRun[]
         `
       SELECT ${AGENT_RUN_SELECT_COLUMNS}
       FROM agent_runs
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
       ORDER BY updated_at DESC
       LIMIT ?
     `
@@ -420,7 +453,7 @@ export function listAgentRunsForTab(tabId: string, limit = 50): StoredAgentRun[]
 }
 
 export function listAllAgentRunsForTab(tabId: string): StoredAgentRun[] {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return []
 
   const rows = readRows(
@@ -429,7 +462,7 @@ export function listAllAgentRunsForTab(tabId: string): StoredAgentRun[] {
         `
       SELECT ${AGENT_RUN_SELECT_COLUMNS}
       FROM agent_runs
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
       ORDER BY COALESCE(started_at, created_at) ASC, run_id ASC
     `
       )
@@ -441,7 +474,7 @@ export function listAllAgentRunsForTab(tabId: string): StoredAgentRun[] {
 }
 
 export function getSessionTokenUsage(tabId: string): SessionTokenUsage {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
   const row = getDatabase()
@@ -453,7 +486,7 @@ export function getSessionTokenUsage(tabId: string): SessionTokenUsage {
         COALESCE(SUM(COALESCE(cache_read_tokens, 0)), 0) AS cacheRead,
         COALESCE(SUM(COALESCE(cache_write_tokens, 0)), 0) AS cacheWrite
       FROM agent_runs
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
     `
     )
     .get(normalizedTabId)
@@ -505,7 +538,7 @@ export function upsertOpsHistoryRecord(
     updatedAt?: string
   }
 ): OpsHistoryRecord | undefined {
-  const tabId = input.tabId.trim()
+  const tabId = ensureConversation(getDatabase(), input.tabId.trim())
   const connectionId = input.connectionId.trim()
   const runId = input.runId.trim()
   const rating = input.rating
@@ -525,8 +558,8 @@ export function upsertOpsHistoryRecord(
     .prepare(
       `
       INSERT INTO ops_history_records (
-        id, tab_id, connection_id, run_id, rating, user_goal, path_summary, lesson, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, tab_id, connection_id, run_id, rating, user_goal, path_summary, lesson, created_at, updated_at, conversation_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(run_id) DO UPDATE SET
         tab_id = excluded.tab_id,
         connection_id = excluded.connection_id,
@@ -547,7 +580,8 @@ export function upsertOpsHistoryRecord(
       pathSummary,
       lesson,
       createdAt,
-      updatedAt
+      updatedAt,
+      tabId
     )
 
   return getOpsHistoryByRunId(runId)
@@ -588,7 +622,7 @@ export function getOpsHistoryByRunId(runId: string): OpsHistoryRecord | undefine
 
 /** @deprecated Prefer listOpsHistoryForConnection — feedback is scoped to SSH connections. */
 export function listOpsHistoryForTab(tabId: string, limit = 20): OpsHistoryRecord[] {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return []
 
   const rows = readRows(
@@ -597,7 +631,7 @@ export function listOpsHistoryForTab(tabId: string, limit = 20): OpsHistoryRecor
         `
       SELECT ${OPS_HISTORY_SELECT}
       FROM ops_history_records
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
       ORDER BY updated_at DESC
       LIMIT ?
     `
@@ -717,65 +751,26 @@ function mapOpsHistoryRow(row: OpsHistoryRow): OpsHistoryRecord {
   }
 }
 
-export function listSessionHistory(limit = 80): StoredSessionHistoryItem[] {
-  const rows = readRows(
-    getDatabase()
-      .prepare(
-        `
-      SELECT
-        tab.tab_id AS tabId,
-        tab.title,
-        tab.connection_id AS connectionId,
-        tab.connection_name AS connectionName,
-        tab.is_ssh AS isSsh,
-        tab.terminal_cwd AS terminalCwd,
-        tab.terminal_mode AS terminalMode,
-        tab.agent_style AS agentStyle,
-        tab.project_id AS projectId,
-        tab.execution_mode AS executionMode,
-        tab.handoff_blocked AS handoffBlocked,
-        tab.expected_target AS expectedTarget,
-        tab.connection_origin AS connectionOrigin,
-        tab.updated_at AS updatedAt,
-        tab.summary AS summary,
-        tab.title_locked AS titleLocked,
-        (
-          SELECT log.text
-          FROM agent_logs log
-          WHERE log.tab_id = tab.tab_id
-          ORDER BY log.created_at DESC, log.log_id DESC
-          LIMIT 1
-        ) AS lastMessage,
-        (
-          SELECT log.created_at
-          FROM agent_logs log
-          WHERE log.tab_id = tab.tab_id
-          ORDER BY log.created_at DESC, log.log_id DESC
-          LIMIT 1
-        ) AS lastMessageAt,
-        (
-          SELECT COUNT(*)
-          FROM agent_runs run
-          WHERE run.tab_id = tab.tab_id
-        ) AS runCount
-      FROM session_tabs tab
-      WHERE EXISTS (
-        SELECT 1 FROM agent_logs log WHERE log.tab_id = tab.tab_id
-      ) OR EXISTS (
-        SELECT 1 FROM agent_runs run WHERE run.tab_id = tab.tab_id
-      )
-      ORDER BY COALESCE(lastMessageAt, tab.updated_at) DESC
-      LIMIT ?
-    `
-      )
-      .all(limit),
-    sessionHistoryRow
-  )
-
-  return rows.map((row) => ({
+const CONVERSATION_SELECT = `
+  c.conversation_id AS tabId,c.title,c.summary,c.project_id AS projectId,c.title_locked AS titleLocked,
+  c.updated_at AS updatedAt,t.connection_id AS connectionId,t.connection_name AS connectionName,
+  COALESCE(t.is_ssh,0) AS isSsh,t.terminal_cwd AS terminalCwd,t.terminal_mode AS terminalMode,
+  t.agent_style AS agentStyle,t.execution_mode AS executionMode,t.handoff_blocked AS handoffBlocked,
+  t.expected_target AS expectedTarget,t.connection_origin AS connectionOrigin,
+  (SELECT text FROM agent_logs WHERE conversation_id=c.conversation_id ORDER BY log_id DESC LIMIT 1) AS lastMessage,
+  (SELECT created_at FROM agent_logs WHERE conversation_id=c.conversation_id ORDER BY log_id DESC LIMIT 1) AS lastMessageAt,
+  (SELECT COUNT(*) FROM agent_runs WHERE conversation_id=c.conversation_id) AS runCount
+`
+const CONVERSATION_FROM = `FROM conversations c LEFT JOIN session_tabs t ON t.tab_id=(
+  SELECT tab_id FROM session_tabs WHERE conversation_id=c.conversation_id ORDER BY updated_at DESC,tab_id LIMIT 1)`
+function mapConversation(row: SessionHistoryRow): StoredSessionHistoryItem {
+  return {
     tabId: row.tabId,
+    conversationId: row.tabId,
     title: row.title,
     projectId: row.projectId ?? undefined,
+    summary: row.summary ?? undefined,
+    updatedAt: row.updatedAt,
     connectionId: row.connectionId ?? undefined,
     connectionName: row.connectionName ?? undefined,
     isSsh: Boolean(row.isSsh),
@@ -786,89 +781,67 @@ export function listSessionHistory(limit = 80): StoredSessionHistoryItem[] {
     handoffBlocked: Boolean(row.handoffBlocked),
     expectedTarget: row.expectedTarget ?? undefined,
     connectionOrigin: row.connectionOrigin ?? undefined,
-    updatedAt: row.updatedAt,
-    summary: row.summary ?? undefined,
     lastMessage: row.lastMessage ?? undefined,
     lastMessageAt: row.lastMessageAt ?? undefined,
     runCount: Number(row.runCount ?? 0)
-  }))
+  }
 }
-
-export function readSessionHistoryDetail(tabId: string): StoredSessionHistoryDetail | undefined {
-  const tab = readRow(
+export function listSessionHistory(limit = 80): StoredSessionHistoryItem[] {
+  return readRows(
     getDatabase()
       .prepare(
-        `
-      SELECT
-        tab_id AS tabId,
-        title,
-        connection_id AS connectionId,
-        connection_name AS connectionName,
-        is_ssh AS isSsh,
-        terminal_cwd AS terminalCwd,
-        terminal_mode AS terminalMode,
-        agent_style AS agentStyle,
-        project_id AS projectId,
-        execution_mode AS executionMode,
-        handoff_blocked AS handoffBlocked,
-        expected_target AS expectedTarget,
-        connection_origin AS connectionOrigin,
-        summary,
-        title_locked AS titleLocked,
-        updated_at AS updatedAt
-      FROM session_tabs
-      WHERE tab_id = ?
-    `
+        `SELECT ${CONVERSATION_SELECT} ${CONVERSATION_FROM}
+    WHERE EXISTS(SELECT 1 FROM agent_logs WHERE conversation_id=c.conversation_id)
+       OR EXISTS(SELECT 1 FROM agent_runs WHERE conversation_id=c.conversation_id)
+    ORDER BY COALESCE(lastMessageAt,c.updated_at) DESC LIMIT ?`
       )
-      .get(tabId),
+      .all(limit),
+    sessionHistoryRow
+  ).map(mapConversation)
+}
+export function readSessionHistoryDetail(id: string): StoredSessionHistoryDetail | undefined {
+  const db = getDatabase()
+  const conversationId = conversationIdFor(db, id)
+  const row = readRow(
+    db
+      .prepare(
+        `SELECT ${CONVERSATION_SELECT} ${CONVERSATION_FROM}
+    WHERE c.conversation_id=?`
+      )
+      .get(conversationId),
     sessionHistoryRow
   )
-
-  if (!tab) return undefined
-
-  const logs = readRows(
-    getDatabase()
-      .prepare(
-        `
-      SELECT
-        tab_id AS tabId,
-        log_id AS logId,
-        kind,
-        text,
-        created_at AS createdAt,
-        run_id AS runId
-      FROM agent_logs
-      WHERE tab_id = ?
-      ORDER BY log_id ASC
-    `
-      )
-      .all(tabId),
-    agentLogRow
-  )
-
-  const [historyItem] = listSessionHistory(200).filter((item) => item.tabId === tabId)
-
+  if (!row) return undefined
   return {
-    tabId: tab.tabId,
-    title: tab.title,
-    projectId: tab.projectId ?? undefined,
-    connectionId: tab.connectionId ?? undefined,
-    connectionName: tab.connectionName ?? undefined,
-    isSsh: Boolean(tab.isSsh),
-    terminalCwd: tab.terminalCwd ?? undefined,
-    terminalMode: tab.terminalMode ?? undefined,
-    agentStyle: parseStoredAgentStyle(tab.agentStyle),
-    executionMode: normalizeExecutionMode(tab.executionMode),
-    handoffBlocked: Boolean(tab.handoffBlocked),
-    expectedTarget: tab.expectedTarget ?? undefined,
-    connectionOrigin: tab.connectionOrigin ?? undefined,
-    updatedAt: tab.updatedAt,
-    summary: tab.summary ?? undefined,
-    lastMessage: historyItem?.lastMessage,
-    lastMessageAt: historyItem?.lastMessageAt,
-    runCount: historyItem?.runCount ?? 0,
-    logs
+    ...mapConversation(row),
+    logs: readRows(
+      db
+        .prepare(
+          `SELECT tab_id AS tabId,log_id AS logId,
+    kind,text,created_at AS createdAt,run_id AS runId FROM agent_logs
+    WHERE conversation_id=? ORDER BY log_id ASC`
+        )
+        .all(conversationId),
+      agentLogRow
+    )
   }
+}
+export function archiveConversation(id: string): void {
+  const db = getDatabase()
+  db.prepare('UPDATE conversations SET archived_at=?,updated_at=? WHERE conversation_id=?').run(
+    new Date().toISOString(),
+    new Date().toISOString(),
+    conversationIdFor(db, id)
+  )
+}
+export function activateConversation(id: string): void {
+  const db = getDatabase()
+  db.prepare('UPDATE conversations SET archived_at=NULL WHERE conversation_id=?').run(
+    conversationIdFor(db, id)
+  )
+}
+export function resolveConversationId(id: string): string {
+  return conversationIdFor(getDatabase(), id)
 }
 
 /** Page older agent logs for a tab (exclusive beforeLogId). Newest-first page then reversed. */
@@ -876,7 +849,7 @@ export function listAgentLogs(
   tabId: string,
   options?: { beforeLogId?: number; limit?: number }
 ): StoredAgentLogEntry[] {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return []
   const limit = Math.max(1, Math.min(200, Math.floor(options?.limit ?? 40)))
   const beforeLogId =
@@ -898,7 +871,7 @@ export function listAgentLogs(
           created_at AS createdAt,
           run_id AS runId
         FROM agent_logs
-        WHERE tab_id = ?
+        WHERE conversation_id = ?
         ORDER BY log_id DESC
         LIMIT ?
       `
@@ -918,7 +891,7 @@ export function listAgentLogs(
           created_at AS createdAt,
           run_id AS runId
         FROM agent_logs
-        WHERE tab_id = ? AND log_id < ?
+        WHERE conversation_id = ? AND log_id < ?
         ORDER BY log_id DESC
         LIMIT ?
       `
@@ -932,10 +905,10 @@ export function listAgentLogs(
 }
 
 export function countAgentLogs(tabId: string): number {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return 0
   const row = getDatabase()
-    .prepare(`SELECT COUNT(*) AS count FROM agent_logs WHERE tab_id = ?`)
+    .prepare(`SELECT COUNT(*) AS count FROM agent_logs WHERE conversation_id = ?`)
     .get(normalizedTabId)
   return Number(row?.count ?? 0)
 }
@@ -945,14 +918,14 @@ export function sessionKnowledgeRevision(tabId: string): string {
   return JSON.stringify(
     getDatabase()
       .prepare(
-        'SELECT COUNT(*) AS count, MAX(log_id) AS lastId, MAX(updated_at) AS updatedAt, SUM(length(text)) AS characters FROM agent_logs WHERE tab_id=?'
+        'SELECT COUNT(*) AS count, MAX(log_id) AS lastId, MAX(updated_at) AS updatedAt, SUM(length(text)) AS characters FROM agent_logs WHERE conversation_id=?'
       )
-      .get(tabId)
+      .get(conversationIdFor(getDatabase(), tabId))
   )
 }
 
 export function deleteSessionHistory(tabId: string): boolean {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return false
 
   const db = getDatabase()
@@ -960,15 +933,22 @@ export function deleteSessionHistory(tabId: string): boolean {
 
   runInTransaction(db, () => {
     changed += Number(
-      db.prepare('DELETE FROM agent_runs WHERE tab_id = ?').run(normalizedTabId).changes
+      db.prepare('DELETE FROM agent_runs WHERE conversation_id = ?').run(normalizedTabId).changes
     )
     changed += Number(
-      db.prepare('DELETE FROM agent_logs WHERE tab_id = ?').run(normalizedTabId).changes
+      db.prepare('DELETE FROM agent_logs WHERE conversation_id = ?').run(normalizedTabId).changes
     )
     // Keep ops_history_records: they are keyed by SSH connection and guide later ops
     // on the same connection across chat/session lifecycles.
     changed += Number(
-      db.prepare('DELETE FROM session_tabs WHERE tab_id = ?').run(normalizedTabId).changes
+      db.prepare('DELETE FROM session_tabs WHERE conversation_id = ?').run(normalizedTabId).changes
+    )
+    changed += Number(
+      db.prepare('DELETE FROM guided_ops_steps WHERE conversation_id=?').run(normalizedTabId)
+        .changes
+    )
+    changed += Number(
+      db.prepare('DELETE FROM conversations WHERE conversation_id=?').run(normalizedTabId).changes
     )
   })
 
@@ -976,16 +956,16 @@ export function deleteSessionHistory(tabId: string): boolean {
 }
 
 export function renameSessionHistory(tabId: string, title: string): boolean {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   const normalizedTitle = title.trim()
   if (!normalizedTabId || !normalizedTitle) return false
 
   const result = getDatabase()
     .prepare(
       `
-      UPDATE session_tabs
+      UPDATE conversations
       SET title = ?, title_locked = 1, updated_at = ?
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
     `
     )
     .run(normalizedTitle, new Date().toISOString(), normalizedTabId)
@@ -998,7 +978,7 @@ export function updateSessionHistorySummary(input: {
   title: string
   summary: string
 }): { ok: boolean; title: string; summary: string; updatedAt: string } {
-  const normalizedTabId = input.tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), input.tabId.trim())
   const title = input.title.trim()
   const summary = input.summary.trim()
   const updatedAt = new Date().toISOString()
@@ -1009,18 +989,18 @@ export function updateSessionHistorySummary(input: {
   const result = getDatabase()
     .prepare(
       `
-      UPDATE session_tabs
+      UPDATE conversations
       SET
         title = CASE WHEN title_locked = 1 THEN title ELSE ? END,
         summary = ?,
         updated_at = ?
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
     `
     )
     .run(title, summary, updatedAt, normalizedTabId)
 
   const row = getDatabase()
-    .prepare('SELECT title, summary FROM session_tabs WHERE tab_id = ?')
+    .prepare('SELECT title, summary FROM conversations WHERE conversation_id = ?')
     .get(normalizedTabId)
 
   return {
@@ -1032,7 +1012,7 @@ export function updateSessionHistorySummary(input: {
 }
 
 export function readSessionLogsForSummary(tabId: string): StoredAgentLogEntry[] {
-  const normalizedTabId = tabId.trim()
+  const normalizedTabId = conversationIdFor(getDatabase(), tabId.trim())
   if (!normalizedTabId) return []
 
   return readRows(
@@ -1047,7 +1027,7 @@ export function readSessionLogsForSummary(tabId: string): StoredAgentLogEntry[] 
         created_at AS createdAt,
         run_id AS runId
       FROM agent_logs
-      WHERE tab_id = ?
+      WHERE conversation_id = ?
       ORDER BY log_id ASC
       LIMIT 80
     `
@@ -1250,7 +1230,7 @@ export function writeCrescentDbFlag(key: string, value: boolean): void {
   writeCrescentDbValue(key, value ? 'true' : 'false')
 }
 
-function getDatabase(): DatabaseSync {
+export function getDatabase(): DatabaseSync {
   if (database) return database
 
   const dir = getCrescentDir()
@@ -1262,7 +1242,13 @@ function getDatabase(): DatabaseSync {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const sqlite = require('node:sqlite') as typeof import('node:sqlite')
   database = new sqlite.DatabaseSync(getCrescentDatabasePath())
-  initializeCrescentDatabase()
+  try {
+    initializeCrescentDatabase()
+  } catch (error) {
+    database.close()
+    database = undefined
+    throw error
+  }
   return database
 }
 

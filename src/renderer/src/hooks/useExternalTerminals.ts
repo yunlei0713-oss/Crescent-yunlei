@@ -59,6 +59,7 @@ export function useExternalTerminals(
     try {
       const result = await terminalClient.connectITerm({
         tabId: tab.id,
+        conversationId: tab.conversationId,
         kind,
         sessionId: selected?.id,
         observationMode

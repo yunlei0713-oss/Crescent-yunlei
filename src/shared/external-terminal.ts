@@ -1,6 +1,9 @@
 export interface ExternalTerminalBinding {
   provider: 'iterm2'
   kind: 'shared' | 'existing'
+  windowState?: ExternalWindowState
+  windowGeneration?: number
+  statusError?: string
   sessionId: string
   columns?: number
   rows?: number
@@ -33,4 +36,19 @@ export interface TerminalObservationGrant {
   status: 'pending' | 'active' | 'paused' | 'expired'
   startedAt: number
   capability: 'structured-stream' | 'screen-snapshot'
+}
+
+export type ExternalWindowState =
+  | 'attached'
+  | 'window-closed'
+  | 'reopening'
+  | 'ended'
+  | 'status-unknown'
+export interface ManagedSharedTerminal {
+  tabId: string
+  sessionId: number
+  pid: number
+  cwd: string
+  detached: boolean
+  external: ExternalTerminalBinding
 }

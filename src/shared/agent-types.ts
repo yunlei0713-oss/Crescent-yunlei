@@ -761,6 +761,9 @@ export interface ToolCatalogEntry {
 }
 
 export interface StoredSessionTab {
+  /** Stable chat owner; tabId is only the terminal metadata key. */
+  conversationId?: string
+  conversationTitle?: string
   projectId?: string
   tabId: string
   sessionGroupId?: string

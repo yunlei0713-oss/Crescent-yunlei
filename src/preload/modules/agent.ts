@@ -59,6 +59,10 @@ import type {
 import type { GuidedOpsAction, GuidedOpsSnapshot } from '../../shared/guided-ops-types'
 
 export const agentApi = {
+  listGuidedOpsHistory: (
+    query: import('../../shared/guided-ops-types').GuidedOpsHistoryQuery
+  ): Promise<import('../../shared/guided-ops-types').GuidedOpsHistoryPage> =>
+    ipcRenderer.invoke('agent:guided-history', query),
   guidedSnapshot: (chatId: string, terminalId: string): Promise<GuidedOpsSnapshot | undefined> =>
     ipcRenderer.invoke('agent:guided-snapshot', { chatId, terminalId }),
   guidedAction: (

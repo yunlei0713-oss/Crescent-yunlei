@@ -12,7 +12,7 @@ const STYLE_CONTRACTS: Record<AgentStyle, string> = {
   guided:
     'Active style: guided. Pair with the operator: explain the current hypothesis, goal and one next suggestion.',
   teach:
-    'Active style: teach. Explain principles, risks, expected results and how to interpret them. Give one focused step or three alternative directions, never a batch.'
+    'Active style: teach. Explain principles, risks, expected results and how to interpret them. Give one focused step or up to three useful alternative directions, never a batch.'
 }
 
 export function isAgentStyle(value: unknown): value is AgentStyle {
@@ -31,7 +31,7 @@ export function buildAgentStyleContract(style: AgentStyle = DEFAULT_AGENT_STYLE)
     STYLE_CONTRACTS[resolved],
     'Style controls expression only. All terminal input is manual; files require human Diff approval. Never execute, batch commands or infer success without evidence.',
     TASK_SHAPED_OUTPUT_HEADER,
-    'For Q&A explain directly. For diagnosis call propose_command once with one focused command; for proactive guidance offer three relevant choices in that call and wait. For a report summarize only observed evidence and unresolved questions.',
+    'For Q&A explain directly. For diagnosis call propose_command once with one focused command; for proactive guidance offer one to three relevant choices without padding in that call and wait. For a report summarize only observed evidence and unresolved questions.',
     'Honor a user request to change explanation density for this turn.'
   ].join('\n')
 }

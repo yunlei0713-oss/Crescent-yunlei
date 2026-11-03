@@ -1,3 +1,5 @@
+import { guidedOpsRepository, type GuidedOpsRepository } from '../sqlite/guided-ops-repository'
+import { resolveConversationId } from '../crescent-sqlite'
 import { randomUUID } from 'node:crypto'
 import type {
   CommandProposalInput,
@@ -20,9 +22,10 @@ interface Session {
   snapshot: GuidedOpsSnapshot
 }
 export class GuidedOpsService {
+  constructor(private readonly repository: GuidedOpsRepository = guidedOpsRepository) {}
   private sessions = new Map<string, Session>()
   private key(ownerId: number, chatId: string): string {
-    return `${ownerId}:${chatId}`
+    return `${ownerId}:${resolveConversationId(chatId)}`
   }
   begin(
     ownerId: number,
@@ -46,9 +49,9 @@ export class GuidedOpsService {
       snapshot: {
         state: previous ? 'ANALYZING_NEXT' : 'ANALYZING',
         goal: proactive
-          ? (previous?.snapshot.goal ?? '')
+          ? previous?.snapshot.goal || this.repository.latestGoal(chatId)
           : redactSensitiveText(goal).slice(0, 2000),
-        history: previous?.snapshot.history ?? [],
+        history: [],
         evidence
       }
     })
@@ -81,10 +84,8 @@ export class GuidedOpsService {
     if (terminalIdentityKey(evidence.identity) !== entry.identityKey)
       throw new Error('Terminal identity changed during analysis; start a new turn')
     const suggestions = [input, ...(input.alternatives ?? [])]
-    if (suggestions.length > 3 || (entry.proactive && suggestions.length !== 3))
-      throw new Error(
-        'Publish three alternative directions for proactive guidance, or one focused next command'
-      )
+    if (suggestions.length < 1 || suggestions.length > 3)
+      throw new Error('Publish one to three distinct suggestions')
     if (new Set(suggestions.map((item) => item.command.trim())).size !== suggestions.length)
       throw new Error('Suggestions must be distinct')
     for (const suggestion of suggestions) {
@@ -99,21 +100,21 @@ export class GuidedOpsService {
       expectedOutput: redactSensitiveText(suggestion.expectedOutput).slice(0, 2000),
       onUnexpected: redactSensitiveText(suggestion.onUnexpected).slice(0, 2000)
     })
-    entry.proposedRun = runId
-    const proposal = {
+    const proposal = this.repository.append(chatId, runId, {
       ...sanitize(input),
       judgment: redactSensitiveText(input.judgment).slice(0, 2000),
       goal: redactSensitiveText(input.goal).slice(0, 1000),
       alternatives: input.alternatives?.map(sanitize),
       id: randomUUID(),
-      step: (entry.snapshot.history.at(-1)?.step ?? 0) + 1,
+      step: 0,
       createdAt: Date.now(),
       target: evidence.identity,
       valid: true,
       observationRequired: evidence.available
-    }
+    })
+    entry.proposedRun = runId
+    entry.changedAt = Date.now()
     entry.snapshot.proposal = proposal
-    entry.snapshot.history = [...entry.snapshot.history, proposal].slice(-30)
     entry.snapshot.evidence = evidence
     entry.snapshot.goal = proposal.goal
     entry.snapshot.state = 'PROPOSAL_READY'
@@ -163,6 +164,7 @@ export class GuidedOpsService {
         }
       }
     }
+    if (proposal) this.repository.update(proposal.id, snapshot.state)
     return structuredClone(snapshot)
   }
   action(ownerId: number, chatId: string, action: GuidedOpsAction): boolean {
@@ -173,9 +175,14 @@ export class GuidedOpsService {
       entry.snapshot.state = 'WAITING_OPERATOR'
     } else if (['skip', 'interrupt', 'complete'].includes(action)) {
       entry.snapshot.state = action === 'complete' ? 'COMPLETED' : 'INTERRUPTED'
-      if (entry.snapshot.proposal) entry.snapshot.proposal.valid = false
+      if (entry.snapshot.proposal) {
+        entry.snapshot.proposal.valid = false
+        this.repository.update(entry.snapshot.proposal.id, entry.snapshot.state)
+      }
     } else return false
     entry.changedAt = Date.now()
+    if (entry.snapshot.proposal)
+      this.repository.update(entry.snapshot.proposal.id, entry.snapshot.state)
     return true
   }
   currentRunId(ownerId: number, chatId: string): string | undefined {
@@ -185,7 +192,10 @@ export class GuidedOpsService {
     for (const [key, entry] of this.sessions) {
       if (!key.startsWith(`${ownerId}:`) || entry.runId !== runId) continue
       entry.snapshot.state = 'INTERRUPTED'
-      if (entry.snapshot.proposal) entry.snapshot.proposal.valid = false
+      if (entry.snapshot.proposal) {
+        entry.snapshot.proposal.valid = false
+        this.repository.update(entry.snapshot.proposal.id, entry.snapshot.state)
+      }
     }
   }
 }

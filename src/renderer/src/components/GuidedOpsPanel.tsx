@@ -1,3 +1,4 @@
+import { GuidedOpsHistory } from './GuidedOpsHistory'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { agentClient, terminalClient } from '../clients'
@@ -6,6 +7,7 @@ import { Button } from './ui/button'
 
 export function GuidedOpsPanel({
   chatId,
+  eventChatId,
   terminalId,
   runId,
   zh,
@@ -15,6 +17,7 @@ export function GuidedOpsPanel({
   onPausedChange
 }: {
   chatId: string
+  eventChatId?: string
   terminalId: string
   runId?: string
   zh: boolean
@@ -65,7 +68,7 @@ export function GuidedOpsPanel({
     // Refresh only after agent activity or an explicit operator action, never idle-poll.
     const unsubscribe = agentClient.onEvent((event) => {
       if (
-        event.tabId === chatId &&
+        (event.tabId === chatId || event.tabId === eventChatId || event.tabId === terminalId) &&
         (event.type === 'done' ||
           event.type === 'error' ||
           event.type === 'status' ||
@@ -81,7 +84,7 @@ export function GuidedOpsPanel({
       unsubscribe()
       stopEvidence()
     }
-  }, [chatId, terminalId])
+  }, [chatId, terminalId, eventChatId])
   async function action(value: GuidedOpsAction): Promise<void> {
     try {
       await agentClient.guidedAction(chatId, value, runId)
@@ -131,12 +134,12 @@ export function GuidedOpsPanel({
   return (
     <section
       aria-label={zh ? '下一步命令建议' : 'Next-command suggestions'}
-      className="guided-ops-primary mt-6 min-w-0 border-t border-border pt-5 text-sm"
+      className="guided-ops-primary mt-2 min-w-0 border-t border-border pt-2 text-sm"
       data-guided-ops-primary
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-sm font-semibold">
             {zh ? '下一步排查建议' : 'Next diagnostic step'}
           </h2>
           <p role="status" className="mt-1 text-xs text-muted-foreground">
@@ -167,14 +170,14 @@ export function GuidedOpsPanel({
         </p>
       )}
       {!proposal && (
-        <div className="py-5">
+        <div className="py-2">
           <p>{zh ? '想排查什么问题？' : 'What would you like to diagnose?'}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {zh
               ? '在下方描述故障现象、预期结果和已知条件，Agent 会给出第一条排查建议，不需要先输入终端命令。'
               : 'Describe symptoms, expectations and known context below. The Agent will suggest the first diagnostic command; no initial terminal command is needed.'}
           </p>
-          <Button className="mt-3" variant="outline" onClick={onStart}>
+          <Button className="mt-2" size="sm" variant="outline" onClick={onStart}>
             {zh ? '描述问题开始排查' : 'Describe an issue to start'}
           </Button>
         </div>
@@ -221,7 +224,7 @@ export function GuidedOpsPanel({
                 {[proposal, ...(proposal.alternatives ?? [])].map((suggestion, index) => (
                   <div
                     key={suggestion.command}
-                    className="space-y-2 border-t border-border py-4"
+                    className="space-y-2 border-t border-border py-2"
                     data-command-suggestion={index}
                     data-scroll-follow-anchor={index === 0 ? '' : undefined}
                   >
@@ -398,19 +401,15 @@ export function GuidedOpsPanel({
                 {zh ? '分析结果' : 'Analyze evidence'}
               </Button>
             </details>
-            <details>
-              <summary>
-                {zh ? '历史步骤' : 'Previous steps'} ({snapshot.history.length})
-              </summary>
-              {snapshot.history.map((item) => (
-                <p key={item.id}>
-                  {item.step} · {item.target.host ?? '?'} · {item.command}
-                </p>
-              ))}
-            </details>
           </div>
         </div>
       )}
+      <GuidedOpsHistory
+        key={chatId}
+        conversationId={chatId}
+        revision={snapshot?.proposal?.id + ':' + snapshot?.state}
+        zh={zh}
+      />
     </section>
   )
 }

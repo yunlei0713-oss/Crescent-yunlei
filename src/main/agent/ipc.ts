@@ -1,3 +1,6 @@
+import { resolveConversationId } from '../crescent-sqlite'
+import { guidedOpsRepository } from '../sqlite/guided-ops-repository'
+import type { GuidedOpsHistoryQuery } from '../../shared/guided-ops-types'
 import { grantLocalDocumentPath } from '../local-document-ipc'
 import { redactSensitiveText } from '../../shared/secret-redaction'
 import { fileChangeApprovals } from './file-approval-service'
@@ -120,6 +123,9 @@ const activeSkillInstalls = new Map<string, { cancel: () => void }>()
 const MAX_COMPACT_INSTRUCTIONS = 2_000
 
 export function registerAgentIpc(): void {
+  rendererIpc.handle('agent:guided-history', (_, query: GuidedOpsHistoryQuery) =>
+    guidedOpsRepository.list(query)
+  )
   rendererIpc.handle(
     'agent:guided-snapshot',
     (event, payload: { chatId?: string; terminalId?: string }) => {
@@ -160,7 +166,7 @@ export function registerAgentIpc(): void {
     (event, payload?: { sessionKey?: string; tabId?: string }) => {
       if (typeof payload?.sessionKey !== 'string' || typeof payload.tabId !== 'string')
         throw new Error('Invalid target request')
-      const context = getPtyBashExecContext(payload.sessionKey)
+      const context = getPtyBashExecContext(resolveConversationId(payload.sessionKey))
       const tabId =
         context?.webContents.id === event.sender.id ? context.executionTabId : payload.tabId
       return readTerminalExecutionTarget(event.sender.id, tabId)
@@ -169,10 +175,10 @@ export function registerAgentIpc(): void {
   rendererIpc.handle('agent:return-to-main', (event, sessionKey: unknown) => {
     if (
       typeof sessionKey !== 'string' ||
-      getPtyBashExecContext(sessionKey)?.webContents.id !== event.sender.id
+      getPtyBashExecContext(resolveConversationId(sessionKey))?.webContents.id !== event.sender.id
     )
       return { ok: false, error: 'No owned execution scope' }
-    return returnToMainTerminal(sessionKey)
+    return returnToMainTerminal(resolveConversationId(sessionKey))
   })
   rendererIpc.handle('agent:get-config', () => {
     const start = traceStartup('ipc:agent:get-config')
@@ -317,19 +323,26 @@ export function registerAgentIpc(): void {
     const sessionKey = typeof payload?.sessionKey === 'string' ? payload.sessionKey.trim() : ''
     return reloadCrescentRuntime({
       ownerId: event.sender.id,
-      sessionKey: sessionKey || undefined,
+      sessionKey: sessionKey ? resolveConversationId(sessionKey) : undefined,
       config: readAgentConfig()
     })
   })
 
   rendererIpc.handle('agent:handoff-status', (event, payload: unknown) => {
     if (!validHandoffSession(payload)) return { available: false, error: 'invalid' }
-    return getHostedHandoffStatus(payload, event.sender.id)
+    return getHostedHandoffStatus(
+      { ...payload, sessionKey: resolveConversationId(payload.sessionKey) },
+      event.sender.id
+    )
   })
 
   rendererIpc.handle('agent:generate-handoff', (event, payload: unknown) => {
     if (!validHandoffInput(payload)) return { ok: false, error: 'invalid' }
-    return generateHandoffForHostedSession(payload, readAgentConfig(), event.sender)
+    return generateHandoffForHostedSession(
+      { ...payload, sessionKey: resolveConversationId(payload.sessionKey) },
+      readAgentConfig(),
+      event.sender
+    )
   })
 
   rendererIpc.handle('agent:cancel-handoff', (event, payload: unknown) => {
@@ -338,7 +351,13 @@ export function registerAgentIpc(): void {
       !validHandoffRequestId((payload as AgentCancelHandoffInput).requestId)
     )
       return { ok: false }
-    return cancelHostedHandoff(payload as AgentCancelHandoffInput, event.sender.id)
+    return cancelHostedHandoff(
+      {
+        ...(payload as AgentCancelHandoffInput),
+        sessionKey: resolveConversationId((payload as AgentCancelHandoffInput).sessionKey)
+      },
+      event.sender.id
+    )
   })
 
   rendererIpc.handle('agent:compact', async (event, payload?: AgentCompactInput) => {
@@ -354,7 +373,7 @@ export function registerAgentIpc(): void {
 
     return compactHostedSession({
       ownerId: event.sender.id,
-      sessionKey,
+      sessionKey: resolveConversationId(sessionKey),
       tabId,
       instructions,
       locale,
@@ -726,7 +745,7 @@ export function registerAgentIpc(): void {
       providerId: payload?.providerId,
       model: payload?.model
     })
-    const sessionKey = payload?.tabId?.trim() || 'default'
+    const sessionKey = resolveConversationId(payload?.tabId?.trim() || 'default')
     if (payload?.projectId !== undefined) {
       agentConfig.workspaceCwd = (
         await resolveProjectForOwner(event.sender, payload.projectId)

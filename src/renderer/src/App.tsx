@@ -1,3 +1,6 @@
+import { Button } from '@renderer/components/ui/button'
+import { formatAgentRunDocumentCompact } from '@renderer/lib/agent-run-document'
+import { ManagedSharedTerminals } from '@renderer/components/ManagedSharedTerminals'
 import {
   agentClient,
   appClient,
@@ -266,10 +269,11 @@ import {
 } from '@renderer/lib/slash-commands'
 import {
   createTerminalTab,
+  getSessionChatTab,
+  toStoredSessionTabs,
   getNextTerminalTitle,
   getSessionDisplayTitle,
   getSessionGroupId,
-  isReservedTerminalTabId,
   resolveSessionAgentStyle,
   resolveSessionChatTabId,
   type AgentLogEntry,
@@ -478,6 +482,8 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     { ...initialTerminalTab, title: locale === 'zh-CN' ? '新建对话' : 'New conversation' }
   ])
   const [activeTabId, setActiveTabId] = useState(initialTerminalTab.id)
+  const closingConversationsRef = useRef(new Set<string>())
+  const [closingConversationId, setClosingConversationId] = useState<string>()
   const externalTerminals = useExternalTerminals(
     (tab) => {
       if (tab.sessionGroupId === tab.id && !tabsRef.current.some((item) => item.id === tab.id)) {
@@ -517,8 +523,9 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
       const chat = tabsRef.current.find((item) => item.id === chatId)
       return {
-        id: chat && !chat.external && !chat.sessionId ? chat.id : undefined,
+        // Always mint a new terminal identity; detached Main-owned sessions may still own old tab IDs.
         sessionGroupId: chatId,
+        conversationId: chat?.conversationId,
         providerId: chat?.providerId ?? config.providerId,
         model: chat?.model,
         agentStyle: chat?.agentStyle ?? config.agentStyle,
@@ -887,6 +894,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     liveRunByLogId,
     pruneLiveRuns
   } = useAgentRuns({
+    tabsRef,
     activeTabIdRef,
     nextLogIdRef,
     activeAgentRunRef,
@@ -2222,6 +2230,11 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
 
   useEffect(() => {
     return storageClient.onSessionSummaryUpdated((event) => {
+      setTabs((current) => {
+        const seed = current.find((tab) => tab.conversationId === event.tabId)
+        const host = seed ? getSessionChatTab(current, seed.id) : undefined
+        return current.map((tab) => (tab.id === host?.id ? { ...tab, title: event.title } : tab))
+      })
       setHistoryItems((current) =>
         current.map((item) =>
           item.tabId === event.tabId
@@ -2476,6 +2489,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
   async function openHistorySession(item: StoredSessionHistoryItem): Promise<void> {
     const detail = await storageClient.getSessionHistory(item.tabId)
     if (!detail) return
+    await storageClient.activateConversation(detail.conversationId ?? detail.tabId)
 
     const connection = detail.connectionId
       ? await findConnectionById(detail.connectionId)
@@ -2491,14 +2505,13 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     }
     const nextLogId = Math.max(0, ...restoredLogs.map((log) => log.id)) + 1
     nextLogIdRef.current = Math.max(nextLogIdRef.current, nextLogId)
-    const existingTab = tabsRef.current.find((tab) => tab.id === detail.tabId)
-    const restoreTabId = isReservedTerminalTabId(detail.tabId) ? undefined : detail.tabId
-    const restoreGroupId = isReservedTerminalTabId(detail.sessionGroupId)
-      ? undefined
-      : detail.sessionGroupId
+    const existingTab = tabsRef.current.find(
+      (tab) => tab.conversationId === (detail.conversationId ?? detail.tabId)
+    )
     const restoredTab = createTerminalTab({
-      id: restoreTabId,
-      sessionGroupId: restoreGroupId ?? restoreTabId,
+      // A restored chat receives a fresh terminal host, never a historical binding.
+      conversationId: detail.conversationId ?? detail.tabId,
+
       title: detail.title,
       projectId: detail.projectId,
       connectionId: detail.connectionId,
@@ -2518,7 +2531,9 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
 
     setTabs((current) =>
       existingTab
-        ? current.map((tab) => (tab.id === detail.tabId ? { ...tab, agentLog: restoredLogs } : tab))
+        ? current.map((tab) =>
+            tab.id === existingTab?.id ? { ...tab, agentLog: restoredLogs } : tab
+          )
         : [...current, restoredTab]
     )
     setActiveTabId(existingTab?.id ?? restoredTab.id)
@@ -2791,6 +2806,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     void storageClient
       .saveAgentRun({
         ...run,
+        tabId: tabsRef.current.find((tab) => tab.id === run.tabId)?.conversationId ?? run.tabId,
         inputTokens: run.inputTokens ?? live?.input,
         outputTokens: run.outputTokens ?? live?.output,
         cacheReadTokens: run.cacheReadTokens ?? live?.cacheRead,
@@ -3033,6 +3049,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     if (mode === 'iterm') {
       const session = await terminalClient.connectITerm({
         tabId: nextTab.id,
+        conversationId: nextTab.conversationId,
         kind: 'shared',
         observationMode,
         connectionId: local ? undefined : connection.id
@@ -3649,7 +3666,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     }
   }
 
-  function performCloseTab(tabId: string): void {
+  function performCloseTab(tabId: string, alreadyDetached = false): void {
     const { closingTab, groupId, peers, shouldPromote, nextRoot } = planCloseTabPromotion(
       tabsRef.current,
       tabId
@@ -3688,11 +3705,12 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       ...(closingTab?.subTerminals.map((subterminal) => subterminal.id) ?? [])
     ])
 
-    terminalClient.stop(tabId)
+    if (!alreadyDetached) void terminalClient.detachExternal(tabId)
     closingTab?.subTerminals.forEach((subterminal) => {
       terminalClient.stop(subterminal.id)
     })
-    setTabs((current) => {
+    {
+      const current = tabsRef.current
       let next = current
       if (shouldPromote && nextRoot && closingTab) {
         next = reassignSessionRootOnClose(current, closingTab, nextRoot, groupId, tabId)
@@ -3702,6 +3720,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
         const sameSession = next.find((tab) => getSessionGroupId(tab) === (nextRoot?.id ?? groupId))
         const fallback = sameSession ?? next[0]
         if (fallback) {
+          activeTabIdRef.current = fallback.id
           setActiveTabId(fallback.id)
         } else if (next.length === 0) {
           // Closing the last tab must not strand the chat input on the
@@ -3714,11 +3733,13 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
           activeTabIdRef.current = localTab.id
           setActiveTabId(localTab.id)
         } else {
+          activeTabIdRef.current = ''
           setActiveTabId('')
         }
       }
-      return next
-    })
+      tabsRef.current = next
+      setTabs(next)
+    }
   }
 
   function performCloseOtherTabs(tabId: string): void {
@@ -3726,7 +3747,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     for (const tab of tabsRef.current) {
       if (tab.id !== tabId) {
         closedTabIds.push(tab.id, ...tab.subTerminals.map((subterminal) => subterminal.id))
-        terminalClient.stop(tab.id)
+        void terminalClient.detachExternal(tab.id)
         tab.subTerminals.forEach((subterminal) => {
           terminalClient.stop(subterminal.id)
         })
@@ -3748,7 +3769,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     const closedTabIds: string[] = []
     for (const tab of tabsRef.current) {
       closedTabIds.push(tab.id, ...tab.subTerminals.map((subterminal) => subterminal.id))
-      terminalClient.stop(tab.id)
+      void terminalClient.detachExternal(tab.id)
       tab.subTerminals.forEach((subterminal) => {
         terminalClient.stop(subterminal.id)
       })
@@ -3768,9 +3789,37 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     setActiveTabId(localTab.id)
   }
 
+  async function endConversation(tabId: string): Promise<void> {
+    const root = getSessionChatTab(tabsRef.current, tabId)
+    if (!root || closingConversationsRef.current.has(root.conversationId)) return
+    closingConversationsRef.current.add(root.conversationId)
+    setClosingConversationId(root.conversationId)
+    try {
+      const peers = tabsRef.current.filter((tab) => tab.conversationId === root.conversationId)
+      const runId = activeRunIdRef.current.get(root.id)
+      if (runId) await agentClient.cancel(runId)
+      await storageClient.saveTabs(toStoredSessionTabs(peers))
+      const liveRun = activeAgentRunRef.current.get(root.id)
+      if (liveRun)
+        await storageClient.updateAgentLog({
+          tabId: root.conversationId,
+          logId: liveRun.logId,
+          text: formatAgentRunDocumentCompact(liveRun)
+        })
+      // Close peers before the runtime host; the stable Conversation ID never moves.
+      await Promise.all(peers.map((peer) => terminalClient.detachExternal(peer.id)))
+      for (const peer of [...peers].reverse()) performCloseTab(peer.id, true)
+      await storageClient.archiveConversation(root.conversationId)
+      await refreshSessionHistory()
+    } finally {
+      closingConversationsRef.current.delete(root.conversationId)
+      setClosingConversationId(undefined)
+    }
+  }
+
   function requestCloseTabs(mode: CloseTabsConfirmRequest['mode'], tabId: string): void {
-    if (!closeTerminalConfirmEnabled) {
-      if (mode === 'tab') performCloseTab(tabId)
+    if (!closeTerminalConfirmEnabled && !getSessionChatTab(tabsRef.current, tabId)?.agentBusy) {
+      if (mode === 'tab') void endConversation(tabId).catch((error) => toast.error(String(error)))
       else if (mode === 'other-tabs') performCloseOtherTabs(tabId)
       else performCloseAllTabs()
       return
@@ -3790,7 +3839,8 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     setCloseTabsConfirmRequest(null)
     if (request.dontAskAgain) setCloseTerminalConfirmEnabled(false)
 
-    if (request.mode === 'tab') performCloseTab(request.tabId)
+    if (request.mode === 'tab')
+      void endConversation(request.tabId).catch((error) => toast.error(String(error)))
     else if (request.mode === 'other-tabs') performCloseOtherTabs(request.tabId)
     else performCloseAllTabs()
   }
@@ -4061,10 +4111,27 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
           }
         }}
       />
-      <header className="app-titlebar flex h-12 shrink-0 items-center">
+      <header className="app-titlebar flex h-8 shrink-0 items-center">
         <div className="app-titlebar-brand flex h-full shrink-0 items-center px-3">
           <ProductLogo />
         </div>
+        <span className="min-w-0 flex-1 truncate px-3 text-xs text-muted-foreground">
+          {sessionChatTab.title}
+        </span>
+        <Button
+          size="xs"
+          variant="ghost"
+          disabled={closingConversationId === sessionChatTab.conversationId}
+          onClick={() => closeTab(sessionChatTab.id)}
+        >
+          {closingConversationId === sessionChatTab.conversationId
+            ? locale === 'zh-CN'
+              ? '正在结束…'
+              : 'Ending…'
+            : locale === 'zh-CN'
+              ? '结束对话'
+              : 'End conversation'}
+        </Button>
       </header>
       {sheetOpen && (
         <Suspense fallback={null}>
@@ -4256,15 +4323,34 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
         />
         <ExternalTerminalDialog controller={externalTerminals} t={t} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <ConversationTerminalSelector
-            terminals={sessionTerminals.filter((tab) => tab.external)}
-            activeId={activeTab.id}
-            zh={locale === 'zh-CN'}
-            onSelect={activateTerminalTab}
-            onConnect={externalTerminals.show}
-          />
+          <ManagedSharedTerminals zh={locale === 'zh-CN'} />
+          {sessionTerminals.filter((tab) => tab.external).length > 1 && (
+            <ConversationTerminalSelector
+              terminals={sessionTerminals.filter((tab) => tab.external)}
+              activeId={activeTab.id}
+              zh={locale === 'zh-CN'}
+              onSelect={activateTerminalTab}
+              onConnect={externalTerminals.show}
+            />
+          )}
           {activeTab.external && (
-            <ExternalTerminalControls key={activeTab.id} tab={activeTab} t={t} />
+            <ExternalTerminalControls
+              key={activeTab.id}
+              tab={activeTab}
+              t={t}
+              onConnect={
+                sessionTerminals.filter((tab) => tab.external).length <= 1
+                  ? externalTerminals.show
+                  : undefined
+              }
+            />
+          )}
+          {activeTab.terminalExited && !activeTab.external && (
+            <p role="status" className="shrink-0 border-b px-3 py-1 text-xs text-muted-foreground">
+              {locale === 'zh-CN'
+                ? '终端已关闭 · 对话和历史仍保留，可重新选择或创建终端。'
+                : 'Terminal closed · conversation and history retained. Select or create another terminal.'}
+            </p>
           )}
           <ChatWorkspace
             onProactiveSuggestionsPausedChange={(paused) =>
@@ -4462,7 +4548,13 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
               })
             }}
             onModelChange={applyConversationModel}
-            onSubmit={(event) => void submitAgent(event)}
+            onSubmit={(event) => {
+              if (closingConversationsRef.current.has(sessionChatTab.conversationId)) {
+                event.preventDefault()
+                return
+              }
+              void submitAgent(event)
+            }}
             onInsertSlashCommand={insertSlashCommand}
             onInsertPinnedWorkflow={(workflow) => {
               updateTab(sessionChatTab.id, (tab) => ({

@@ -1,6 +1,27 @@
 import { ipcRenderer } from 'electron'
 
 export const terminalApi = {
+  listShared: (): Promise<import('../../shared/external-terminal').ManagedSharedTerminal[]> =>
+    ipcRenderer.invoke('terminal:list-shared'),
+  detachExternal: (tabId: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('terminal:detach-external', { tabId }),
+  reopenShared: (tabId: string, sessionId: number): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('terminal:reopen-shared', { tabId, sessionId }),
+  endShared: (tabId: string, sessionId: number): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('terminal:end-shared', { tabId, sessionId }),
+  onExternalWindow: (
+    callback: (event: {
+      tabId: string
+      sessionId: number
+      external: import('../../shared/external-terminal').ExternalTerminalBinding
+      detached?: boolean
+    }) => void
+  ): (() => void) => {
+    const listener = (_: Electron.IpcRendererEvent, event: Parameters<typeof callback>[0]): void =>
+      callback(event)
+    ipcRenderer.on('terminal:external-window', listener)
+    return () => ipcRenderer.removeListener('terminal:external-window', listener)
+  },
   onEvidenceChanged: (
     callback: (
       notice: import('../../shared/terminal-observation-types').TerminalEvidenceNotice
@@ -31,6 +52,7 @@ export const terminalApi = {
   connectITerm: (options: {
     tabId: string
     kind: 'shared' | 'existing'
+    conversationId?: string
     sessionId?: string
     observationMode?: import('../../shared/external-terminal').TerminalObservationMode
     connectionId?: string

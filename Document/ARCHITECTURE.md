@@ -1,15 +1,15 @@
 # 墨巡（MoXun）Architecture
 
-当前产品是 **聊天优先 + 外部 iTerm 人工操作 + 可选只读观察** 的 Electron 工作台。Pi 是 Main 中的客座模型运行时，不持有终端输入权限。本文以 2026-11-01 工作区实现为准；旧架构资料见 [归档说明](archive/README.md)。
+当前产品是 **聊天优先 + 外部 iTerm 人工操作 + 可选只读观察** 的 Electron 工作台。Pi 是 Main 中的客座模型运行时，不持有终端输入权限。本文以 2026-11-03 工作区实现为准；旧架构资料见 [归档说明](archive/README.md)。
 
 ## 进程与依赖方向
 
-| 层 | 职责 | 入口/关键文件 |
-| --- | --- | --- |
-| Main | OS、窗口、SSH/PTY、授权、文件、DB、密钥、模型生命周期 | `src/main/index.ts`、`src/main/ipc-security.ts` |
-| Preload | contextBridge、按领域暴露有限且有类型的 IPC | `src/preload/api.ts`、`src/preload/modules/` |
-| Renderer | 聊天、连接操作、设置和审批呈现；不能直接访问 Node/fs | `src/renderer/src/App.tsx`、`src/renderer/src/clients/` |
-| Shared | 纯类型、验证策略、主题与目录元数据；不反向依赖其他进程 | `src/shared/` |
+| 层       | 职责                                                   | 入口/关键文件                                           |
+| -------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| Main     | OS、窗口、SSH/PTY、授权、文件、DB、密钥、模型生命周期  | `src/main/index.ts`、`src/main/ipc-security.ts`         |
+| Preload  | contextBridge、按领域暴露有限且有类型的 IPC            | `src/preload/api.ts`、`src/preload/modules/`            |
+| Renderer | 聊天、连接操作、设置和审批呈现；不能直接访问 Node/fs   | `src/renderer/src/App.tsx`、`src/renderer/src/clients/` |
+| Shared   | 纯类型、验证策略、主题与目录元数据；不反向依赖其他进程 | `src/shared/`                                           |
 
 Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通过 `rendererIpc` 校验 sender、origin、主 frame 及 payload；不向 Renderer 暴露任意 channel。窗口保持 sandbox、contextIsolation、关闭 nodeIntegration。安全决策不能只放在 UI 或提示词。
 
@@ -43,7 +43,7 @@ Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通�
 
 `src/main/projects.ts` 的原生目录选择创建项目授权，激活时再次验证真实路径、非 symlink 和可访问性；不能把侧栏 ready 当安全授权。`src/main/local-document-ipc.ts` / `src/main/local-document-reader.ts` 限制 owner/root、文件类型、大小、secret path 与 symlink。`src/main/code-intelligence/` 持有代码索引及 Worker/WASM 边界。
 
-`src/main/agent/pi-local-files.ts` 的 `read` 与 `request_file_change` 独立于 SSH 目标。后者 → `src/main/agent/file-approval-service.ts` → Renderer `src/renderer/src/components/FileChangeReview.tsx` 完整 Diff/逐文件决定 → Main 原生确认 → 一次性校验 owner/run、路径、内容 hash、时效 → mutation queue 和写后验证。拒绝/失效不改变文件字节，不注册 Pi 内建 write/edit。
+`src/main/agent/pi-local-files.ts` 的 `read` 与 `request_file_change` 独立于 SSH 目标。后者 → `src/main/agent/file-approval-service.ts` → Renderer `src/renderer/src/components/FileChangeReview.tsx` 完整 Diff/一次批次确认 → Main 原生确认 → 一次性校验 owner/run、路径、内容 hash、时效 → mutation queue 和写后验证。拒绝/失效不改变文件字节，不注册 Pi 内建 write/edit。
 
 ## 存储与历史兼容
 
@@ -64,3 +64,13 @@ Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通�
 `electron.vite.config.ts` 分别构建 Main/Preload/Renderer；`electron-builder.yml` 仅打包当前输出/资源，排除 Document、experiments 与验收输出。Pi、MCP、Photon WASM、node-pty prebuild、PDF legacy worker/fonts/cmaps 维持 external/asarUnpack 规则；Renderer PDF worker、Mermaid、Tree-sitter 和 XYFlow 不能作为垃圾删掉。
 
 当前仅交付 Mac Intel（x64）app/DMG/ZIP，应用名“墨巡”、安装包前缀 `moxun`；仅保留 x64 打包入口。签名、公证和真机验收不由源码构建通过推定。`experiments/agent-runtime/` 保留独立 package/lockfile、源码和评估，不进入产品依赖或打包。具体参见 [开发规范](DEVELOPMENT.md)、[安全模型](SECURITY_MODEL.md)、[外部终端](EXTERNAL_TERMINALS.md) 与 [本地测试](TESTING.md)。
+
+## Conversation 与历史（2026-11-03）
+
+`conversationId` 是稳定聊天身份；`sessionGroupId` 仅组织 Renderer 运行态承载，`tab.id` 是具体终端标识。关闭根终端时仅转移 UI 承载，Conversation ID 不变；从历史恢复会生成新的终端 Tab，不恢复旧 UUID、PTY、授权或审批。
+
+SQLite 的 `conversations` 保存标题、摘要、项目及归档时间；旧 `session_tabs`、`agent_logs`、`agent_runs`、`ops_history_records` 通过新增 `conversation_id` 关联。历史查询从 Conversation 出发，既有 `tabId` API 同时接受稳定 Conversation ID 或已保存的终端别名。`sqlite/conversations.ts` 在事务中做幂等增量迁移，保留旧字段／主键和孤立日志，不按相似标题合并。
+
+`sqlite/guided-ops-repository.ts` 保存脱敏建议，事务内按 Conversation 分配 step，proposal 和 run 去重；历史游标为 `(created_at, proposal_id)`，默认每页 30、最多 100。`GuidedOpsService` Map 只保留当前运行状态；`snapshot.history` 暂留为空的兼容字段。历史提案始终不可作为当前有效建议，不含授权、原始输出、原生 UUID 或 owner。Renderer `GuidedOpsHistory` 独立按页读取，运行态淘汰不删除历史。
+
+shared iTerm 窗口状态使用独立 `terminal:external-window` 事件，真正 PTY 结束才发 `terminal:exit`。Main 保留关闭窗口后的原 PTY/Socket；解除关联后仍能从 `terminal:list-shared` 与 `ManagedSharedTerminals` 找到。显式 `terminal:end-shared` 要求原生二次确认并复核 owner/session ID，Agent-origin 一律拒绝这些管理操作。Main/Renderer owner 退出沿用既有 reaper 清理边界，不提供跨应用重启保活。

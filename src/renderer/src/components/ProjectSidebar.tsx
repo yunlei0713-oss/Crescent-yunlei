@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon } from 'lucide-react'
+import { ChevronDownIcon, ChevronRightIcon, FolderIcon, PlusIcon, XIcon } from 'lucide-react'
 import type { LocalProject } from '../../../shared/projects'
 import type { StoredSessionHistoryItem } from '../../../shared/agent-types'
 import type { AgentTerminalTab } from '@renderer/lib/terminal-tabs'
@@ -18,7 +18,8 @@ export function ProjectSidebar({
   onAttach,
   onNew,
   onSelect,
-  onHistory
+  onHistory,
+  onClose
 }: {
   expanded: boolean
   zh: boolean
@@ -32,6 +33,7 @@ export function ProjectSidebar({
   onNew: (id: string) => void
   onSelect: (id: string) => void
   onHistory: (item: StoredSessionHistoryItem) => void
+  onClose: (id: string) => void
 }): React.JSX.Element {
   const [projects, setProjects] = useState<LocalProject[]>([])
   const [opened, setOpened] = useState(projectId ?? '')
@@ -175,22 +177,36 @@ export function ProjectSidebar({
                       session.agentLog.some((log) => log.kind === 'user')
                   )
                   .map((session) => (
-                    <Button
-                      key={session.id}
-                      variant="ghost"
-                      className="app-sidebar-action h-7"
-                      aria-current={activeId === session.id ? 'page' : undefined}
-                      onClick={() => onSelect(session.id)}
-                      title={session.title}
-                    >
-                      <span className="truncate">{session.title}</span>
-                    </Button>
+                    <div key={session.conversationId} className="flex min-w-0 items-center">
+                      <Button
+                        variant="ghost"
+                        className="app-sidebar-action h-7 min-w-0 flex-1"
+                        aria-current={activeId === session.id ? 'page' : undefined}
+                        onClick={() => onSelect(session.id)}
+                        title={session.title}
+                      >
+                        <span className="truncate">{session.title}</span>
+                      </Button>
+                      <Button
+                        size="icon-xs"
+                        variant="ghost"
+                        aria-label={
+                          zh ? `结束对话：${session.title}` : `End conversation: ${session.title}`
+                        }
+                        title={zh ? '结束对话' : 'End conversation'}
+                        onClick={() => onClose(session.id)}
+                      >
+                        <XIcon />
+                      </Button>
+                    </div>
                   ))}
                 {history
                   .filter(
                     (item) =>
                       item.projectId === project.id &&
-                      !sessions.some((session) => session.id === item.tabId)
+                      !sessions.some(
+                        (session) => session.conversationId === (item.conversationId ?? item.tabId)
+                      )
                   )
                   .slice(0, 10)
                   .map((item) => (

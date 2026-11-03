@@ -186,6 +186,7 @@ export function AppSidebar({
           onNew={onNewProjectChat}
           onSelect={onSelect}
           onHistory={onOpenHistory}
+          onClose={onCloseSession}
         />
         {expanded && (
           <>
@@ -226,7 +227,11 @@ export function AppSidebar({
               ))}
             {history
               .filter(
-                (item) => !item.projectId && !sessions.some((session) => session.id === item.tabId)
+                (item) =>
+                  !item.projectId &&
+                  !sessions.some(
+                    (session) => session.conversationId === (item.conversationId ?? item.tabId)
+                  )
               )
               .slice(0, 8)
               .map((item) => (

@@ -54,6 +54,8 @@ export function reassignSessionRootOnClose(
       return {
         ...tab,
         sessionGroupId: nextRoot.id,
+        conversationId: closingTab.conversationId,
+        title: closingTab.title,
         agentInput: closingTab.agentInput,
         skillRefs: closingTab.skillRefs,
         activeWikiIds: closingTab.activeWikiIds ?? [],

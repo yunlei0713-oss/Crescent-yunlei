@@ -13,6 +13,18 @@ export function useTerminalCollaborationLifecycle({
   onExit: (id: string) => void
 }): void {
   useEffect(() => {
+    const stopWindow = terminalClient.onExternalWindow((event) => {
+      updateTab(event.tabId, (tab) =>
+        tab.sessionId === event.sessionId
+          ? {
+              ...tab,
+              external: event.detached ? undefined : event.external,
+              sessionId: event.detached ? undefined : tab.sessionId,
+              terminalReady: !event.detached && event.external.windowState === 'attached'
+            }
+          : tab
+      )
+    })
     const stopBinding = terminalClient.onExternalBinding((event) => {
       updateTab(event.tabId, (tab) =>
         tab.sessionId === event.sessionId ? { ...tab, external: event.external } : tab
@@ -27,6 +39,7 @@ export function useTerminalCollaborationLifecycle({
       if (!tab || (event.sessionId && tab.sessionId && event.sessionId !== tab.sessionId)) return
       updateTab(event.tabId, (current) => ({
         ...current,
+        external: undefined,
         sessionId: undefined,
         terminalReady: false,
         terminalExited: true
@@ -35,6 +48,7 @@ export function useTerminalCollaborationLifecycle({
       // Never reconnect automatically or replace an SSH session with a local shell.
     })
     return () => {
+      stopWindow()
       stopBinding()
       stopPrompt()
       stopExit()

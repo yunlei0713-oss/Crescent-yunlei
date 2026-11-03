@@ -1,3 +1,4 @@
+import type { ExternalTerminalBinding } from '../../../shared/external-terminal'
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -113,20 +114,43 @@ export function createSharedITermSession(
     dispose()
     throw error
   }
-  const external = {
+  const external: ExternalTerminalBinding = {
+    windowState: 'window-closed',
+    windowGeneration: 0,
     provider: 'iterm2' as const,
     kind: 'shared' as const,
     sessionId: '',
     columns: input.cols,
     rows: input.rows
   }
+  let failures = 0
+  let pendingId = ''
+  const publishWindow = (state: ExternalTerminalBinding['windowState'], error?: string): void => {
+    external.windowState = state
+    external.statusError = error
+    events.onExternalWindow?.({ ...external })
+  }
+  const closed = (): void => {
+    clearTimeout(sizeTimer)
+    ++observationEpoch
+    external.sessionId = ''
+    client?.destroy()
+    client = undefined
+    publishWindow('window-closed')
+  }
+  const missing = (error: unknown): boolean =>
+    error instanceof Error && /ITERM_SESSION_MISSING|ITERM_NOT_RUNNING/.test(error.message)
   const syncSize = async (): Promise<void> => {
+    const uuid = external.sessionId
+    if (stopped || !uuid) return
     try {
       const size = await itermRequest<{ columns: number; rows: number }>({
         action: 'size',
-        id: external.sessionId
+        id: uuid
       })
-      if (stopped) return
+      if (stopped || external.sessionId !== uuid) return
+      failures = 0
+      if (external.windowState === 'status-unknown') publishWindow('attached')
       if (
         Number.isInteger(size.columns) &&
         Number.isInteger(size.rows) &&
@@ -141,11 +165,44 @@ export function createSharedITermSession(
         external.rows = size.rows
         events.onExternalSize?.(size.columns, size.rows)
       }
-      sizeTimer = setTimeout(() => void syncSize(), 1000)
-    } catch {
-      // The internal PTY survives closing iTerm. Reopen explicitly from the pane.
+    } catch (error) {
+      if (stopped || external.sessionId !== uuid) return
+      if (missing(error)) {
+        closed()
+        return
+      }
+      ++failures
+      publishWindow('status-unknown', error instanceof Error ? error.message : 'iTerm unavailable')
     }
+    if (!stopped && external.sessionId === uuid)
+      sizeTimer = setTimeout(
+        () => void syncSize(),
+        Math.min(30000, 1000 * 2 ** Math.min(failures, 5))
+      )
   }
+  const waitForBridge = async (): Promise<void> => {
+    if (client) return
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup()
+        reject(new Error('iTerm bridge connection timed out'))
+      }, 10000)
+      const cleanup = (): void => {
+        clearTimeout(timer)
+        connected = undefined
+        disconnected = undefined
+      }
+      connected = () => {
+        cleanup()
+        resolve()
+      }
+      disconnected = () => {
+        cleanup()
+        reject(new Error('Terminal disconnected'))
+      }
+    })
+  }
+
   return {
     ...pty,
     external,
@@ -156,6 +213,8 @@ export function createSharedITermSession(
     setObservation: async (mode) => {
       assertOperatorTerminalAccess()
       const version = ++observationEpoch
+      if (mode !== 'off' && external.windowState !== 'attached')
+        throw new Error('No attached iTerm window')
       if (mode !== 'context-live' || stopped) return
       // Inspect the entire retained cache before the Observer redacts and bounds
       // it. It is plain evidence, never a replay of cached OSC control markers.
@@ -168,56 +227,64 @@ export function createSharedITermSession(
       opening = (async () => {
         await listening
         if (stopped) throw new Error('Terminal disconnected')
+        clearTimeout(sizeTimer)
         if (external.sessionId) {
           try {
             await focusITermSession(external.sessionId)
-            clearTimeout(sizeTimer)
             await syncSize()
-            return
+            if (external.sessionId) return
           } catch (error) {
-            // A closed iTerm view can leave nc's socket half-open. UUID liveness,
-            // not client truthiness, decides whether to reopen the same PTY.
-            if (!(error instanceof Error) || !error.message.includes('ITERM_SESSION_MISSING'))
+            if (!missing(error)) {
+              publishWindow(
+                'status-unknown',
+                error instanceof Error ? error.message : 'iTerm unavailable'
+              )
+              sizeTimer = setTimeout(() => void syncSize(), 5000)
               throw error
-            client?.destroy()
-            client = undefined
+            }
+            closed()
           }
         }
-        clearTimeout(sizeTimer)
-        const created = await itermRequest<{ id: string }>({
-          action: 'create',
-          command: `/bin/bash ${shellQuote(scriptPath)}`
-        })
-        external.sessionId = created.id
-        events.onExternalBinding?.({ ...external })
-        if (stopped) throw new Error('Terminal disconnected')
-        if (!client)
-          await new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(() => {
-              cleanup()
-              reject(new Error('iTerm bridge connection timed out'))
-            }, 10000)
-            const cleanup = (): void => {
-              clearTimeout(timer)
-              connected = undefined
-              disconnected = undefined
+        publishWindow('reopening')
+        try {
+          // A late bridge connection must not create a second view after a timeout.
+          if (pendingId) {
+            try {
+              await focusITermSession(pendingId)
+            } catch (error) {
+              if (!missing(error)) throw error
+              pendingId = ''
             }
-            connected = () => {
-              cleanup()
-              resolve()
-            }
-            disconnected = () => {
-              cleanup()
-              reject(new Error('Terminal disconnected'))
-            }
-          })
-        await syncSize()
+          }
+          if (!pendingId) {
+            const created = await itermRequest<{ id: string }>({
+              action: 'create',
+              command: `/bin/bash ${shellQuote(scriptPath)}`
+            })
+            if (stopped) throw new Error('Terminal disconnected')
+            pendingId = created.id
+          }
+          await waitForBridge()
+          if (stopped) throw new Error('Terminal disconnected')
+          external.sessionId = pendingId
+          pendingId = ''
+          external.windowGeneration = (external.windowGeneration ?? 0) + 1
+          publishWindow('attached')
+          events.onExternalBinding?.({ ...external })
+          await syncSize()
+        } catch (error) {
+          if (!stopped)
+            publishWindow('window-closed', error instanceof Error ? error.message : 'Reopen failed')
+          throw error
+        }
       })().finally(() => {
         opening = undefined
       })
       return opening
     },
     kill: () => {
+      if (stopped) return
+      publishWindow('ended')
       dispose()
       pty.kill()
     }

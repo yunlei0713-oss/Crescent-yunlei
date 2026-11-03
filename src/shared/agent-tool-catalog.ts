@@ -28,7 +28,7 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
     method: 'post',
     path: 'pi://moxun/propose_command',
     description:
-      'Suggest one focused command or three next-direction choices, target-bound and manually copied/typed by the operator.',
+      'Suggest one to three useful next-direction choices, target-bound and manually copied/typed by the operator.',
     source: 'built-in',
     risk: 'low',
     requiresApproval: false,

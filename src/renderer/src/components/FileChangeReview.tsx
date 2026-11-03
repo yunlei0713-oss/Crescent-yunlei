@@ -19,7 +19,11 @@ export function FileChangeReview({ locale }: { locale: string }) {
   const zh = locale.startsWith('zh')
   useEffect(() => {
     const stopRequest = agentClient.onFileChangeRequest((next) =>
-      setRequests((all) => [...all, next])
+      setRequests((all) =>
+        all.some((item) => item.id === next.id)
+          ? all.map((item) => (item.id === next.id ? next : item))
+          : [...all, next]
+      )
     )
     const stopResult = agentClient.onFileChangeResult((result) => {
       setRequests((all) => all.filter((item) => item.id !== result.id))
@@ -40,7 +44,7 @@ export function FileChangeReview({ locale }: { locale: string }) {
   if (!request) return null
   return (
     <ReviewDialog
-      key={request.id}
+      key={request.id + request.digest}
       request={request}
       count={requests.length}
       zh={zh}
@@ -60,7 +64,9 @@ function ReviewDialog({
   zh: boolean
   dismiss: () => void
 }) {
-  const [strongPaths, setStrongPaths] = useState<string[]>([])
+  const [batchConfirmed, setBatchConfirmed] = useState(false)
+  const strongChanges = request.changes.filter((change) => change.strongApproval)
+  const strongPaths = batchConfirmed ? strongChanges.map((change) => change.path) : []
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [now, setNow] = useState(() => Date.now())
@@ -113,8 +119,8 @@ function ReviewDialog({
           <div className="min-h-0 space-y-4 overflow-auto px-4 text-xs select-text">
             <p>
               {zh
-                ? '风险：现有文件变更需逐项确认。审批仅对以下完整 Diff 生效。'
-                : 'Risk: confirm each existing-file change. Approval applies only to the complete Diff below.'}
+                ? '请审阅以下全部 Diff，然后一次确认本次批次。'
+                : 'Review all Diffs, then confirm this entire batch once.'}
             </p>
             <p className="text-muted-foreground">
               {zh
@@ -148,26 +154,40 @@ function ReviewDialog({
                   </div>
                 </details>
                 {change.strongApproval && (
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      disabled={busy}
-                      checked={strongPaths.includes(change.path)}
-                      onChange={(event) =>
-                        setStrongPaths((paths) =>
-                          event.target.checked
-                            ? [...paths, change.path]
-                            : paths.filter((path) => path !== change.path)
-                        )
-                      }
-                    />
+                  <p className="text-destructive">
                     {zh
-                      ? '单独确认此文件的修改 / 覆盖 / 删除 / 移动'
-                      : 'Explicitly confirm this file modification / replacement / removal / move'}
-                  </label>
+                      ? '需批次确认 · 可能修改或删除已有内容'
+                      : 'Batch confirmation required · may change or remove existing content'}
+                  </p>
                 )}
               </section>
             ))}
+            {strongChanges.length > 0 && (
+              <div className="space-y-2 border-t pt-3">
+                <p className="font-medium">
+                  {zh ? '本次涉及的全部高影响操作' : 'All higher-impact changes in this batch'}
+                </p>
+                <ul className="space-y-1">
+                  {strongChanges.map((change) => (
+                    <li key={change.path} className="break-all">
+                      {change.operation} · {change.path}
+                      {change.destination ? ` → ${change.destination}` : ''}
+                    </li>
+                  ))}
+                </ul>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    disabled={busy || now >= request.expiresAt}
+                    checked={batchConfirmed}
+                    onChange={(event) => setBatchConfirmed(event.target.checked)}
+                  />
+                  {zh
+                    ? '我已审阅本次全部 Diff，允许执行以上列出的全部变更。'
+                    : 'I reviewed every Diff and approve all changes listed in this batch.'}
+                </label>
+              </div>
+            )}
             <textarea
               aria-label={zh ? '调整意见' : 'Revision feedback'}
               placeholder={zh ? '可填写调整意见' : 'Optional revision feedback'}
@@ -178,6 +198,19 @@ function ReviewDialog({
             />
           </div>
         )}
+        <p role="status" className="px-4 text-xs text-muted-foreground">
+          {now >= request.expiresAt
+            ? zh
+              ? '审批已过期，请重新申请。'
+              : 'Review expired; request a new proposal.'
+            : strongChanges.length > 0 && !batchConfirmed
+              ? zh
+                ? '请先勾选批次确认，再批准本次修改。'
+                : 'Confirm the batch before approving these changes.'
+              : zh
+                ? '审批仅适用于当前显示的变更。'
+                : 'Approval applies only to the displayed changes.'}
+        </p>
         <DialogFooter>
           <Button variant="outline" disabled={busy} onClick={() => void decide(false)}>
             {zh ? '拒绝' : 'Reject'}
@@ -190,9 +223,7 @@ function ReviewDialog({
               busy ||
               !request ||
               now >= request.expiresAt ||
-              request.changes.some(
-                (change) => change.strongApproval && !strongPaths.includes(change.path)
-              )
+              (strongChanges.length > 0 && !batchConfirmed)
             }
             onClick={() => void decide(true)}
           >

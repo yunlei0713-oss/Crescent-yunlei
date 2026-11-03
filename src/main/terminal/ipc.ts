@@ -861,6 +861,12 @@ function observationIdentity(
   generation?: number
 ): TerminalIdentity {
   const target = readTerminalExecutionTarget(senderId, tabId)
+  const session = sessions.get(getSessionKey(senderId, tabId))
+  const unavailable =
+    session?.detached ||
+    (session?.external?.kind === 'shared' &&
+      Boolean(session.external.windowState) &&
+      session.external.windowState !== 'attached')
   const observedHost =
     sessions.get(getSessionKey(senderId, tabId))?.external?.kind === 'existing'
       ? undefined
@@ -869,10 +875,11 @@ function observationIdentity(
         (target.executionMode === 'local' ? hostname() : undefined))
   return {
     ownerId: senderId,
+    conversationId: session?.conversationId,
     itermSessionId: sessions.get(getSessionKey(senderId, tabId))?.external?.sessionId,
     tabId,
     connectionId: target.connectionId,
-    sessionGeneration: generation ?? target.sessionGeneration ?? 0,
+    sessionGeneration: unavailable ? 0 : (generation ?? target.sessionGeneration ?? 0),
     // A local zsh may alternate a bare % with its hostname prompt in one result.
     // Those are one host, not evidence-segment changes on every command.
     host: isLocalMachinePromptHost(observedHost, hostname()) ? 'local-shell' : observedHost,
@@ -1511,6 +1518,7 @@ export function registerTerminalIpc(): void {
       payload?: {
         tabId?: string
         kind?: string
+        conversationId?: string
         sessionId?: string
         observationMode?: TerminalObservationMode
         connectionId?: string
@@ -1524,6 +1532,12 @@ export function registerTerminalIpc(): void {
         !['shared', 'existing'].includes(payload?.kind ?? '')
       )
         throw new Error('Invalid external terminal request')
+      if (
+        payload?.conversationId !== undefined &&
+        (typeof payload.conversationId !== 'string' ||
+          !/^[a-zA-Z0-9:_-]{1,180}$/.test(payload.conversationId))
+      )
+        throw new Error('Invalid conversation identity')
       const key = getSessionKey(event.sender.id, tabId)
       if (sessions.has(key) || restoringSessionKeys.has(key))
         throw new Error('Terminal is already connected')
@@ -1570,6 +1584,7 @@ export function registerTerminalIpc(): void {
             ? { kind: 'existing', id: payload!.sessionId!, screen }
             : { kind: 'shared' }
         })
+        session.conversationId = payload?.conversationId
         sessions.set(key, session)
         if (session.stopObservation) bindObservationSampling(key, session.stopObservation)
         noteSessionMode(key, session.mode)
@@ -1625,6 +1640,12 @@ export function registerTerminalIpc(): void {
       const session = sessions.get(key)
       if (payload.action === 'status' && !session?.external) return undefined
       if (!session?.external) throw new Error('No live iTerm binding')
+      if (
+        payload.action === 'authorize' &&
+        (session.detached ||
+          (session.external.windowState && session.external.windowState !== 'attached'))
+      )
+        throw new Error('No attached iTerm window')
       const identity = observationIdentity(event.sender.id, tabId)
       if (payload.action === 'status') return observationGrants.read(key, identity)
       if (payload.action === 'pause' || payload.action === 'revoke') {
@@ -1677,6 +1698,114 @@ export function registerTerminalIpc(): void {
         }
       } else throw new Error('Invalid observation action')
       return observationGrants.read(key, observationIdentity(event.sender.id, tabId))
+    }
+  )
+  rendererIpc.handle('terminal:list-shared', (event) => {
+    assertOperatorTerminalAccess()
+    return [...sessions.entries()].flatMap(([key, session]) => {
+      if (session.external?.kind !== 'shared' || !key.startsWith(`${event.sender.id}:`)) return []
+      return [
+        {
+          tabId: key.slice(`${event.sender.id}:`.length),
+          sessionId: session.id,
+          pid: session.pid,
+          cwd: session.cwd,
+          detached: Boolean(session.detached),
+          external: { ...session.external }
+        }
+      ]
+    })
+  })
+  rendererIpc.handle('terminal:detach-external', (event, payload: { tabId?: string }) => {
+    assertOperatorTerminalAccess()
+    const tabId = normalizeTabId(payload?.tabId)
+    if (!tabId) throw new Error('Invalid terminal')
+    const key = getSessionKey(event.sender.id, tabId),
+      session = sessions.get(key)
+    if (!session) return { ok: true }
+    observationRequests.delete(key)
+    observationGrants.revoke(key)
+    invalidateTerminalPlans(key)
+    if (session.external?.kind === 'shared') {
+      session.detached = true
+      session.conversationId = undefined
+      session.stopObservation?.()
+      safeWebContentsSend(event.sender, 'terminal:external-window', {
+        tabId,
+        sessionId: session.id,
+        external: { ...session.external },
+        detached: true
+      })
+    } else {
+      stopSession(key) // existing iTerm kill is detach-only.
+      if (session.external)
+        safeWebContentsSend(event.sender, 'terminal:external-window', {
+          tabId,
+          sessionId: session.id,
+          external: { ...session.external },
+          detached: true
+        })
+    }
+    return { ok: true }
+  })
+  rendererIpc.handle(
+    'terminal:reopen-shared',
+    async (event, payload: { tabId?: string; sessionId?: number }) => {
+      assertOperatorTerminalAccess()
+      const tabId = normalizeTabId(payload?.tabId)
+      const session = tabId ? sessions.get(getSessionKey(event.sender.id, tabId)) : undefined
+      if (!session || session.id !== payload.sessionId || session.external?.kind !== 'shared')
+        throw new Error('Shared session ended')
+      await session.openExternal?.()
+      return { ok: true }
+    }
+  )
+  rendererIpc.handle(
+    'terminal:end-shared',
+    async (event, payload: { tabId?: string; sessionId?: number }) => {
+      assertOperatorTerminalAccess()
+      const tabId = normalizeTabId(payload?.tabId)
+      if (!tabId) throw new Error('Invalid terminal')
+      const key = getSessionKey(event.sender.id, tabId),
+        session = sessions.get(key)
+      if (!session) return { ok: true }
+      if (
+        session.id !== payload.sessionId ||
+        session.external?.kind !== 'shared' ||
+        session.external.windowState === 'reopening'
+      )
+        throw new Error('Shared session changed or reopening')
+      const options = {
+        type: 'warning' as const,
+        buttons: ['取消 / Cancel', '结束终端会话 / End session'],
+        defaultId: 0,
+        cancelId: 0,
+        message: `结束终端会话 #${session.id} · ${tabId}？`,
+        detail:
+          '将终止此 Shell 及其前台任务，并释放资源。结束后无法通过重新打开恢复。This ends the shell and its foreground tasks permanently.'
+      }
+      const parent = BrowserWindow.fromWebContents(event.sender)
+      const result = await (parent
+        ? dialog.showMessageBox(parent, options)
+        : dialog.showMessageBox(options))
+      if (result.response !== 1) return { ok: false }
+      if (
+        sessions.get(key) !== session ||
+        event.sender.isDestroyed() ||
+        sessions.get(key)?.external?.windowState === 'reopening'
+      )
+        return { ok: false }
+      stopSession(key)
+      connectionStates.delete(key)
+      sessionWebContents.delete(key)
+      safeWebContentsSend(event.sender, 'terminal:exit', {
+        tabId,
+        sessionId: session.id,
+        exitCode: 130,
+        reason: 'operator-end',
+        ended: true
+      })
+      return { ok: true }
     }
   )
   rendererIpc.handle('terminal:focus-iterm', async (event, payload?: { tabId?: string }) => {
@@ -2742,6 +2871,19 @@ function createTerminalSession(input: {
   let creating = true
   const current = (): boolean => creating || sessions.get(input.key)?.id === input.sessionId
   const events: TerminalSessionEvents = {
+    onExternalWindow: (binding) => {
+      if (!current()) return
+      if (binding.windowState !== 'attached') {
+        observationRequests.delete(input.key)
+        observationGrants.revoke(input.key)
+        invalidateTerminalPlans(input.key)
+      }
+      sendIfAlive(input.webContents, input.tabId, input.key, 'terminal:external-window', {
+        tabId: input.tabId,
+        sessionId: input.sessionId,
+        external: binding
+      })
+    },
     onExternalBinding: (binding) => {
       if (!current()) return
       // Reopening preserves the PTY, but a new native UUID never inherits a grant.

@@ -37,7 +37,7 @@ This metadata is advisory. Enforcement belongs in Main capability checks, runtim
 - Shared PTY evidence is structured only with reliable OSC 133 boundaries. Remote shells are not assumed to have integration; nothing is installed or injected remotely for observation.
 - Redacted evidence stays in memory (20 events, 16K/event, 64K total, 30 minutes). Models read it only when needed, not on every output fragment.
 - Analysis has no command-name or syntax whitelist. Visible redacted interactive/running output may be analyzed without claiming completion; uncertain keystrokes are not retained as commands. Secret prompts, credentials and private keys remain suppressed/redacted.
-- Unbinding existing iTerm sends no exit/Ctrl+C and does not close its shell. Ending collaboration does not close a shared PTY; quitting MoXun terminates its owned bridge.
+- Unbinding existing iTerm sends no exit/Ctrl+C and does not close its shell. Detaching or archiving a conversation does not close its shared PTY; Main keeps a visible management entry. Explicitly ending that owned session requires native confirmation. Quitting MoXun terminates its owned bridge.
 
 ## Diagnostic suggestions are not execution permissions
 
@@ -62,3 +62,11 @@ This metadata is advisory. Enforcement belongs in Main capability checks, runtim
 - Are secrets excluded from logs, release artifacts, tests, and issue templates?
 - Does the user see enough source, parameter, risk, and approval context before state changes?
 - Are tests updated for command risk, path handling, provider config, or tool selection?
+
+## 2026-11-03 persistence and lifecycle boundaries
+
+Observation identities include the Conversation, terminal Tab, owner, PTY generation and native UUID. Confirmed shared-window loss clears the native binding and evidence without ending the PTY. Unknown Automation status revokes current evidence and retries with capped backoff; it is never proof that the Shell ended. Reopening creates only the front end and requires fresh observation consent.
+
+Guided history stores a redacted proposal projection, without raw evidence, native UUIDs, owners or grants; historical proposals are always `valid=false`. One to three distinct suggestions are permitted. Persisting a suggestion never grants execution or observation.
+
+File review uses a single batch checkbox for every required higher-impact path. Main rejects duplicate, missing and additional `strongPaths`; request ID, owner/run validity, digest, expiry, path/symlink/source hashes, mutation queue and write verification remain authoritative. A changed digest resets Renderer confirmation. There is no new automatic approval path.

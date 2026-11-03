@@ -41,6 +41,7 @@ import type { AgentEvent, CommandApprovalRequest } from '../../../shared/agent-t
 import { redactSensitiveText } from '../../../shared/secret-redaction'
 
 interface UseAgentRunsInput {
+  tabsRef: MutableRefObject<AgentTerminalTab[]>
   activeTabIdRef: MutableRefObject<string>
   nextLogIdRef: MutableRefObject<number>
   activeAgentRunRef: MutableRefObject<Map<string, AgentRunViewState>>
@@ -57,6 +58,7 @@ function createStepId(prefix: string): string {
 }
 
 export function useAgentRuns({
+  tabsRef,
   activeTabIdRef,
   nextLogIdRef,
   activeAgentRunRef,
@@ -126,7 +128,7 @@ export function useAgentRuns({
         }
       })
       void storageClient.saveAgentLog({
-        tabId,
+        tabId: tabsRef.current.find((tab) => tab.id === tabId)?.conversationId ?? tabId,
         logId: id,
         kind: nextEntry.kind,
         text: storedText,
@@ -139,7 +141,7 @@ export function useAgentRuns({
       }
       return id
     },
-    [activeTabIdRef, nextLogIdRef, pruneLiveRuns, updateTab]
+    [activeTabIdRef, nextLogIdRef, pruneLiveRuns, updateTab, tabsRef]
   )
 
   const updateLogEntryText = useCallback(
@@ -153,10 +155,14 @@ export function useAgentRuns({
       }))
       if (persist) {
         // Persist the full compact document; renderer memory stays structure-clamped.
-        void storageClient.updateAgentLog({ tabId, logId, text })
+        void storageClient.updateAgentLog({
+          tabId: tabsRef.current.find((tab) => tab.id === tabId)?.conversationId ?? tabId,
+          logId,
+          text
+        })
       }
     },
-    [updateTab]
+    [updateTab, tabsRef]
   )
 
   const publishLiveRun = useCallback((run: AgentRunViewState): void => {
