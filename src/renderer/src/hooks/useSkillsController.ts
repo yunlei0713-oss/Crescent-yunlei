@@ -137,7 +137,7 @@ export function useSkillsController({
     try {
       const nextConfig = await saveAgentConfig({
         ...config,
-        skillRoot: config.skillRoot.trim() || '~/.crescent/skills',
+        skillRoot: config.skillRoot.trim() || '~/.moxun/skills',
         commandWhitelist: parseCommandWhitelist(commandWhitelistText)
       })
       setSkillManageMessage({ type: 'success', text: t.settings.skillDirectorySaved })

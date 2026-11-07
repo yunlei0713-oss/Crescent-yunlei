@@ -1,5 +1,6 @@
 import { terminalClient } from '../clients'
 import { SharedTerminalActions } from './SharedTerminalActions'
+import { TerminalSessionMenu } from './TerminalSessionMenu'
 import { toast } from 'sonner'
 import { ExternalLinkIcon } from 'lucide-react'
 import { Button } from './ui/button'
@@ -21,6 +22,9 @@ export function ExternalTerminalControls({
   const existing = tab.external?.kind === 'existing'
   const windowState = tab.external?.windowState
   const unavailable = !tab.sessionId || (windowState && windowState !== 'attached')
+  const detach = (): void => {
+    void terminalClient.detachExternal(tab.id).catch((cause) => toast.error(String(cause)))
+  }
   const statusText =
     windowState === 'window-closed'
       ? zh
@@ -93,18 +97,17 @@ export function ExternalTerminalControls({
             sessionId={tab.sessionId}
             state={windowState}
             zh={zh}
+            onDetach={detach}
+            disabled={busy}
           />
         ) : null}
-        <Button
-          size="xs"
-          variant="ghost"
-          disabled={busy || windowState === 'reopening'}
-          onClick={() =>
-            void terminalClient.detachExternal(tab.id).catch((cause) => toast.error(String(cause)))
-          }
-        >
-          {zh ? '解除关联' : 'Detach'}
-        </Button>
+        {(existing || !tab.sessionId) && (
+          <TerminalSessionMenu
+            zh={zh}
+            disabled={busy || windowState === 'reopening'}
+            onDetach={detach}
+          />
+        )}
         {onConnect && (
           <Button size="xs" variant="ghost" onClick={onConnect}>
             {zh ? '连接其他终端' : 'Connect another terminal'}

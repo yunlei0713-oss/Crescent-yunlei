@@ -1,17 +1,22 @@
 import { useRef, useState } from 'react'
 import { terminalClient } from '../clients'
 import { Button } from './ui/button'
+import { TerminalSessionMenu } from './TerminalSessionMenu'
 import type { ExternalWindowState } from '../../../shared/external-terminal'
 export function SharedTerminalActions({
   tabId,
   sessionId,
   state,
-  zh
+  zh,
+  onDetach,
+  disabled
 }: {
   tabId: string
   sessionId: number
   state?: ExternalWindowState
   zh: boolean
+  onDetach?: () => void
+  disabled?: boolean
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -37,7 +42,7 @@ export function SharedTerminalActions({
       <Button
         size="xs"
         variant="outline"
-        disabled={busy || state === 'reopening'}
+        disabled={disabled || busy || state === 'reopening'}
         onClick={() => void act()}
       >
         {state === 'window-closed'
@@ -56,14 +61,12 @@ export function SharedTerminalActions({
                 ? '显示终端'
                 : 'Show terminal'}
       </Button>
-      <Button
-        size="xs"
-        variant="ghost"
-        disabled={busy || state === 'reopening'}
-        onClick={() => void act(true)}
-      >
-        {zh ? '结束终端会话…' : 'End terminal session…'}
-      </Button>
+      <TerminalSessionMenu
+        zh={zh}
+        disabled={disabled || busy || state === 'reopening'}
+        onDetach={onDetach}
+        onEnd={() => void act(true)}
+      />
       {error && (
         <p role="alert" className="break-words text-destructive">
           {error}

@@ -1,0 +1,14 @@
+
+> moxun@1.0.12 test:local
+> CRESCENT_LOCAL_TESTS=1 vitest run --project unit
+
+
+ RUN  v4.1.11 /Users/xusong.yu/Desktop/moxun-test
+
+Print: Entry, ":CFBundleIconName", Does Not Exist
+
+ Test Files  81 passed | 1 skipped (82)
+      Tests  540 passed | 3 skipped (543)
+   Start at  20:00:12
+   Duration  17.86s (transform 6.79s, setup 0ms, import 21.55s, tests 58.18s, environment 20ms)
+

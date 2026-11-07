@@ -19,7 +19,11 @@ import type {
   AgentSkillOption,
   AgentSkillSearchResult
 } from './types'
-import { GLOBAL_AGENT_SKILLS_TILDE } from '../crescent-paths'
+import {
+  CRESCENT_USER_SKILLS_TILDE,
+  getCrescentDir,
+  GLOBAL_AGENT_SKILLS_TILDE
+} from '../crescent-paths'
 
 const MAX_MATCHED_SKILLS = 3
 const MAX_SKILL_CONTENT_CHARS = 16_000
@@ -27,7 +31,6 @@ const MAX_SKILL_DESCRIPTION_CHARS = 800
 const MIN_SKILL_MATCH_SCORE = 40
 const MIN_RELATIVE_SKILL_MATCH_SCORE = 0.65
 const MIN_MATCHED_SKILL_TOKENS = 2
-const DEFAULT_SKILL_ROOT = '~/.crescent/skills'
 const ESCAPE_CHAR = String.fromCharCode(27)
 const BELL_CHAR = String.fromCharCode(7)
 const ANSI_CSI_PATTERN = new RegExp(`${ESCAPE_CHAR}\\[[0-?]*[ -/]*[@-~]`, 'g')
@@ -803,6 +806,23 @@ export function readAgentSkillContent(
   return readSkillContent(skill.path)
 }
 
+export function readAgentSkillDocuments(
+  paths: string[],
+  skillRoot?: string,
+  options?: ListAgentSkillsOptions
+): Array<{ name: string; path: string; content: string }> {
+  if (!paths.length) return []
+  const catalog = new Map(
+    listAgentSkills(skillRoot, options).map((skill) => [resolve(skill.path), skill])
+  )
+  return paths.flatMap((path) => {
+    const skill = catalog.get(resolve(path))
+    return skill
+      ? [{ name: skill.name, path: skill.path, content: readSkillContent(skill.path) }]
+      : []
+  })
+}
+
 export function buildAgentSkillContext(input: string, skillRoot?: string): AgentSkillContext {
   const catalog = listAgentSkills(skillRoot)
   const referenced = findReferencedSkills(input, catalog)
@@ -865,7 +885,8 @@ function readSkill(path: string, root: string, removable: boolean): AgentSkillOp
 }
 
 function resolveSkillRoot(value: string | undefined): string {
-  const trimmed = value?.trim() || DEFAULT_SKILL_ROOT
+  const trimmed = value?.trim() || CRESCENT_USER_SKILLS_TILDE
+  if (trimmed === CRESCENT_USER_SKILLS_TILDE) return join(getCrescentDir(), 'skills')
   if (trimmed === '~') return homedir()
   if (trimmed.startsWith('~/')) return join(homedir(), trimmed.slice(2))
 
@@ -1185,7 +1206,7 @@ function formatSkillPromptBlock(
   const lines = [
     'Local agent skills are available on this machine.',
     'Use a skill when the user explicitly references it or when the task clearly matches its description.',
-    'Crescent has already read the loaded SKILL.md files from the local filesystem in the app process and included their content below.',
+    'MoXun has already read the loaded SKILL.md files from the local filesystem in the app process and included their content below.',
     'Do not call terminal commands such as cat, sed, awk, less, head, tail, or grep to read SKILL.md or other local skill instruction files.',
     'When using a loaded skill, rely on the content in this Agent skills block and follow its workflow.',
     '',

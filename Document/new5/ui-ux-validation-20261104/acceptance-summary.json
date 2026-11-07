@@ -1,0 +1,84 @@
+{
+  "productFilesChanged": 5,
+  "ci": "passed",
+  "securityChecks": 345,
+  "localTestFilesPassed": 83,
+  "localTestFilesSkipped": 9,
+  "localTestsPassed": 505,
+  "localTestsSkipped": 14,
+  "localTestDurationSeconds": 164.82,
+  "electronMainAudit": "AUDIT_OK",
+  "mainScreenshotScenarios": 42,
+  "extraAudit": "EXTRA_OK",
+  "extraScreenshotScenarios": 12,
+  "nativeWidths": [
+    1440,
+    800,
+    560
+  ],
+  "nativeContentHeight": 752,
+  "chatLayouts": [
+    {
+      "name": "chat-layout",
+      "width": 1440,
+      "logWidth": 1196,
+      "logScrollWidth": 1196,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    },
+    {
+      "name": "chat-layout",
+      "width": 800,
+      "logWidth": 570,
+      "logScrollWidth": 570,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    },
+    {
+      "name": "chat-layout",
+      "width": 560,
+      "logWidth": 330,
+      "logScrollWidth": 330,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    },
+    {
+      "name": "chat-layout",
+      "width": 1440,
+      "logWidth": 1196,
+      "logScrollWidth": 1196,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    },
+    {
+      "name": "chat-layout",
+      "width": 800,
+      "logWidth": 570,
+      "logScrollWidth": 570,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    },
+    {
+      "name": "chat-layout",
+      "width": 560,
+      "logWidth": 330,
+      "logScrollWidth": 330,
+      "logBottom": 542.5,
+      "dockTop": 542.5
+    }
+  ],
+  "reducedMotion": [
+    {
+      "name": "reduced-motion",
+      "matches": true,
+      "animation": "1e-05s",
+      "transition": "0s"
+    }
+  ],
+  "scope": "Real built Electron; isolated profile; synthetic history/attachments; no business terminals or paid models",
+  "knownLimitations": [
+    "opt-in integration tests skipped",
+    "memory target unavailable without model",
+    "existing Chinese strings in Local Documents under English locale"
+  ]
+}

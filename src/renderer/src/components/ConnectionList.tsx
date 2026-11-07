@@ -25,7 +25,7 @@ interface ConnectionListProps {
 function connectionSourceLabel(connection: ConnectionConfig, t: Dictionary): string {
   if (connection.source === 'local') return t.connections.defaultTerminal
   if (connection.source === 'ssh-config') return '~/.ssh/config'
-  return connection.description || '~/.crescent/config.json'
+  return connection.description || '~/.moxun/config.json'
 }
 
 function ConnectionIdentity({

@@ -1,11 +1,16 @@
 import { registerProjectIpc } from './projects'
 import { registerKnowledgeIpc } from './knowledge-ipc'
 import { registerLocalDocumentIpc } from './local-document-ipc'
-import { rendererIpc } from './ipc-security'
-import { app, BrowserWindow, clipboard, Notification, screen } from 'electron'
+import { isManagedTerminalRenderer, rendererIpc } from './ipc-security'
+import { managedTerminalWindow } from './terminal/managed/window'
+import { app, BrowserWindow, clipboard, dialog, Notification, screen } from 'electron'
 import { join, resolve } from 'path'
 import { mkdirSync } from 'fs'
+import { homedir } from 'node:os'
 import { traceStartup } from './startup-trace'
+import { refreshMacApplicationRegistration } from './macos-application-icon'
+import { getDataDirectoryOverride, MOXUN_PROFILE_DIRECTORY } from './crescent-paths'
+import { migrateMoxunDataDirectories } from './moxun-data-migration'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
@@ -34,16 +39,35 @@ import {
   stopWhaleMonitorScheduler
 } from './whale-monitor'
 
+let stopAgentDispatch: (() => void) | undefined
 let stopAttachmentCleanup: (() => void) | undefined
 
 const mainStartup = traceStartup('main:start')
-const userDataOverride = process.env.CRESCENT_USER_DATA_DIR?.trim()
-// Display-name changes must never redirect Chromium, electron-store or safeStorage data.
+const userDataOverride =
+  process.env.MOXUN_USER_DATA_DIR?.trim() || process.env.CRESCENT_USER_DATA_DIR?.trim()
+const appData = app.getPath('appData')
+try {
+  migrateMoxunDataDirectories({
+    userHome: homedir(),
+    appData,
+    migrateData: !getDataDirectoryOverride(),
+    migrateProfile: !userDataOverride
+  })
+} catch (error) {
+  const message = error instanceof Error ? error.message : '请退出旧版应用后重试。'
+  dialog.showErrorBox('墨巡 · 数据迁移未完成', `${message}\n已有数据不会被覆盖。`)
+  app.exit(1)
+  throw error
+}
 const userDataPath = userDataOverride
   ? resolve(userDataOverride)
-  : join(app.getPath('appData'), app.isPackaged ? 'Crescent' : 'crescent')
+  : join(appData, MOXUN_PROFILE_DIRECTORY)
 mkdirSync(userDataPath, { recursive: true })
 app.setPath('userData', userDataPath)
+// Electron selects its macOS Keychain service from the name before ready.
+// Keep that storage namespace stable across the package rename. The ready
+// handler sets the display name before creating the window and menu.
+if (process.platform === 'darwin') app.setName('crescent')
 initializePrivateFiles()
 removeRetiredCommandDirectory()
 initSystemLogging()
@@ -205,7 +229,12 @@ app.whenReady().then(async () => {
   }
 
   const [
-    { registerAgentIpc },
+    {
+      registerAgentIpc,
+      isConversationTurnBusy,
+      discardHostedHistory,
+      stopAgentDispatch: stopDispatch
+    },
     { registerConnectionIpc },
     { startAttachmentCleanupScheduler },
     { initializeCrescentDatabase },
@@ -227,8 +256,8 @@ app.whenReady().then(async () => {
   configureAboutPanel(icon)
   registerMenuIpc()
   installApplicationMenu()
-  // macOS uses the bundle ICNS from first launch through minimize/restore.
-  // Development hooks prepare Electron.app; do not swap in the unpadded UI PNG.
+  // Keep the same native, system-masked icon for launch, running and window badges.
+  await refreshMacApplicationRegistration()
   app.on('child-process-gone', (_event, details) => {
     if (details.type === 'GPU') {
       console.warn('GPU process gone', details)
@@ -236,7 +265,7 @@ app.whenReady().then(async () => {
   })
 
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.crescent.app')
+  electronApp.setAppUserModelId('com.moxun.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -292,12 +321,14 @@ app.whenReady().then(async () => {
   registerRendererRecoveryIpc(icon)
   const { ensureDefaultInstructionFiles } = await import('./agent/instruction-files')
   ensureDefaultInstructionFiles()
+  stopAgentDispatch = stopDispatch
   registerAgentIpc()
   registerConnectionIpc()
   registerStorageIpc()
   registerTerminalIpc()
+  managedTerminalWindow.register()
   registerLocalDocumentIpc()
-  registerProjectIpc()
+  registerProjectIpc(isConversationTurnBusy, discardHostedHistory)
   registerKnowledgeIpc()
   registerWhaleMonitorIpc()
   registerUpdateIpc()
@@ -320,7 +351,11 @@ app.whenReady().then(async () => {
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (
+      !BrowserWindow.getAllWindows().some(
+        (window) => !isManagedTerminalRenderer(window.webContents)
+      )
+    ) {
       const window = createWindow()
       attachRendererCrashRecovery(window, {
         iconPath: icon,
@@ -338,8 +373,7 @@ app.whenReady().then(async () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  stopAllTerminalSessions()
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && !managedTerminalWindow.hasSession()) {
     app.quit()
   }
 })
@@ -351,6 +385,8 @@ app.on('before-quit', (event) => {
   event.preventDefault()
   if (terminalShutdownStarted) return
   terminalShutdownStarted = true
+  stopAgentDispatch?.()
+  managedTerminalWindow.stop()
   stopAllTerminalSessions()
   stopAttachmentCleanup?.()
   stopAttachmentCleanup = undefined

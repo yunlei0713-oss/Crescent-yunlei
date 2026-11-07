@@ -30,7 +30,7 @@ import {
   type AgentRunViewState,
   type AgentTerminalTab
 } from '@renderer/lib/terminal-tabs'
-import { useEffect, useRef, type FormEvent, type RefObject } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from 'react'
 import { normalizeAgentStyle } from '../../../shared/agent-style'
 import type {
   AgentConfig,
@@ -39,10 +39,13 @@ import type {
   StoredAgentRun
 } from '../../../shared/agent-types'
 import { parseCaptureIntent } from '../../../shared/capture-intent'
+import type { AgentRunInput } from '../../../shared/agent-types'
+import type { AgentTurnSummary, ClaimedAgentTurn } from '../../../shared/agent-turn-queue'
 import { useProactiveTerminalSuggestions } from './useProactiveTerminalSuggestions'
 
 interface Parameters {
   activeTabIdRef: RefObject<string>
+  activeConversationId?: string
   tabsRef: RefObject<AgentTerminalTab[]>
   startNewSession: () => void
   reloadApplicationRuntime: () => Promise<void>
@@ -89,6 +92,7 @@ interface Parameters {
 
 export function useAgentController({
   activeTabIdRef,
+  activeConversationId,
   tabsRef,
   startNewSession,
   reloadApplicationRuntime,
@@ -116,6 +120,31 @@ export function useAgentController({
   pruneLiveRuns
 }: Parameters) {
   const submissions = useRef(new Map<string, symbol>())
+  const draining = useRef(new Set<string>())
+  const accepting = useRef(new Map<string, number>())
+  const [visibleQueue, setVisibleQueue] = useState<{ id: string; turns: AgentTurnSummary[] }>()
+  const turns = visibleQueue?.id === activeConversationId ? (visibleQueue?.turns ?? []) : []
+  const visibleConversation = useRef(activeConversationId)
+  const drainRef = useRef<(chatId: string, conversationId: string) => Promise<void>>(async () => {})
+  useEffect(() => {
+    visibleConversation.current = activeConversationId
+    let current = true
+    if (activeConversationId) {
+      void agentClient
+        .listTurns(activeConversationId)
+        .then((items) => {
+          if (current) setVisibleQueue({ id: activeConversationId, turns: items })
+        })
+        .catch(() => {})
+    }
+    return () => {
+      current = false
+    }
+  }, [activeConversationId])
+  useEffect(() => {
+    drainRef.current = drainTurns
+  })
+
   const proactiveRunRef = useRef<
     (terminal: AgentTerminalTab, chatId: string, token: string) => Promise<void>
   >(async () => {})
@@ -151,7 +180,12 @@ export function useAgentController({
 
   async function submitAgentMessage(
     overrideInput?: string,
-    options?: { forcedConnectionId?: string; skipUserLog?: boolean }
+    options?: {
+      forcedConnectionId?: string
+      skipUserLog?: boolean
+      stopAndSend?: boolean
+      terminalOperatorFinished?: boolean
+    }
   ): Promise<void> {
     const terminalTabId = activeTabIdRef.current
     const chatTabId = resolveSessionChatTabId(tabsRef.current, terminalTabId)
@@ -182,16 +216,16 @@ export function useAgentController({
       return
     }
 
-    const skillRefs = tab?.skillRefs ?? []
+    const skillRefs = options?.terminalOperatorFinished ? [] : (tab?.skillRefs ?? [])
     dismissProactive(terminalTabId)
-    const pathRefs = tab?.pathRefs ?? []
+    const pathRefs = options?.terminalOperatorFinished ? [] : (tab?.pathRefs ?? [])
     const selected = resolveTabModelSelection(tab, config, visibleModels)
     const model = visibleModels.find(
       (entry) => entry.id === selected.model && entry.providerId === selected.providerId
     )
     if (hasImageAttachments(pathRefs) && !model?.capabilities?.imageInput) return
-    const toolRefs = tab?.toolRefs ?? []
-    const wikiRefs = tab?.wikiRefs ?? []
+    const toolRefs = options?.terminalOperatorFinished ? [] : (tab?.toolRefs ?? [])
+    const wikiRefs = options?.terminalOperatorFinished ? [] : (tab?.wikiRefs ?? [])
     const messageRefs = snapshotMessageReferences({ skillRefs, pathRefs, toolRefs, wikiRefs })
     const promptInput =
       displayInput || (locale === 'en' ? 'Analyze the attached evidence.' : '请分析所附证据。')
@@ -203,50 +237,182 @@ export function useAgentController({
       wikiRefs,
       t
     )
-    const input =
-      isContinueIntent(displayInput) && tab ? buildResumeAgentInput(tab, baseInput, t) : baseInput
-    const conversationContext = tab ? buildRecentConversationContext(tab, displayInput, t) : ''
-    const submission = Symbol(chatTabId)
-    submissions.current.set(chatTabId, submission)
-    // A new operator turn cancels reasoning and approvals, then waits for Main teardown.
-    // Connection/login remains an explicit operation of the connection UI.
-    const previousRun = activeRunIdRef.current.get(chatTabId)
-    if (previousRun) {
-      activeRunCanceledRef.current.add(chatTabId)
-      await agentClient.cancel(previousRun)
+    const resumeInput =
+      isContinueIntent(displayInput) && tab && !tab.projectId
+        ? buildResumeAgentInput(tab, baseInput, t)
+        : undefined
+    if (!tab) return
+    const conversationId = tab.conversationId
+    const executionTabId = terminalTabId
+    const request: AgentRunInput = {
+      input: baseInput,
+      resumeInput,
+      terminalOperatorFinished: options?.terminalOperatorFinished,
+      skillInput: displayInput,
+      tabId: chatTabId,
+      executionTabId,
+      executionConnectionId: options?.forcedConnectionId ?? terminalTab?.connectionId,
+      projectId: tab.projectId,
+      providerId: selected.providerId,
+      model: selected.model,
+      locale,
+      agentStyle: normalizeAgentStyle(sessionAgentStyle),
+      observationTabIds: getSessionTerminals(tabsRef.current, chatTabId)
+        .filter((terminal) => terminal.external && terminal.sessionId)
+        .map((terminal) => terminal.id)
+        .slice(0, 8),
+      activeWikiIds: options?.terminalOperatorFinished ? [] : [...tab.activeWikiIds],
+      activeSkillPaths: skillRefs.map((skill) => skill.path).filter(Boolean),
+      attachments: pathRefs
+        .filter((reference) => reference.kind === 'file')
+        .map(({ path }) => ({ path }))
     }
-    if (submissions.current.get(chatTabId) !== submission) return
-    submissions.current.delete(chatTabId)
-    updateTab(chatTabId, (current) =>
-      current.agentInput.trim() !== rawInput
-        ? current
-        : applyComposerInput(current, '', {
-            pathRefs: [],
-            skillRefs: [],
-            toolRefs: [],
-            wikiRefs: [],
-            activeWikiIds: []
-          })
-    )
-    if (!options?.skipUserLog)
-      appendLog({ kind: 'user', text: rawInput || promptInput, references: messageRefs }, chatTabId)
-    await runAgentConversation(
-      input,
-      terminalTabId,
-      terminalTab?.connectionId,
-      promptInput,
-      false,
-      Date.now(),
-      {
-        conversationContext,
-        chatTabId,
-        activeWikiIds: [...(tab?.activeWikiIds ?? [])],
-        activeSkillPaths: skillRefs.map((skill) => skill.path).filter(Boolean),
-        attachments: pathRefs
-          .filter((reference) => reference.kind === 'file')
-          .map(({ path }) => ({ path }))
+    const previousRun = options?.stopAndSend ? activeRunIdRef.current.get(chatTabId) : undefined
+    accepting.current.set(conversationId, (accepting.current.get(conversationId) ?? 0) + 1)
+    submissions.current.set(chatTabId, Symbol(chatTabId))
+    try {
+      await agentClient.enqueueTurn(
+        conversationId,
+        {
+          request,
+          originalInput: rawInput || promptInput,
+          displayInput: promptInput,
+          references: messageRefs,
+          skipUserLog: options?.skipUserLog
+        },
+        Boolean(previousRun)
+      )
+      if (
+        !options?.terminalOperatorFinished &&
+        (overrideInput === undefined || rawInput === tab.agentInput.trim())
+      )
+        updateTab(chatTabId, (current) =>
+          current.agentInput !== tab.agentInput ||
+          current.pathRefs !== tab.pathRefs ||
+          current.skillRefs !== tab.skillRefs ||
+          current.toolRefs !== tab.toolRefs ||
+          current.wikiRefs !== tab.wikiRefs ||
+          current.activeWikiIds !== tab.activeWikiIds
+            ? current
+            : applyComposerInput(current, '', {
+                pathRefs: [],
+                skillRefs: [],
+                toolRefs: [],
+                wikiRefs: [],
+                activeWikiIds: []
+              })
+        )
+      if (previousRun && activeRunIdRef.current.get(chatTabId) === previousRun) {
+        activeRunCanceledRef.current.add(chatTabId)
+        await agentClient.cancel(previousRun)
       }
+    } catch (error) {
+      appendLog(
+        { kind: 'error', text: error instanceof Error ? error.message : String(error) },
+        chatTabId
+      )
+    } finally {
+      const remaining = (accepting.current.get(conversationId) ?? 1) - 1
+      if (remaining) accepting.current.set(conversationId, remaining)
+      else {
+        accepting.current.delete(conversationId)
+        submissions.current.delete(chatTabId)
+      }
+    }
+    const drain = drainTurns(chatTabId, conversationId)
+    void refreshTurns(conversationId)
+    await drain
+  }
+
+  async function refreshTurns(conversationId: string): Promise<void> {
+    try {
+      const items = await agentClient.listTurns(conversationId)
+      if (visibleConversation.current === conversationId)
+        setVisibleQueue({ id: conversationId, turns: items })
+    } catch {
+      // A navigation can close the initiating document before its query returns.
+    }
+  }
+
+  async function drainTurns(chatTabId: string, conversationId: string): Promise<void> {
+    if (
+      draining.current.has(conversationId) ||
+      accepting.current.has(conversationId) ||
+      activeRunIdRef.current.has(chatTabId)
     )
+      return
+    draining.current.add(conversationId)
+    const ownsChat = (): boolean =>
+      tabsRef.current.some(
+        (item) => item.id === chatTabId && item.conversationId === conversationId
+      )
+    try {
+      while (
+        ownsChat() &&
+        !accepting.current.has(conversationId) &&
+        !activeRunIdRef.current.has(chatTabId)
+      ) {
+        const queued = await agentClient.claimTurn(conversationId)
+        if (!queued) break
+        try {
+          if (!ownsChat()) break
+          await storageClient.saveTabs(toStoredSessionTabs(tabsRef.current))
+          if (!ownsChat()) break
+          const run = runAgentConversation(
+            queued.request.input,
+            queued.request.executionTabId ?? chatTabId,
+            queued.request.executionConnectionId,
+            queued.displayInput,
+            false,
+            Date.now(),
+            { chatTabId, queued }
+          )
+          void refreshTurns(conversationId)
+          await run
+        } finally {
+          await agentClient.releaseTurn(queued.id)
+        }
+      }
+    } catch (error) {
+      appendLog(
+        { kind: 'error', text: error instanceof Error ? error.message : String(error) },
+        chatTabId
+      )
+    } finally {
+      draining.current.delete(conversationId)
+      await refreshTurns(conversationId)
+    }
+  }
+
+  async function continueTurns(): Promise<void> {
+    const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
+    const tab = tabsRef.current.find((item) => item.id === chatId)
+    if (!tab) return
+    try {
+      await agentClient.resumeTurns(tab.conversationId)
+      await drainTurns(chatId, tab.conversationId)
+    } catch (error) {
+      appendLog(
+        { kind: 'error', text: error instanceof Error ? error.message : String(error) },
+        chatId
+      )
+    }
+  }
+
+  async function removeTurn(id: string): Promise<void> {
+    const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
+    const tab = tabsRef.current.find((item) => item.id === chatId)
+    if (!tab) return
+    try {
+      await agentClient.removeTurn(tab.conversationId, id)
+      await refreshTurns(tab.conversationId)
+      await drainTurns(chatId, tab.conversationId)
+    } catch (error) {
+      appendLog(
+        { kind: 'error', text: error instanceof Error ? error.message : String(error) },
+        chatId
+      )
+    }
   }
 
   async function runAgentConversation(
@@ -257,6 +423,7 @@ export function useAgentController({
     appendUserLog = true,
     startedAt = Date.now(),
     options: {
+      queued?: ClaimedAgentTurn
       proactiveToken?: string
       attachments?: Array<{ path: string }>
       conversationContext?: string
@@ -268,7 +435,17 @@ export function useAgentController({
     } = {}
   ): Promise<void> {
     const chatTabId = options.chatTabId ?? resolveSessionChatTabId(tabsRef.current, terminalTabId)
-    const supplements = pendingPostLoginSupplementsRef.current.get(chatTabId) ?? []
+    const queueTab = tabsRef.current.find((candidate) => candidate.id === chatTabId)
+    if (
+      !options.queued &&
+      ((activeRunIdRef.current.has(chatTabId) &&
+        !(options.reuseRun && activeRunCanceledRef.current.has(chatTabId))) ||
+        (queueTab && draining.current.has(queueTab.conversationId)))
+    )
+      return
+    const supplements = options.queued
+      ? []
+      : (pendingPostLoginSupplementsRef.current.get(chatTabId) ?? [])
     if (supplements.length) {
       pendingPostLoginSupplementsRef.current.delete(chatTabId)
       input = mergePostLoginSupplements(input, supplements)
@@ -308,7 +485,16 @@ export function useAgentController({
         elapsedMs: undefined
       })
     } else {
-      if (appendUserLog) appendLog({ kind: 'user', text: displayInput }, chatTabId)
+      if (options.queued && !options.queued.skipUserLog) {
+        appendLog(
+          {
+            kind: 'user',
+            text: options.queued.originalInput,
+            references: options.queued.references
+          },
+          chatTabId
+        )
+      } else if (appendUserLog) appendLog({ kind: 'user', text: displayInput }, chatTabId)
       const logId = appendLog(
         {
           kind: 'assistant',
@@ -363,32 +549,43 @@ export function useAgentController({
       const runTab = tabsRef.current.find((candidate) => candidate.id === terminalTabId)
       const chatTab = tabsRef.current.find((candidate) => candidate.id === chatTabId)
       const selection = resolveTabModelSelection(chatTab ?? runTab, config, visibleModels)
-      await storageClient.saveTabs(toStoredSessionTabs(tabsRef.current))
+      if (!options.queued) await storageClient.saveTabs(toStoredSessionTabs(tabsRef.current))
       if (!isCurrent()) return
-      const result = await agentClient.run({
-        proactiveToken: options.proactiveToken,
-        attachments: options.attachments,
-        projectId: chatTab?.projectId,
-        runId,
-        input,
-        skillInput: displayInput,
-        conversationContext:
-          options.conversationContext ?? buildRecentConversationContext(chatTab, displayInput, t),
-        providerId: selection.providerId,
-        model: selection.model,
-        tabId: chatTabId,
-        executionTabId,
-        observationTabIds: getSessionTerminals(tabsRef.current, chatTabId)
-          .filter((tab) => tab.external && tab.sessionId)
-          .map((tab) => tab.id)
-          .slice(0, 8),
-        locale,
-        agentStyle: normalizeAgentStyle(sessionAgentStyle),
-        activeWikiIds: options.activeWikiIds ?? chatTab?.activeWikiIds ?? [],
-        activeSkillPaths:
-          options.activeSkillPaths ??
-          (chatTab?.skillRefs ?? []).map((skill) => skill.path).filter(Boolean)
-      })
+      const result = await agentClient.run(
+        options.queued
+          ? {
+              ...options.queued.request,
+              tabId: chatTabId,
+              runId,
+              queueTurnId: options.queued.id,
+              conversationContext: buildRecentConversationContext(chatTab, displayInput, t)
+            }
+          : {
+              proactiveToken: options.proactiveToken,
+              attachments: options.attachments,
+              projectId: chatTab?.projectId,
+              runId,
+              input,
+              skillInput: displayInput,
+              conversationContext:
+                options.conversationContext ??
+                buildRecentConversationContext(chatTab, displayInput, t),
+              providerId: selection.providerId,
+              model: selection.model,
+              tabId: chatTabId,
+              executionTabId,
+              observationTabIds: getSessionTerminals(tabsRef.current, chatTabId)
+                .filter((tab) => tab.external && tab.sessionId)
+                .map((tab) => tab.id)
+                .slice(0, 8),
+              locale,
+              agentStyle: normalizeAgentStyle(sessionAgentStyle),
+              activeWikiIds: options.activeWikiIds ?? chatTab?.activeWikiIds ?? [],
+              activeSkillPaths:
+                options.activeSkillPaths ??
+                (chatTab?.skillRefs ?? []).map((skill) => skill.path).filter(Boolean)
+            }
+      )
       if (!isCurrent()) return
       if (result.ok) {
         const resolved = resolveSuccessfulAgentResult({
@@ -436,7 +633,8 @@ export function useAgentController({
           thinkingMessage: undefined
         }))
       }
+      if (!options.queued && queueTab) void drainRef.current(chatTabId, queueTab.conversationId)
     }
   }
-  return { submitAgent, submitAgentMessage, runAgentConversation }
+  return { submitAgent, submitAgentMessage, runAgentConversation, turns, continueTurns, removeTurn }
 }

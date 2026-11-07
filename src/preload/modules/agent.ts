@@ -58,7 +58,28 @@ import type {
 } from '../../shared/file-approval-types'
 import type { GuidedOpsAction, GuidedOpsSnapshot } from '../../shared/guided-ops-types'
 
+import type {
+  AgentTurnDraft,
+  AgentTurnSummary,
+  ClaimedAgentTurn
+} from '../../shared/agent-turn-queue'
+
 export const agentApi = {
+  enqueueTurn: (
+    conversationId: string,
+    draft: AgentTurnDraft,
+    priority = false
+  ): Promise<AgentTurnSummary> =>
+    ipcRenderer.invoke('agent:turn-enqueue', { conversationId, draft, priority }),
+  listTurns: (conversationId: string): Promise<AgentTurnSummary[]> =>
+    ipcRenderer.invoke('agent:turn-list', conversationId),
+  claimTurn: (conversationId: string): Promise<ClaimedAgentTurn | undefined> =>
+    ipcRenderer.invoke('agent:turn-claim', conversationId),
+  releaseTurn: (id: string): Promise<void> => ipcRenderer.invoke('agent:turn-unclaim', id),
+  resumeTurns: (conversationId: string): Promise<void> =>
+    ipcRenderer.invoke('agent:turn-resume', conversationId),
+  removeTurn: (conversationId: string, id: string): Promise<boolean> =>
+    ipcRenderer.invoke('agent:turn-remove', { conversationId, id }),
   listGuidedOpsHistory: (
     query: import('../../shared/guided-ops-types').GuidedOpsHistoryQuery
   ): Promise<import('../../shared/guided-ops-types').GuidedOpsHistoryPage> =>

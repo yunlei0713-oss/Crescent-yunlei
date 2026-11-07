@@ -154,11 +154,43 @@ check(
   ),
   'Historical tool rows must not restore terminal execution controls'
 )
+check(!('xterm' in dependencies), 'Use the official scoped xterm packages')
+const terminalRenderer = path.join(root, 'src/renderer/src/terminal')
+for (const file of walk(path.join(root, 'src/renderer/src')).filter(
+  (file) => /\.[jt]sx?$/.test(file) && !file.endsWith('.test.ts')
+)) {
+  if (file.startsWith(terminalRenderer + path.sep)) continue
+  check(!fs.readFileSync(file, 'utf8').includes('@xterm/'), 'xterm must stay outside chat')
+}
+const terminalWindow = read('src/main/terminal/managed/window.ts')
 check(
-  !Object.keys(dependencies).some((name) => name.startsWith('@xterm/') || name === 'xterm'),
-  'Built-in terminal dependencies must stay retired'
+  ['sandbox: true', 'contextIsolation: true', 'nodeIntegration: false'].every((setting) =>
+    terminalWindow.includes(setting)
+  ),
+  'Managed terminal must use isolated and sandboxed BrowserWindow settings'
+)
+check(
+  !read('src/preload/terminal.ts').includes("from './api'") &&
+    !read('src/preload/modules/terminal.ts').includes('managed-terminal:write'),
+  'The dedicated terminal preload alone can forward raw terminal input'
+)
+const managedTool = read('src/main/agent/pi-managed-terminal-tool.ts')
+for (const channel of ['managed-terminal:ssh-probe', 'managed-terminal:ssh-confirm']) {
+  check(
+    read('src/preload/terminal.ts').includes(channel) &&
+      read('src/main/terminal/managed/ipc.ts').includes(channel) &&
+      !read('src/preload/modules/terminal.ts').includes(channel),
+    'SSH setup must use the dedicated terminal IPC boundary'
+  )
+}
+check(
+  managedTool.includes('managedTerminalWindow.execute') &&
+    !/child_process|spawn|\.write\(/.test(managedTool),
+  'Managed Agent tool must use the reviewed executor without a raw PTY or child process'
+)
+check(
+  !read('src/main/agent/pi-subagent.ts').includes('MANAGED_TERMINAL_TOOL'),
+  'Subagents must stay outside the managed execution capability'
 )
 console.log(`Security boundary policy: ${checks} checks passed.`)
-console.log(
-  'Unit tests are local-only. Run npm run test:local before committing; CI does not claim unit-test coverage.'
-)
+console.log('Vitest suites are local-only. CI also runs the managed command protocol tests.')

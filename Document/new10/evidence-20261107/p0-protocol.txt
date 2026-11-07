@@ -1,0 +1,26 @@
+
+> moxun@1.0.12 test
+> node scripts/check-security-boundaries.cjs && node --test scripts/verify-managed-terminal.cjs
+
+Security boundary policy: 580 checks passed.
+Vitest suites are local-only. CI also runs the managed command protocol tests.
+✔ matches session/generation, command, nonce, exit status, and next prompt (13.729538ms)
+✔ rejection, invalid grammar, visibility change, and expiry send no bytes (2.369094ms)
+✔ start-marker timeout and user takeover keep ambiguous commands locked (1.957593ms)
+✔ soft timeout leaves the running command locked and can accept a later result (1.820473ms)
+✔ wait and query follow the original ID after soft timeout (3.073624ms)
+✔ aborting a wait does not alter the original command or send bytes (1.317462ms)
+✔ cancel is idempotent and requires matching completion and prompt evidence (1.185286ms)
+✔ an unavailable journal prevents dispatch (0.709651ms)
+✔ SSH probe requires an exact nonce, shell identity and a subsequent ready prompt (1.775889ms)
+✔ SQLite keeps command identity and reconciles an unfinished command after restart (19.412101ms)
+✔ exit 127 requires correlated end and rejects a duplicate success frame (0.90193ms)
+✔ never discloses a private key split across lines or output chunks (5.73766ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 291.519364

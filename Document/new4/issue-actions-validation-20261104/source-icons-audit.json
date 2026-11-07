@@ -1,0 +1,11 @@
+{
+  "scope": "Project-owned source, resources, docs and current out/; existing dist packages excluded per user request; third-party dependencies and Git object history excluded",
+  "imageFilesChecked": 123,
+  "legacyFilenameMatches": [],
+  "legacyContentHashMatches": [],
+  "embeddedLegacyContentMatches": [],
+  "legacyArchiveExists": false,
+  "retiredCompatibilityDirectoryExists": false,
+  "regeneratedFromApprovedMaster": true,
+  "legacySignatureSet": "Removed obsolete icon archives, excluding approved current artwork and temporary test captures"
+}

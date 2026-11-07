@@ -59,6 +59,16 @@ Optionally point at a directory of downloaded release assets:
 npm run smoke:packaging -- ./release-assets
 ```
 
+## macOS application bundle
+
+Run the layout and native-architecture check against an unpacked app or the app from a mounted DMG. Pass the workspace as a second argument to compare the packaged entry points with the current build.
+
+```sh
+node scripts/smoke-macos-app.cjs "/path/to/墨巡.app" "$PWD"
+```
+
+The check reads ASAR entries, terminal renderer isolation, xterm notices, the x64 executable and the unpacked node-pty helper. App launch and operator acceptance are separate checks. The local unsigned packaging entry runs `verify:local` before packaging and uses that build output.
+
 ## Follow-up
 
 - Check the GitHub Release assets are present and named by platform/architecture.

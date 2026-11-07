@@ -42,6 +42,10 @@
   max-width: var(--chat-reading-width);
   margin-inline: auto;
 }
+.chat-workspace .app-agent-message-content[data-defer-layout] {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 160px;
+}
 .chat-workspace .app-input-dock {
   width: 100%;
   max-width: calc(var(--chat-reading-width) + 24px);

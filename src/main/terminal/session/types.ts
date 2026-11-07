@@ -15,10 +15,13 @@ export interface TerminalSession {
   pid: number
   cwd: string
   shell: string
+  foregroundCommand?: () => string
   write: (data: string) => void | Promise<void>
   display: (data: string) => void
   interrupt: () => void
   resize: (cols: number, rows: number) => void
+  pauseOutput?: () => void
+  resumeOutput?: () => void
   clear: () => void
   kill: () => void
 }

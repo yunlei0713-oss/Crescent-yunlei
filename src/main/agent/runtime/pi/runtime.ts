@@ -51,6 +51,7 @@ export function createPiRuntime(pi: PiSdkFacade): AgentRuntimeAdapter<Options> {
         abort: () => session.abort(),
         waitForIdle: () => session.waitForIdle(),
         abortRetry: () => session.abortRetry(),
+        abortCompaction: () => session.abortCompaction(),
         compact: (instructions) => withAgentCapabilities(() => session.compact(instructions)),
         async setModel(model) {
           const resolved = options.modelRuntime?.getModel(model.provider, model.id)
@@ -80,9 +81,10 @@ export function createPiRuntime(pi: PiSdkFacade): AgentRuntimeAdapter<Options> {
               }),
               usageChanged: ['compaction_end', 'turn_end', 'message_end'].includes(event.type),
               retryError: event.type === 'auto_retry_start' ? event.errorMessage : undefined,
+              compactionStart: event.type === 'compaction_start' ? event.reason : undefined,
               compaction:
                 event.type === 'compaction_end'
-                  ? { reason: event.reason, aborted: event.aborted }
+                  ? { reason: event.reason, aborted: event.aborted, result: event.result }
                   : undefined
             })
           })

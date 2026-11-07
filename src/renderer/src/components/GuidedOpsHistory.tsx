@@ -3,6 +3,7 @@ import { agentClient } from '../clients'
 import type { GuidedOpsHistoryItem, GuidedOpsHistoryPage } from '../../../shared/guided-ops-types'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
+import { guidedOpsStateLabel } from '../lib/guided-ops-labels'
 export function GuidedOpsHistory({
   conversationId,
   revision,
@@ -101,7 +102,7 @@ export function GuidedOpsHistory({
         <div key={item.id} className="space-y-1 border-t py-2">
           <p>
             {item.step} · {item.target.host ?? '?'} · {new Date(item.createdAt).toLocaleString()} ·{' '}
-            {state}
+            {guidedOpsStateLabel(state, zh)}
           </p>
           {[item, ...(item.alternatives ?? [])].map((choice, i) => (
             <div key={i}>

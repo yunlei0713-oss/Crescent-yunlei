@@ -13,7 +13,7 @@ function patchElectronDockIcon(root = path.resolve(__dirname, '..'), options = {
       CFBundleName: '墨巡',
       CFBundleDisplayName: '墨巡',
       // Development identity changes must never move existing user data.
-      CFBundleIdentifier: 'com.crescent.moxun.dev'
+      CFBundleIdentifier: 'com.moxun.dev'
     }
   })
   console.info(

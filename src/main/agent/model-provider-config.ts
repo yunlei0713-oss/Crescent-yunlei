@@ -56,7 +56,7 @@ export const defaultProviderRegistryConfig: ProviderRegistryConfig = {
         primary: ''
       },
       models: {},
-      workspace: '~/.crescent/workspace'
+      workspace: '~/.moxun/workspace'
     }
   }
 }

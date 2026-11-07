@@ -45,7 +45,7 @@ export interface AgentConfig {
   /** When true, also load skills from ~/.agents/skills. Writes still go to skillRoot. */
   loadGlobalAgentSkills: boolean
   mcpServers: AgentMcpServerConfig[]
-  /** Minimum level recorded to ~/.crescent/logs (default: info). */
+  /** Minimum level recorded to ~/.moxun/logs (default: info). */
   logLevel?: SystemLogLevel
 }
 
@@ -255,6 +255,9 @@ export interface AgentSessionTerminalRef {
 }
 
 export interface AgentRunInput {
+  queueTurnId?: string
+  terminalOperatorFinished?: boolean
+  resumeInput?: string
   /** Main-owned project ID; never an arbitrary renderer-supplied cwd. */
   projectId?: string
   /** One-use Main-issued terminal evidence notice; not an observation grant. */
@@ -874,6 +877,10 @@ export interface AgentHandoffStatus {
 
 export interface AgentCompactResult {
   ok: boolean
+  quality?: 'passed' | 'partial' | 'failed'
+  checkpointId?: string
+  missing?: number
+  reason?: string
   busy?: boolean
   error?: string
   tokensBefore?: number

@@ -14,6 +14,7 @@ interface PendingConsent {
   target: MemoryLearningTarget
   ids?: string[]
   auto?: boolean
+  reflection?: boolean
 }
 export function useMemoryCenter(open: boolean, selection: MemoryModelSelection) {
   const [snapshot, setSnapshot] = useState<MemorySnapshot>()
@@ -90,19 +91,29 @@ export function useMemoryCenter(open: boolean, selection: MemoryModelSelection) 
       })
       count += result.count
       done++
-      setMessage(`已整理 ${done}/${ids.length} 次会话，生成 ${count} 条待审核知识`)
+      setMessage(`已整理 ${done}/${ids.length} 次会话，生成 ${count} 条待审核观察`)
       await reload()
     }
   }
-  async function learn(ids: string[]): Promise<void> {
+  async function runReflection(ids: string[], target: MemoryLearningTarget): Promise<void> {
+    const { count } = await window.api.knowledge.memoryReflect(ids, {
+      selection: { providerId: target.providerId, model: target.model },
+      targetKey: target.consentKey
+    })
+    setMessage(
+      count ? `已生成 ${count} 条待审核反思` : '该组观察已整理，或模型未找到新的可归纳经验。'
+    )
+  }
+  async function learn(ids: string[], reflection = false): Promise<void> {
     await perform(async () => {
       const target = await window.api.knowledge.memoryTarget({ providerId, model })
       setLearningTarget(target)
       if (!target.authorized) {
-        setPendingConsent({ target, ids })
+        setPendingConsent({ target, ids, reflection })
         return
       }
-      await runLearning(ids, target)
+      if (reflection) await runReflection(ids, target)
+      else await runLearning(ids, target)
     })
   }
   async function setAutoLearn(enabled: boolean): Promise<void> {
@@ -140,7 +151,8 @@ export function useMemoryCenter(open: boolean, selection: MemoryModelSelection) 
           autoLearn: true,
           learningSelection: chosen
         })
-      if (!pending.auto) await runLearning(pending.ids ?? [], pending.target)
+      if (pending.reflection) await runReflection(pending.ids ?? [], pending.target)
+      else if (!pending.auto) await runLearning(pending.ids ?? [], pending.target)
     })
   }
   async function revokeConsent(): Promise<void> {

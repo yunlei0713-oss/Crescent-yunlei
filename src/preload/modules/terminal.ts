@@ -1,6 +1,10 @@
 import { ipcRenderer } from 'electron'
 
 export const terminalApi = {
+  openManaged: (locale: string): Promise<void> =>
+    ipcRenderer.invoke('terminal:open-managed', locale),
+  openCollaboration: (locale: string, conversationId: string): Promise<void> =>
+    ipcRenderer.invoke('terminal:open-collaboration', { locale, conversationId }),
   listShared: (): Promise<import('../../shared/external-terminal').ManagedSharedTerminal[]> =>
     ipcRenderer.invoke('terminal:list-shared'),
   detachExternal: (tabId: string): Promise<{ ok: boolean }> =>

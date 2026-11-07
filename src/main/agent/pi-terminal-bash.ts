@@ -22,6 +22,8 @@ export interface PtyBashExecContext {
   webContents: WebContents
   executionTabId: string
   observationTabIds?: string[]
+  attachmentPaths?: string[]
+  projectRootIdentity?: string
   chatTabId?: string
   runId: string
   userInput: string

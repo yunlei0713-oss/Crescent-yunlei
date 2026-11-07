@@ -1,5 +1,5 @@
 // Run before launch/signing. Dock window badges resolve the native bundle icon,
-// not the renderer PNG or a runtime app.dock.setIcon() override.
+// independently of the running application image set by app.dock.setIcon().
 const fs = require('node:fs')
 const path = require('node:path')
 const { createHash } = require('node:crypto')
@@ -25,7 +25,11 @@ function patchMacosAppIcon(appPath, source, options = {}) {
     }
   }
   const previous = readValue('CFBundleIconFile')
-  const names = new Set([iconName, 'electron.icns'])
+  const names = new Set([iconName, 'electron.icns', 'icon.icns'])
+  // Older generated names may still be cached by IconServices. Keep aliases
+  // consistent without touching document-type icons or other app resources.
+  for (const name of fs.readdirSync(resources))
+    if (/^moxun-[a-f0-9]{16}\.icns$/.test(name)) names.add(name)
   // Replace the builder's/default/previously referenced file too. Never leave
   // the old moon artwork behind a still-resolvable native icon alias.
   if (previous && path.basename(previous) === previous)
@@ -36,6 +40,13 @@ function patchMacosAppIcon(appPath, source, options = {}) {
       fs.writeFileSync(file, bytes)
       changed = true
     }
+  }
+  // An asset-catalog name takes precedence over CFBundleIconFile on macOS.
+  if (readValue('CFBundleIconName') !== undefined) {
+    execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Delete :CFBundleIconName', plist], {
+      stdio: 'pipe'
+    })
+    changed = true
   }
   const values = { ...options.bundleValues, CFBundleIconFile: iconName }
   for (const [key, value] of Object.entries(values)) {
@@ -51,9 +62,13 @@ function patchMacosAppIcon(appPath, source, options = {}) {
   if (changed) {
     const now = new Date()
     fs.utimesSync(appPath, now, now)
+  }
+  // Refresh even if bytes are current: another installed app with the legacy
+  // bundle ID can have replaced Launch Services' cached registration.
+  if (options.refreshLaunchServices) {
     const lsregister =
       '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
-    if (options.refreshLaunchServices && fs.existsSync(lsregister)) {
+    if (fs.existsSync(lsregister)) {
       try {
         execFileSync(lsregister, ['-f', appPath], { stdio: 'pipe', timeout: 5000 })
       } catch {

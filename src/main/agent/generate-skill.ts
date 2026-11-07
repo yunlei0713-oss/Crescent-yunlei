@@ -92,7 +92,7 @@ export function buildGenerateSkillSystemPrompt(locale?: string): string {
     : 'Write the skill entirely in English except command names and paths.'
 
   return [
-    'You turn a Crescent ops session summary into a reusable Agent Skill (SKILL.md).',
+    'You turn a MoXun ops session summary into a reusable Agent Skill (SKILL.md).',
     'This is a single text completion: do not call tools, do not browse disk, do not write files.',
     'Do not invent filesystem paths, hosts, or secret credentials.',
     'Use only the session transcript. Do not invent hosts, paths, or credentials.',

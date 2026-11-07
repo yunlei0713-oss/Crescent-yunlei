@@ -176,6 +176,7 @@ export function AgentLogList({
             const previousKind = entryIndex > 0 ? visibleEntries[entryIndex - 1]?.kind : undefined
             const spacing = logListItemSpacingClass(entry.kind, previousKind, entryIndex === 0)
             const readyKind = readyLogById.get(entry.id)
+            const liveRun = liveRunByLogId?.[entry.id]
 
             return (
               <AgentLogMessage
@@ -185,7 +186,13 @@ export function AgentLogList({
                 onCopyEntry={onCopyEntry}
                 onOpenCaptureDraft={onOpenCaptureDraft}
                 entry={entry}
-                liveRun={liveRunByLogId?.[entry.id]}
+                liveRun={liveRun}
+                deferLayout={
+                  entry.kind === 'assistant' &&
+                  visibleEntries.length > 80 &&
+                  entryIndex < visibleEntries.length - 6 &&
+                  (!liveRun || liveRun.elapsedMs !== undefined)
+                }
                 tabId={tabId}
                 t={t}
                 copied={copiedLogId === entry.id}

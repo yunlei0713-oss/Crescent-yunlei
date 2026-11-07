@@ -1,0 +1,10 @@
+ELECTRON_SSH_OK {"calls":["request_terminal_command","wait_terminal_command","get_terminal_command_result"],"states":["timed-out-running","completed-success","completed-success"],"approvalCount":2,"durationMs":6010,"exitCode":0}
+✔ Electron Pi requests, waits for, and queries one reviewed command in the visible SSH PTY (10545.174908ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10689.234106

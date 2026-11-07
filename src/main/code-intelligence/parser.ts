@@ -1,25 +1,12 @@
 import Parser from 'web-tree-sitter'
 import { createRequire } from 'node:module'
-import { dirname, join, extname } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { CodeSymbol, CodeReference } from '../../shared/knowledge'
+import { codeLanguage } from './language'
 import { redactSensitiveText } from '../../shared/secret-redaction'
 
 const runtimeRequire = createRequire(__filename)
-const extensions: Record<string, string> = {
-  '.ts': 'typescript',
-  '.tsx': 'tsx',
-  '.js': 'javascript',
-  '.jsx': 'javascript',
-  '.mjs': 'javascript',
-  '.cjs': 'javascript',
-  '.py': 'python',
-  '.sh': 'bash',
-  '.bash': 'bash',
-  '.json': 'json',
-  '.yml': 'yaml',
-  '.yaml': 'yaml'
-}
-const languages = new Map<string, Parser.Language>()
+const parsers = new Map<string, Promise<Parser>>()
 /** Describe callable identity without capturing argument values or anonymous function bodies. */
 function callableName(node: Parser.SyntaxNode): string | undefined {
   if (/^(?:identifier|property_identifier|word|command_name)$/.test(node.type)) return node.text
@@ -37,10 +24,6 @@ function callableName(node: Parser.SyntaxNode): string | undefined {
   return undefined
 }
 let initialized: Promise<void> | undefined
-export function codeLanguage(path: string): string | undefined {
-  return extensions[extname(path)]
-}
-
 export async function parseCode(
   path: string,
   text: string
@@ -52,20 +35,47 @@ export async function parseCode(
   await initialized
   const language = codeLanguage(path)
   if (!language) throw new Error('Unsupported language')
-  if (!languages.has(language)) {
-    const wasmRoot = dirname(runtimeRequire.resolve('tree-sitter-wasms/package.json'))
-    languages.set(
-      language,
-      await Parser.Language.load(join(wasmRoot, 'out', `tree-sitter-${language}.wasm`))
-    )
+  let ready = parsers.get(language)
+  if (!ready) {
+    ready = (async () => {
+      const wasmRoot = dirname(runtimeRequire.resolve('tree-sitter-wasms/package.json'))
+      const grammar = await Parser.Language.load(
+        join(wasmRoot, 'out', `tree-sitter-${language}.wasm`)
+      )
+      const parser = new Parser()
+      parser.setLanguage(grammar)
+      parser.setTimeoutMicros(350_000)
+      return parser
+    })().catch((error) => {
+      parsers.delete(language)
+      throw error
+    })
+    parsers.set(language, ready)
   }
-  const parser = new Parser()
-  parser.setLanguage(languages.get(language)!)
-  const tree = parser.parse(text)
+  // The synchronous parse/traversal has no awaits once the grammar is loaded.
+  const parser = await ready
+  let tree: Parser.Tree
+  try {
+    tree = parser.parse(text)
+  } catch (error) {
+    parser.reset()
+    throw error
+  }
   const symbols: CodeSymbol[] = []
   const references: CodeReference[] = []
+  let visited = 0
+  let limited = false
+  const deadline = performance.now() + 180
   function visit(node: Parser.SyntaxNode, from?: string): void {
-    if (symbols.length + references.length >= 12000) return
+    if (
+      limited ||
+      ++visited > 80_000 ||
+      symbols.length + references.length >= 12000 ||
+      (visited % 256 === 0 && performance.now() > deadline)
+    ) {
+      limited = true
+      return
+    }
     const definition =
       /^(?:function_declaration|function_definition|class_declaration|class_definition|method_definition|interface_declaration|type_alias_declaration|variable_declarator|pair|block_mapping_pair)$/.test(
         node.type
@@ -115,13 +125,15 @@ export async function parseCode(
         from
       })
     }
-    for (const child of node.namedChildren) visit(child, from)
+    for (const child of node.namedChildren) {
+      if (limited) break
+      visit(child, from)
+    }
   }
   try {
     visit(tree.rootNode)
-    return { symbols, references, errors: tree.rootNode.hasError() }
+    return { symbols, references, errors: limited || tree.rootNode.hasError() }
   } finally {
     tree.delete()
-    parser.delete()
   }
 }

@@ -5,12 +5,8 @@ import type {
 } from '../../../shared/agent-types'
 import type { AgentToolReference } from './terminal-tabs'
 
-export interface AgentMessageReferences {
-  skills: Array<{ id: string; name: string }>
-  wiki: Array<{ id: string; title: string }>
-  tools: Array<{ id: string; name: string; source: 'mcp' | 'built-in' | 'openapi' }>
-  paths: Array<{ id: string; name: string; kind: 'file' | 'directory' }>
-}
+import type { AgentMessageReferences } from '../../../shared/agent-turn-queue'
+export type { AgentMessageReferences } from '../../../shared/agent-turn-queue'
 
 const SENTINEL_PREFIX = '<!--crescent-refs:'
 const SENTINEL_PATTERN = /^<!--crescent-refs:(.+?)-->\n?/

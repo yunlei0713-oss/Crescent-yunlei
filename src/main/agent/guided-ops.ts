@@ -155,7 +155,11 @@ export class GuidedOpsService {
           .filter((item) => item.startedAt >= proposal.createdAt)
           .at(-1)
         if (observed) {
-          if (observed.status === 'completed' || observed.status === 'failed')
+          if (
+            observed.status === 'completed' ||
+            observed.status === 'failed' ||
+            observed.status === 'finished-unknown'
+          )
             snapshot.state = 'EVIDENCE_READY'
           else if (observed.status === 'submitted') snapshot.state = 'COMMAND_RUNNING'
           else if (observed.status === 'running')

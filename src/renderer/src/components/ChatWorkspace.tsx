@@ -1,15 +1,23 @@
+import { AgentTurnQueuePanel } from './AgentTurnQueuePanel'
+import { ConversationRecords } from './ConversationRecords'
 import { GuidedOpsHistory } from './GuidedOpsHistory'
 import { GuidedOpsPanel } from './GuidedOpsPanel'
 import { ComposerAttachments } from './ComposerAttachments'
 import { hasImageAttachments } from '../../../shared/model-capabilities'
-import { type FormEvent, type KeyboardEvent, type RefObject, useId, useState } from 'react'
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type RefObject,
+  type ReactNode,
+  useId,
+  useState
+} from 'react'
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronRightIcon,
   FileIcon,
   FolderOpenIcon,
-  Loader2Icon,
   PaperclipIcon,
   PlusIcon,
   TriangleAlertIcon
@@ -120,6 +128,7 @@ export function ChatWorkspace({
   onInsertSlashCommand,
   onInsertPinnedWorkflow,
   onAgentInputChange,
+  conversationActions,
   onProactiveSuggestionsPausedChange,
   onComposerCaretChange,
   onAgentInputKeyDown,
@@ -128,6 +137,11 @@ export function ChatWorkspace({
   onRemovePath,
   onPickPathReference,
   onStopAgent,
+  onStopAndSend,
+  onAnalyzeTerminal,
+  turns = [],
+  onContinueTurns,
+  onRemoveTurn,
   onRetryConnection,
   onOpenConnections,
   passwordPromptRequest = null,
@@ -216,10 +230,16 @@ export function ChatWorkspace({
   onComposerCaretChange?: (cursor: number) => void
   onAgentInputKeyDown: (event: KeyboardEvent<HTMLElement>) => void
   onAgentInputPaste: (event: React.ClipboardEvent<HTMLElement>) => void
+  conversationActions?: ReactNode
   onAgentFiles: (files: File[]) => void
   onRemovePath: (id: string) => void
   onPickPathReference: (kind: 'file' | 'directory') => void
   onStopAgent: () => void
+  onStopAndSend: () => void
+  onAnalyzeTerminal: (input: string) => void
+  turns?: import('../../../shared/agent-turn-queue').AgentTurnSummary[]
+  onContinueTurns: () => void
+  onRemoveTurn: (id: string) => void
   onRetryConnection?: () => void
   onOpenConnections?: () => void
   passwordPromptRequest?: PasswordPromptRequest | null
@@ -245,6 +265,7 @@ export function ChatWorkspace({
   contextPercent?: number | null
   contextPending?: boolean
 }): React.JSX.Element {
+  const [recordsTarget, setRecordsTarget] = useState<HTMLDivElement | null>(null)
   const sessionDetailsId = useId()
   const [sessionDetailsOpen, setSessionDetailsOpen] = useState(false)
   const imageMismatch =
@@ -311,24 +332,34 @@ export function ChatWorkspace({
             activeTab.external ? (
               <GuidedOpsPanel
                 key={sessionChatTab.conversationId}
+                recordsTarget={recordsTarget}
                 chatId={sessionChatTab.conversationId}
                 eventChatId={sessionChatTab.id}
                 terminalId={activeTab.id}
+                hasStarted={
+                  activeAgentPending ||
+                  sessionChatTab.agentLog.some(
+                    ({ kind }) => kind === 'user' || kind === 'assistant'
+                  )
+                }
                 zh={zh}
                 onAsk={(text) => {
                   onAgentInputChange(text)
                   agentInputRef?.current?.focus()
                 }}
+                onAnalyze={onAnalyzeTerminal}
                 onStart={() => agentInputRef?.current?.focus()}
                 paused={Boolean(activeTab.proactiveSuggestionsPaused)}
                 onPausedChange={onProactiveSuggestionsPausedChange}
               />
             ) : sessionChatTab.agentLog.length > 0 ? (
-              <GuidedOpsHistory
-                key={sessionChatTab.conversationId}
-                conversationId={sessionChatTab.conversationId}
-                zh={zh}
-              />
+              <ConversationRecords target={recordsTarget} zh={zh}>
+                <GuidedOpsHistory
+                  key={sessionChatTab.conversationId}
+                  conversationId={sessionChatTab.conversationId}
+                  zh={zh}
+                />
+              </ConversationRecords>
             ) : undefined
           }
         />
@@ -403,19 +434,23 @@ export function ChatWorkspace({
             >
               {sessionTitle}
             </h1>
-            <button
-              type="button"
-              className="inline-flex shrink-0 items-center gap-1 rounded-sm text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              aria-expanded={sessionDetailsOpen}
-              aria-controls={sessionDetailsId}
-              onClick={() => setSessionDetailsOpen((open) => !open)}
-            >
-              <ChevronRightIcon
-                className={`size-3 ${sessionDetailsOpen ? 'rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-              {zh ? '会话详情' : 'Session details'}
-            </button>
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
+              <div ref={setRecordsTarget} className="contents" />
+              <button
+                type="button"
+                className="inline-flex shrink-0 items-center gap-1 rounded-sm text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                aria-expanded={sessionDetailsOpen}
+                aria-controls={sessionDetailsId}
+                onClick={() => setSessionDetailsOpen((open) => !open)}
+              >
+                <ChevronRightIcon
+                  className={`size-3 ${sessionDetailsOpen ? 'rotate-90' : ''}`}
+                  aria-hidden="true"
+                />
+                {zh ? '会话详情' : 'Session details'}
+              </button>
+              {conversationActions}
+            </div>
           </div>
           <div
             id={sessionDetailsId}
@@ -436,6 +471,12 @@ export function ChatWorkspace({
             />
           </div>
         </div>
+        <AgentTurnQueuePanel
+          turns={turns}
+          zh={zh}
+          onContinue={onContinueTurns}
+          onRemove={onRemoveTurn}
+        />
         <form
           onSubmit={(event) => {
             if (imageMismatch) event.preventDefault()
@@ -671,6 +712,13 @@ export function ChatWorkspace({
                     {t.common.stop}
                   </Button>
                 ) : null}
+                {sessionChatTab.agentBusy &&
+                  !imageMismatch &&
+                  (sessionChatTab.agentInput.trim() || sessionChatTab.pathRefs.length > 0) && (
+                    <Button type="button" size="xs" variant="outline" onClick={onStopAndSend}>
+                      {zh ? '停止并发送' : 'Stop and send'}
+                    </Button>
+                  )}
                 <Button
                   type="submit"
                   size="icon-xs"
@@ -678,18 +726,17 @@ export function ChatWorkspace({
                   tabIndex={showSendButton ? undefined : -1}
                   aria-hidden={showSendButton ? undefined : true}
                   aria-label={
-                    sessionChatTab.agentThinking
-                      ? t.input.thinking
-                      : sessionChatTab.agentBusy
-                        ? t.input.contextAdd
-                        : t.common.send
+                    sessionChatTab.agentBusy ? (zh ? '加入队列' : 'Queue message') : t.common.send
                   }
-                  disabled={!showSendButton || sessionChatTab.agentThinking || imageMismatch}
+                  disabled={
+                    !showSendButton ||
+                    imageMismatch ||
+                    (sessionChatTab.agentBusy &&
+                      !sessionChatTab.agentInput.trim() &&
+                      !sessionChatTab.pathRefs.length)
+                  }
                 >
-                  {sessionChatTab.agentThinking ||
-                  (sessionChatTab.agentBusy && !sessionChatTab.agentInput.trim()) ? (
-                    <Loader2Icon className="size-3.5 animate-spin" aria-hidden="true" />
-                  ) : sessionChatTab.agentBusy ? (
+                  {sessionChatTab.agentBusy ? (
                     <PlusIcon className="size-3.5" aria-hidden="true" />
                   ) : (
                     <ArrowUpIcon className="size-3.5" aria-hidden="true" />

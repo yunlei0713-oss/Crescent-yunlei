@@ -1,0 +1,336 @@
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py desktop operations workbench density --design-system -p MoXun
+╔═════════════════════════════════════════════════════════════════════════════════════════╗
+║  TARGET: MoXun - RECOMMENDED DESIGN SYSTEM                                              ║
+╚═════════════════════════════════════════════════════════════════════════════════════════╝
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+├─── PATTERN ──────────────────────────────────────────────────────────────────────────────┤
+│  Name: Real-Time / Operations Landing                                                   │
+│     Conversion: Offer a demo or sandbox and show trust signals. Label telemetry as live only when backed by a current source, with update time and stale state. Provide pause/hide or update-frequency controls for tickers and previews, stop offscreen/hidden work, support keyboard controls, and render a static final snapshot under reduced motion.│
+│     CTA: Primary CTA in nav + After metrics                                             │
+│     Sections:                                                                           │
+│       1. Hero (product + live preview or status)                                        │
+│       2. Key metrics/indicators                                                         │
+│       3. How it works                                                                   │
+│       4. CTA (Start trial / Contact)                                                    │
+├─── STYLE ────────────────────────────────────────────────────────────────────────────────┤
+│  Name: Cyberpunk UI                                                                     │
+│     Mode Support: Light not-recommended  Dark supported                                 │
+│     Keywords: Neon, dark mode, terminal, HUD, sci-fi, glitch, dystopian, futuristic,    │
+│     matrix, tech noir                                                                   │
+│     Best For: Gaming platforms, tech products, crypto apps, sci-fi applications,        │
+│     developer tools, entertainment                                                      │
+│     Performance: cost:moderate|drivers:animation,blur | Accessibility: risk:low|requires:contrast-text-4.5,keyboard,visible-focus,reduced-motion│
+├─── COLORS ───────────────────────────────────────────────────────────────────────────────┤
+│     Primary:       #00FF41    (--color-primary)                                         │
+│     On Primary:    #0F172A    (--color-on-primary)                                      │
+│     Secondary:     #0D0D0D    (--color-secondary)                                       │
+│     On Secondary:  #FFFFFF    (--color-on-secondary)                                    │
+│     Accent/CTA:    #FF3333    (--color-accent)                                          │
+│     On Accent/CTA: #000000    (--color-on-accent)                                       │
+│     Background:    #000000    (--color-background)                                      │
+│     Foreground:    #E0E0E0    (--color-foreground)                                      │
+│     Card:          #0C130E    (--color-card)                                            │
+│     Card Foreground: #E0E0E0    (--color-card-foreground)                               │
+│     Muted:         #181818    (--color-muted)                                           │
+│     Muted Foreground: #94A3B8    (--color-muted-foreground)                             │
+│     Border:        #1F1F1F    (--color-border)                                          │
+│     Destructive:   #EF4444    (--color-destructive)                                     │
+│     On Destructive: #000000    (--color-on-destructive)                                 │
+│     Ring:          #00FF41    (--color-ring)                                            │
+│     Notes: Matrix green + alert red                                                     │
+├─── TYPOGRAPHY ───────────────────────────────────────────────────────────────────────────┤
+│  Cinzel / Josefin Sans                                                                  │
+│     Mood: real estate, luxury, elegant, sophisticated, property, premium                │
+│     Best For: Real estate, luxury properties, architecture, interior design             │
+│     Google Fonts: https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&display=swap│
+│     CSS Import: @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;...│
+├─── KEY EFFECTS ──────────────────────────────────────────────────────────────────────────┤
+│     Neon glow (text-shadow), glitch animations (skew/offset), scanlines (::before       │
+│     overlay), terminal fonts                                                            │
+├─── AVOID ────────────────────────────────────────────────────────────────────────────────┤
+│     Light mode + Poor data viz                                                          │
+├─── PRE-DELIVERY CHECKLIST ───────────────────────────────────────────────────────────────┤
+│     [ ] No emojis as icons (use SVG: Heroicons/Lucide)                                  │
+│     [ ] cursor-pointer on all clickable elements                                        │
+│     [ ] Hover states with smooth transitions (150-300ms)                                │
+│     [ ] Light mode: text contrast 4.5:1 minimum                                         │
+│     [ ] Focus states visible for keyboard nav                                           │
+│     [ ] prefers-reduced-motion respected                                                │
+│     [ ] Responsive: 375px, 768px, 1024px, 1440px                                        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py productivity tool minimal monochrome --design-system -p MoXun
+╔═════════════════════════════════════════════════════════════════════════════════════════╗
+║  TARGET: MoXun - RECOMMENDED DESIGN SYSTEM                                              ║
+╚═════════════════════════════════════════════════════════════════════════════════════════╝
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+├─── PATTERN ──────────────────────────────────────────────────────────────────────────────┤
+│  Name: Product Demo + Features                                                          │
+│     Conversion: Use an interactive demo only when it explains value better than static media. Provide captions, transcript, visible play/pause controls, and a non-video fallback; do not autoplay under reduced motion. Pause media when offscreen or hidden and keep the final product state available as static content.│
+│     CTA: Video center + CTA right/bottom                                                │
+│     Sections:                                                                           │
+│       1. Hero                                                                           │
+│       2. Product video/mockup (center)                                                  │
+│       3. Feature breakdown per section                                                  │
+│       4. Comparison (optional)                                                          │
+│       5. CTA                                                                            │
+├─── STYLE ────────────────────────────────────────────────────────────────────────────────┤
+│  Name: Flat Design                                                                      │
+│     Mode Support: Light supported  Dark supported                                       │
+│     Keywords: 2D, minimalist, bold colors, no shadows, clean lines, simple shapes,      │
+│     typography-focused, modern, icon-heavy                                              │
+│     Best For: Web apps, mobile apps, cross-platform, startup MVPs, user-friendly,       │
+│     SaaS, dashboards, corporate                                                         │
+│     Performance: cost:low|drivers:none | Accessibility: risk:low|requires:contrast-text-4.5,keyboard,visible-focus,reduced-motion│
+├─── COLORS ───────────────────────────────────────────────────────────────────────────────┤
+│     Primary:       #0D9488    (--color-primary)                                         │
+│     On Primary:    #000000    (--color-on-primary)                                      │
+│     Secondary:     #14B8A6    (--color-secondary)                                       │
+│     On Secondary:  #0F172A    (--color-on-secondary)                                    │
+│     Accent/CTA:    #EA580C    (--color-accent)                                          │
+│     On Accent/CTA: #000000    (--color-on-accent)                                       │
+│     Background:    #F0FDFA    (--color-background)                                      │
+│     Foreground:    #134E4A    (--color-foreground)                                      │
+│     Card:          #FFFFFF    (--color-card)                                            │
+│     Card Foreground: #134E4A    (--color-card-foreground)                               │
+│     Muted:         #E8F1F4    (--color-muted)                                           │
+│     Muted Foreground: #475569    (--color-muted-foreground)                             │
+│     Border:        #99F6E4    (--color-border)                                          │
+│     Destructive:   #DC2626    (--color-destructive)                                     │
+│     On Destructive: #FFFFFF    (--color-on-destructive)                                 │
+│     Ring:          #0D9488    (--color-ring)                                            │
+│     Notes: Teal focus + action orange [Accent adjusted from #F97316]                    │
+├─── TYPOGRAPHY ───────────────────────────────────────────────────────────────────────────┤
+│  Plus Jakarta Sans / Plus Jakarta Sans                                                  │
+│     Mood: friendly, modern, saas, clean, approachable, professional                     │
+│     Best For: SaaS products, web apps, dashboards, B2B, productivity tools              │
+│     Google Fonts: https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap│
+│     CSS Import: @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+San...│
+├─── KEY EFFECTS ──────────────────────────────────────────────────────────────────────────┤
+│     No gradients/shadows, simple hover (color/opacity shift), fast loading, clean       │
+│     transitions (150-200ms ease), minimal icons                                         │
+├─── AVOID ────────────────────────────────────────────────────────────────────────────────┤
+│     Complex onboarding + Slow performance                                               │
+├─── PRE-DELIVERY CHECKLIST ───────────────────────────────────────────────────────────────┤
+│     [ ] No emojis as icons (use SVG: Heroicons/Lucide)                                  │
+│     [ ] cursor-pointer on all clickable elements                                        │
+│     [ ] Hover states with smooth transitions (150-300ms)                                │
+│     [ ] Light mode: text contrast 4.5:1 minimum                                         │
+│     [ ] Focus states visible for keyboard nav                                           │
+│     [ ] prefers-reduced-motion respected                                                │
+│     [ ] Responsive: 375px, 768px, 1024px, 1440px                                        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py keyboard focus modal --domain ux
+## UI Pro Max Search Results
+**Domain:** ux | **Query:** keyboard focus modal
+**Source:** ux-guidelines.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Interaction
+- **Issue:** Focus States
+- **Platform:** All
+- **Description:** Keyboard focus, including controls inside a modal, needs a visible indicator
+- **Do:** Use a visible focus ring on every interactive control, including modal controls
+- **Don't:** Remove focus outline without replacement
+- **Code Example Good:** focus:ring-2 focus:ring-blue-500
+- **Code Example Bad:** outline-none without alternative
+- **Severity:** High
+
+### Result 2
+- **Category:** Accessibility
+- **Issue:** Focus Not Obscured (Enhanced)
+- **Platform:** Web
+- **Description:** WCAG 2.2 AAA requires keyboard focus to remain fully visible
+- **Do:** Keep the entire focused component unobscured by author-created content
+- **Don't:** Present this enhanced AAA criterion as an AA requirement or allow persistent UI to hide any part of focus
+- **Code Example Good:** close persistent overlay before focus moves behind it
+- **Code Example Bad:** sticky footer covers half the focused button
+- **Severity:** Medium
+
+### Result 3
+- **Category:** Accessibility
+- **Issue:** Focus Not Obscured (Minimum)
+- **Platform:** Web
+- **Description:** WCAG 2.2 AA requires keyboard focus to remain at least partially visible
+- **Do:** Offset sticky UI with scroll-padding and dismiss or move persistent overlays
+- **Don't:** Let headers footers banners or chat widgets fully cover focus
+- **Code Example Good:** scroll-padding-top: var(--header-height)
+- **Code Example Bad:** fixed overlay covers :focus
+- **Severity:** High
+
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py accessible form labels --stack react
+## UI Pro Max Stack Guidelines
+**Stack:** react | **Query:** accessible form labels
+**Source:** stacks/react.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Accessibility
+- **Guideline:** Label form controls
+- **Description:** Associate labels with inputs
+- **Do:** htmlFor matching input id
+- **Don't:** Placeholder as only label
+- **Code Good:** <label htmlFor="email">Email</label>
+- **Code Bad:** <input placeholder="Email"/>
+- **Severity:** High
+- **Docs URL:** https://react.dev/reference/react-dom/components/input
+- **Applies To:** react 19.2.x
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 2
+- **Category:** Testing
+- **Guideline:** Use testing-library queries
+- **Description:** Use accessible queries
+- **Do:** getByRole getByLabelText
+- **Don't:** getByTestId for everything
+- **Code Good:** getByRole('button')
+- **Code Bad:** getByTestId('submit-btn')
+- **Severity:** Medium
+- **Docs URL:** https://testing-library.com/docs/queries/about#priority
+- **Applies To:** react 19.2.x
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 3
+- **Category:** Forms
+- **Guideline:** Handle form submission properly
+- **Description:** Prevent default and handle in submit handler
+- **Do:** onSubmit with preventDefault
+- **Don't:** onClick on submit button only
+- **Code Good:** <form onSubmit={handleSubmit}>
+- **Code Bad:** <button onClick={handleSubmit}>
+- **Severity:** Medium
+- **Docs URL:** 
+- **Applies To:** react 19.2.x
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py design tokens desktop layout --stack html-tailwind
+## UI Pro Max Stack Guidelines
+**Stack:** html-tailwind | **Query:** design tokens desktop layout
+**Source:** stacks/html-tailwind.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Colors
+- **Guideline:** Semantic colors
+- **Description:** Define semantic design tokens with CSS-first @theme
+- **Do:** Declare --color-primary and related tokens in @theme
+- **Don't:** Repeat palette utilities in components
+- **Code Good:** bg-primary
+- **Code Bad:** bg-blue-500 everywhere
+- **Severity:** Medium
+- **Docs URL:** https://tailwindcss.com/docs/theme
+- **Applies To:** html-tailwind 4.3
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 2
+- **Category:** Images
+- **Guideline:** Responsive image layout
+- **Description:** Adjust image sizing and placement mobile-first with breakpoint variants
+- **Do:** w-full md:w-1/2
+- **Don't:** Use a fixed desktop width at every viewport
+- **Code Good:** w-full md:max-w-xl
+- **Code Bad:** w-[900px]
+- **Severity:** High
+- **Docs URL:** https://tailwindcss.com/docs/responsive-design
+- **Applies To:** html-tailwind 4.3
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 3
+- **Category:** Performance
+- **Guideline:** Use complete class tokens
+- **Description:** Keep utility class names statically detectable in source
+- **Do:** Map variants to complete tokens like colorMap[color]
+- **Don't:** Construct partial tokens with interpolation
+- **Code Good:** const colorMap = { red: 'bg-red-500', blue: 'bg-blue-500' }
+- **Code Bad:** `bg-${color}-500`
+- **Severity:** High
+- **Docs URL:** https://tailwindcss.com/docs/detecting-classes-in-source-files#dynamic-class-names
+- **Applies To:** html-tailwind 4.3
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py tabs keyboard navigation --domain ux
+## UI Pro Max Search Results
+**Domain:** ux | **Query:** tabs keyboard navigation
+**Source:** ux-guidelines.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Accessibility
+- **Issue:** Keyboard Navigation
+- **Platform:** Web
+- **Description:** Web users need complete keyboard navigation with visible focus on every operable control
+- **Do:** Keep tab order aligned with visual order and test every action without a pointer
+- **Don't:** Keyboard traps or illogical tab order
+- **Code Example Good:** tabIndex for custom order
+- **Code Example Bad:** Unreachable elements
+- **Severity:** High
+
+### Result 2
+- **Category:** Accessibility
+- **Issue:** Skip Links
+- **Platform:** Web
+- **Description:** Allow keyboard users to skip navigation
+- **Do:** Provide skip to main content link
+- **Don't:** No skip link on nav-heavy pages
+- **Code Example Good:** Skip to main content link
+- **Code Example Bad:** 100 tabs to reach content
+- **Severity:** Medium
+
+### Result 3
+- **Category:** Navigation
+- **Issue:** Sticky Navigation
+- **Platform:** Web
+- **Description:** Fixed nav should not obscure content
+- **Do:** Add padding-top to body equal to nav height
+- **Don't:** Let nav overlap first section content
+- **Code Example Good:** pt-20 (if nav is h-20)
+- **Code Example Bad:** No padding compensation
+- **Severity:** Medium
+
+
+$ python3 /Users/xusong.yu/.agents/skills/ui-ux-pro-max/scripts/search.py reduced motion transitions --domain ux
+## UI Pro Max Search Results
+**Domain:** ux | **Query:** reduced motion transitions
+**Source:** ux-guidelines.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Animation
+- **Issue:** Reduced Motion
+- **Platform:** All
+- **Description:** Respect user's motion preferences
+- **Do:** Check prefers-reduced-motion media query
+- **Don't:** Ignore accessibility motion settings
+- **Code Example Good:** @media (prefers-reduced-motion: reduce)
+- **Code Example Bad:** No motion query check
+- **Severity:** High
+
+### Result 2
+- **Category:** Animation
+- **Issue:** Excessive Motion
+- **Platform:** All
+- **Description:** Too many animations cause distraction and motion sickness
+- **Do:** Animate 1-2 key elements per view maximum
+- **Don't:** Animate everything that moves
+- **Code Example Good:** Single hero animation
+- **Code Example Bad:** animate-bounce on 5+ elements
+- **Severity:** High
+
+### Result 3
+- **Category:** Animation
+- **Issue:** Cancellable State Transitions
+- **Platform:** Web
+- **Description:** Rapid compact-control changes can interrupt an in-flight transition
+- **Do:** Cancel or replace prior motion; set the final semantic state directly and handle cancellation cleanup
+- **Don't:** Depend on animationend or transitionend for required state correctness
+- **Code Example Good:** previous?.cancel(); setSelected(next)
+- **Code Example Bad:** Enable the chip only inside transitionend
+- **Severity:** High
+

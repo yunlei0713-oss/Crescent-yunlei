@@ -2,15 +2,19 @@ import { useEffect, useState } from 'react'
 import { FileIcon, FolderIcon } from 'lucide-react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import type { CodeIndexStatus } from '../../../shared/knowledge'
+import type { CodeIndexSkip, CodeIndexStatus } from '../../../shared/knowledge'
 import type { LocalDocumentNode } from '../../../shared/local-documents'
 
 /** Project-scoped inspector; mounting never changes the active conversation's cwd. */
 export function CodeIntelligenceSettings({
   root,
+  projectId,
+  onIndexChange,
   zh
 }: {
   root: string
+  projectId?: string
+  onIndexChange?: () => void
   zh: boolean
 }): React.JSX.Element {
   const [status, setStatus] = useState<CodeIndexStatus>()
@@ -21,6 +25,8 @@ export function CodeIntelligenceSettings({
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState('search')
   const [result, setResult] = useState('')
+  const [skips, setSkips] = useState<CodeIndexSkip[]>([])
+  const [moreSkips, setMoreSkips] = useState(true)
   useEffect(() => {
     let canceled = false
     void window.api.knowledge
@@ -39,7 +45,7 @@ export function CodeIntelligenceSettings({
   useEffect(() => {
     let canceled = false
     void window.api.documents
-      .list(directory)
+      .list(directory, projectId)
       .then((value) => {
         if (!canceled) {
           setNodes(value)
@@ -55,7 +61,7 @@ export function CodeIntelligenceSettings({
     return () => {
       canceled = true
     }
-  }, [directory])
+  }, [directory, projectId])
   async function perform(action: () => Promise<void>): Promise<void> {
     setBusy(true)
     setError('')
@@ -94,6 +100,7 @@ export function CodeIntelligenceSettings({
                 : void perform(async () => {
                     const page = await window.api.documents.read({
                       path: node.path,
+                      projectId,
                       limit: 200,
                       requestId: crypto.randomUUID()
                     })
@@ -130,7 +137,16 @@ export function CodeIntelligenceSettings({
           size="xs"
           disabled={busy}
           onClick={() =>
-            void perform(async () => setStatus(await window.api.knowledge.codeIndex(root)))
+            void perform(async () => {
+              const indexing = window.api.knowledge.codeIndex(root)
+              try {
+                setStatus(await indexing)
+                setSkips([])
+                setMoreSkips(true)
+              } finally {
+                onIndexChange?.()
+              }
+            })
           }
         >
           {zh ? '重新索引' : 'Reindex'}
@@ -144,6 +160,9 @@ export function CodeIntelligenceSettings({
               await window.api.knowledge.codeClear(root)
               setStatus(await window.api.knowledge.codeStatus(root))
               setResult('')
+              setSkips([])
+              setMoreSkips(true)
+              onIndexChange?.()
             })
           }
         >
@@ -155,6 +174,53 @@ export function CodeIntelligenceSettings({
           </Button>
         )}
       </div>
+      {Boolean(status?.symbolOnly) && (
+        <p>
+          {zh ? '仅符号与引用' : 'Symbols and references only'} {status?.symbolOnly}
+        </p>
+      )}
+      {Boolean(status?.skipped) && (
+        <details>
+          <summary>{zh ? '跳过原因与文件' : 'Skip reasons and files'}</summary>
+          <p className="break-words">
+            {Object.entries(status?.skipReasons ?? {})
+              .map(([reason, count]) => `${reason} ${count}`)
+              .join(' · ')}
+          </p>
+          <ul className="max-h-32 overflow-auto">
+            {skips.map((item) => (
+              <li className="break-all" key={item.path}>
+                <button
+                  type="button"
+                  className="text-left underline"
+                  onClick={() => setResult(item.path)}
+                >
+                  {item.path}
+                </button>
+                {' · '}
+                {item.reason}
+              </li>
+            ))}
+          </ul>
+          {moreSkips && (
+            <Button
+              type="button"
+              size="xs"
+              variant="ghost"
+              disabled={busy}
+              onClick={() =>
+                void perform(async () => {
+                  const entries = await window.api.knowledge.codeSkips(root, skips.at(-1)?.path)
+                  setSkips([...skips, ...entries])
+                  setMoreSkips(entries.length === 40)
+                })
+              }
+            >
+              {zh ? '显示更多跳过文件' : 'Show more skipped files'}
+            </Button>
+          )}
+        </details>
+      )}
       <form
         className="flex flex-wrap gap-1"
         onSubmit={(event) => {

@@ -18,13 +18,28 @@ export interface TerminalIdentity {
 }
 export interface TerminalObservation extends TerminalIdentity {
   eventId: string
+  commandId?: string
+  commandGroupId?: string
+  source?: 'osc133' | 'osc633' | 'snapshot' | 'user-confirmation' | 'terminal-stream'
+  groupState?: 'pending' | 'finished' | 'incomplete'
   command?: string
   output: string
   exitCode?: number
   startedAt: number
   finishedAt?: number
-  status: 'submitted' | 'running' | 'completed' | 'failed' | 'interactive' | 'unknown'
-  boundary: 'osc133' | 'uncertain'
+  status:
+    | 'submitted'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'finished-unknown'
+    | 'interrupted'
+    | 'session-lost'
+    | 'timeout-unconfirmed'
+    | 'prompt-returned'
+    | 'interactive'
+    | 'unknown'
+  boundary: 'osc133' | 'osc633' | 'prompt' | 'uncertain' | 'user-confirmation'
   confidence?: 'structured' | 'snapshot' | 'uncertain'
   sensitive: boolean
   redacted: boolean

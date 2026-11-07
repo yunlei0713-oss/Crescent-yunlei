@@ -1,0 +1,42 @@
+{
+  "ci": "passed",
+  "securityChecks": 346,
+  "localFilesPassed": 84,
+  "localFilesSkipped": 9,
+  "localTestsPassed": 506,
+  "localTestsSkipped": 14,
+  "durationSeconds": 170.67,
+  "focusedInternalChecks": 36,
+  "mainAppAudit": "AUDIT_OK",
+  "extraAudit": "EXTRA_OK",
+  "nativeSizes": [
+    [
+      1440,
+      755
+    ],
+    [
+      800,
+      755
+    ],
+    [
+      560,
+      755
+    ]
+  ],
+  "scope": "real Electron with isolated profiles and synthetic messages/evidence/attachments; no business terminal or paid model",
+  "preserved": [
+    "archive action",
+    "terminal evidence",
+    "diagnostic history",
+    "pagination and historical copy",
+    "default directory persistence",
+    "memory behavior"
+  ],
+  "changes": [
+    "archive moved beside session metadata",
+    "brand moved into sidebar",
+    "records moved into on-demand Sheet",
+    "fallback directory moved to advanced settings",
+    "sidebar entry priority reordered"
+  ]
+}

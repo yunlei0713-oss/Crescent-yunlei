@@ -9,6 +9,7 @@ export interface AgentAuditEvent {
   eventType:
     | 'analysis'
     | 'command_suggestion'
+    | 'terminal_execution'
     | 'terminal_observation'
     | 'file_change_request'
     | 'file_change_approval'

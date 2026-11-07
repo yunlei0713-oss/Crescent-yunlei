@@ -17,15 +17,30 @@ export function useTerminalObservation(tab: AgentTerminalTab) {
   useEffect(() => {
     const context = { binding, revision: 0, mutating: false, stopped: false }
     requests.current = context
+    if (!tab.sessionId) return
     let refreshing = false
     const refresh = async (): Promise<void> => {
-      if (!tab.sessionId || refreshing || context.mutating) return
+      if (refreshing || context.mutating) return
       refreshing = true
       const request = ++context.revision
       try {
         const value = await terminalClient.observation({ tabId: tab.id, action: 'status' })
         if (!context.stopped && request === context.revision)
-          setState({ binding, grant: value, loading: false, busy: false, error: '' })
+          setState((previous) => {
+            const grant = previous.grant
+            if (
+              previous.binding === binding &&
+              !previous.loading &&
+              !previous.busy &&
+              !previous.error &&
+              grant?.status === value?.status &&
+              grant?.mode === value?.mode &&
+              grant?.capability === value?.capability &&
+              grant?.startedAt === value?.startedAt
+            )
+              return previous
+            return { binding, grant: value, loading: false, busy: false, error: '' }
+          })
       } catch (cause) {
         if (!context.stopped && request === context.revision)
           setState({

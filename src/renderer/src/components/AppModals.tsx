@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useRef } from 'react'
-import { TriangleAlertIcon } from 'lucide-react'
+import { ArchiveIcon, TriangleAlertIcon } from 'lucide-react'
 
 import { ImeSafeInput } from '@renderer/components/ImeSafeFields'
 import { Button } from '@renderer/components/ui/button'
@@ -54,10 +54,14 @@ export function CloseTabsConfirmModal({
         className="app-modal-panel w-full max-w-md overflow-hidden rounded-xl border bg-background"
       >
         <div className="app-modal-header flex items-start gap-3 border-b px-4 py-3">
-          <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+          {request.mode === 'tab' ? (
+            <ArchiveIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+          )}
           <div className="min-w-0">
             <h2 id="close-tabs-confirm-title" className="text-sm font-semibold">
-              {t.confirm.closeTabsTitle}
+              {request.mode === 'tab' ? t.confirm.closeTabsTitle : t.common.close}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {request.mode === 'tab'
@@ -87,8 +91,12 @@ export function CloseTabsConfirmModal({
           <Button type="button" variant="outline" onClick={onCancel}>
             {t.common.cancel}
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            {t.common.close}
+          <Button
+            type="button"
+            variant={request.mode === 'tab' ? 'default' : 'destructive'}
+            onClick={onConfirm}
+          >
+            {request.mode === 'tab' ? t.confirm.closeTabsTitle : t.common.close}
           </Button>
         </div>
       </div>

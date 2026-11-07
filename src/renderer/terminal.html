@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>MoXun Terminal</title>
+  </head>
+  <body>
+    <header id="toolbar" aria-label="Terminal controls">
+      <span id="session"></span>
+      <input id="search" type="search" />
+      <button id="copy" type="button"></button>
+      <button id="paste" type="button"></button>
+      <button id="clear" type="button"></button>
+      <button id="interrupt" type="button"></button>
+      <button id="ssh-collaboration" type="button" hidden></button>
+      <button id="close" type="button"></button>
+      <button id="end" type="button"></button>
+    </header>
+    <div id="terminal"></div>
+    <footer id="status" role="status"></footer>
+    <script type="module" src="/src/terminal/main.ts"></script>
+  </body>
+</html>

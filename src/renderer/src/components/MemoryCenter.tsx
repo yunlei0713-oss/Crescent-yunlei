@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet'
+import { MemoryEvidenceList } from './MemoryEvidenceList'
 import { useMemoryCenter } from '../hooks/useMemoryCenter'
 import {
   MEMORY_CATEGORIES,
@@ -19,13 +20,22 @@ const categories = {
   troubleshooting: '故障经验',
   preference: '用户偏好'
 }
-const states = { candidate: '待审核', approved: '已确认', archived: '已归档' }
+const states = {
+  candidate: '待审核',
+  approved: '已确认',
+  archived: '已归档',
+  superseded: '已被替代'
+}
+const kinds = { legacy: '既有知识', knowledge: '手动知识', observation: '观察', reflection: '反思' }
 const historyStates = {
   pending: '待整理',
   changed: '有新内容',
   review: '待审核',
   learned: '已学习',
   archived: '已归档'
+}
+function expired(item: MemoryItem): boolean {
+  return Boolean(item.validTo && Date.parse(item.validTo) <= Date.now())
 }
 const emptyDraft: MemoryInput = {
   title: '',
@@ -69,11 +79,35 @@ export function MemoryCenter({
   const [confirmation, setConfirmation] = useState<string>()
   const [target, setTarget] = useState('')
   const [relation, setRelation] = useState('关联')
+  const [reflectionIds, setReflectionIds] = useState<string[]>([])
   const items = snapshot?.items ?? []
+  const current = items.find((item) => item.id === draft?.id)
+  const derived = current?.kind === 'observation' || current?.kind === 'reflection'
+  const replaceable =
+    current?.kind === 'observation'
+      ? items.filter(
+          (item) =>
+            item.id !== current.id &&
+            item.kind === 'observation' &&
+            item.status === 'approved' &&
+            item.scope === current.scope &&
+            item.observedAt &&
+            current.observedAt &&
+            Date.parse(item.observedAt) < Date.parse(current.observedAt)
+        )
+      : []
+  const supports = items.filter(
+    (item) =>
+      reflectionIds.includes(item.id) && item.kind === 'observation' && item.status === 'approved'
+  )
   const filtered = items.filter(
     (item) =>
       (category === 'all' || item.category === category) &&
-      (status === 'all' || item.status === status) &&
+      (status === 'all'
+        ? item.status !== 'superseded' && !expired(item)
+        : status === 'expired'
+          ? expired(item) && item.status !== 'superseded'
+          : item.status === status) &&
       `${item.title} ${item.content} ${item.scope}`.toLowerCase().includes(query.toLowerCase())
   )
   function edit(item: MemoryItem): void {
@@ -91,7 +125,8 @@ export function MemoryCenter({
     await perform(async () => {
       await window.api.knowledge.memorySave({
         ...draft,
-        status: approved ? 'approved' : 'candidate'
+        status: approved ? 'approved' : 'candidate',
+        supersedesId: approved ? draft.supersedesId : undefined
       })
       setDraft(undefined)
     })
@@ -176,7 +211,11 @@ export function MemoryCenter({
           </div>
           {pendingConsent && (
             <div role="alert" className="space-y-2 rounded border p-3">
-              <p className="font-medium">允许向此模型发送脱敏后的历史？</p>
+              <p className="font-medium">
+                {pendingConsent.reflection
+                  ? '允许向此模型发送所选已审核观察？'
+                  : '允许向此模型发送脱敏后的历史？'}
+              </p>
               <p>
                 {pendingConsent.target.providerName} / {pendingConsent.target.model}
               </p>
@@ -184,7 +223,7 @@ export function MemoryCenter({
                 {pendingConsent.target.endpoint}
               </p>
               <p>
-                整理需要发送历史对话片段。密码、令牌等会先脱敏，但主机名、集群架构和操作内容仍可能包含内部信息。授权会记住此服务地址和模型，用于后续手动及自动整理；可随时撤销。整理结果保存在本机，审核后才启用。
+                整理会发送脱敏后的资料，主机名、集群架构和操作内容仍可能包含内部信息。此授权绑定服务地址和模型，可随时撤销。整理可能产生模型费用。结果保存在本机，审核后才启用。
               </p>
               <div className="flex gap-2">
                 <Button size="sm" disabled={busy} onClick={() => void confirmConsent()}>
@@ -345,7 +384,8 @@ export function MemoryCenter({
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
-                <option value="all">所有状态</option>
+                <option value="all">默认状态</option>
+                <option value="expired">已过期</option>
                 {Object.entries(states).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -357,23 +397,80 @@ export function MemoryCenter({
                 新增知识
               </Button>
             </div>
+            {supports.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 px-4 text-xs">
+                <span>已选 {supports.length} 条观察。归纳可能产生模型费用。</span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={
+                    busy ||
+                    supports.length < 2 ||
+                    supports.some((item) => item.scope !== supports[0].scope)
+                  }
+                  onClick={() =>
+                    void learn(
+                      supports.map((item) => item.id),
+                      true
+                    )
+                  }
+                >
+                  归纳为反思
+                </Button>
+                {busy ? (
+                  <Button size="sm" variant="ghost" onClick={cancel}>
+                    停止归纳
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => setReflectionIds([])}>
+                    清除选择
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="flex min-h-0 flex-1 gap-3 overflow-hidden px-4">
               <div className="min-w-0 flex-1 overflow-auto">
                 {filtered.map((item) => (
-                  <button
-                    key={item.id}
-                    className="app-list-row block w-full text-left text-xs focus-visible:ring-2 focus-visible:ring-ring"
-                    data-selected={draft?.id === item.id}
-                    onClick={() => edit(item)}
-                  >
-                    <div className="font-medium">{item.title}</div>
-                    <div className="mt-1 text-muted-foreground">
-                      {categories[item.category]} · {states[item.status]} ·{' '}
-                      {item.scope || '本地 / 通用偏好'} · 置信度 {Math.round(item.confidence * 100)}
-                      %
-                    </div>
-                    <p className="mt-1 line-clamp-2">{item.content}</p>
-                  </button>
+                  <div key={item.id} className="flex items-start gap-1">
+                    {item.kind === 'observation' && item.status === 'approved' && (
+                      <input
+                        type="checkbox"
+                        aria-label={`选择观察 ${item.title}`}
+                        className="ml-1 mt-3 shrink-0 focus-visible:ring-2 focus-visible:ring-ring"
+                        checked={reflectionIds.includes(item.id)}
+                        disabled={
+                          busy || (reflectionIds.length >= 8 && !reflectionIds.includes(item.id))
+                        }
+                        onChange={(event) => {
+                          const selected = event.target.checked
+                          setReflectionIds((previous) =>
+                            selected
+                              ? [...previous, item.id]
+                              : previous.filter((id) => id !== item.id)
+                          )
+                        }}
+                      />
+                    )}
+                    <button
+                      className="app-list-row block min-w-0 flex-1 text-left text-xs focus-visible:ring-2 focus-visible:ring-ring"
+                      data-selected={draft?.id === item.id}
+                      onClick={() => edit(item)}
+                    >
+                      <div className="break-words font-medium">{item.title}</div>
+                      <div className="mt-1 break-words text-muted-foreground">
+                        {kinds[item.kind ?? 'legacy']} · {categories[item.category]} ·{' '}
+                        {states[item.status]} · {item.scope || '本地 / 通用偏好'} · 置信度{' '}
+                        {Math.round(item.confidence * 100)}%
+                        {item.evidenceCount !== undefined && ` · ${item.evidenceCount} 条证据`}
+                      </div>
+                      {item.observedAt && (
+                        <div className="text-muted-foreground">
+                          {new Date(item.observedAt).toLocaleString()} · 历史事实，当前状态待验证
+                        </div>
+                      )}
+                      <p className="mt-1 line-clamp-2 break-words">{item.content}</p>
+                    </button>
+                  </div>
                 ))}
                 {filtered.length === 0 && (
                   <p className="p-4 text-xs text-muted-foreground">
@@ -383,6 +480,15 @@ export function MemoryCenter({
               </div>
               {draft && (
                 <div className="w-[min(420px,50vw)] shrink-0 space-y-3 overflow-auto border-l pl-3 text-xs">
+                  {derived && current && (
+                    <MemoryEvidenceList
+                      key={current.id}
+                      id={current.id}
+                      count={current.evidenceCount ?? 0}
+                      updatedAt={current.updatedAt}
+                      onOpenHistory={onOpenHistory}
+                    />
+                  )}
                   <label className="block">
                     标题
                     <Input
@@ -396,6 +502,7 @@ export function MemoryCenter({
                     <select
                       className="ml-2 rounded border bg-background p-1"
                       value={draft.category}
+                      disabled={derived}
                       onChange={(e) =>
                         setDraft({ ...draft, category: e.target.value as MemoryInput['category'] })
                       }
@@ -411,6 +518,7 @@ export function MemoryCenter({
                     环境范围（连接 ID；留空为本地）
                     <Input
                       value={draft.scope}
+                      readOnly={derived}
                       onChange={(e) => setDraft({ ...draft, scope: e.target.value })}
                       maxLength={200}
                     />
@@ -418,23 +526,89 @@ export function MemoryCenter({
                   <label className="block">
                     知识内容
                     <Textarea
-                      className="min-h-52"
+                      className={derived ? 'min-h-20 max-h-32 resize-none' : 'min-h-52'}
                       value={draft.content}
+                      readOnly={derived}
                       onChange={(e) => setDraft({ ...draft, content: e.target.value })}
                       maxLength={12000}
                     />
                   </label>
+                  {derived && current && (
+                    <>
+                      {current.uncertainty && (
+                        <p className="break-words text-muted-foreground">
+                          不确定性 · {current.uncertainty}
+                        </p>
+                      )}
+                      {current.validTo && (
+                        <p className="text-muted-foreground">
+                          有效期至 {new Date(current.validTo).toLocaleString()}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {current?.kind === 'observation' && current.status !== 'superseded' && (
+                    <label className="block">
+                      可选失效日期（UTC）
+                      <Input
+                        type="date"
+                        value={
+                          (draft.validTo === undefined ? current.validTo : draft.validTo)?.slice(
+                            0,
+                            10
+                          ) ?? ''
+                        }
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            validTo: event.target.value
+                              ? `${event.target.value}T23:59:59.999Z`
+                              : null
+                          })
+                        }
+                      />
+                    </label>
+                  )}
+                  {replaceable.length > 0 && (
+                    <label className="block">
+                      确认时替代一条旧观察
+                      <select
+                        className="mt-1 w-full rounded border bg-background p-1"
+                        value={draft.supersedesId ?? ''}
+                        onChange={(event) =>
+                          setDraft({ ...draft, supersedesId: event.target.value || undefined })
+                        }
+                      >
+                        <option value="">保留现有观察</option>
+                        {replaceable.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
-                      disabled={busy || !draft.title.trim() || !draft.content.trim()}
+                      disabled={
+                        busy ||
+                        current?.status === 'superseded' ||
+                        !draft.title.trim() ||
+                        !draft.content.trim()
+                      }
                       onClick={() => void save()}
                     >
                       保存待审核
                     </Button>
                     <Button
                       size="sm"
-                      disabled={busy || !draft.title.trim() || !draft.content.trim()}
+                      disabled={
+                        busy ||
+                        current?.status === 'superseded' ||
+                        !draft.title.trim() ||
+                        !draft.content.trim()
+                      }
                       onClick={() => void save(true)}
                     >
                       确认并启用
@@ -467,22 +641,22 @@ export function MemoryCenter({
                           删除
                         </Button>
                       </div>
-                      {items.find((item) => item.id === draft.id)?.source && (
+                      {!derived && current?.source && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() =>
-                            void perform(() =>
-                              onOpenHistory(items.find((item) => item.id === draft.id)!.source)
-                            )
-                          }
+                          onClick={() => void perform(() => onOpenHistory(current.source))}
                         >
                           打开来源会话
                         </Button>
                       )}
                       <p className="text-muted-foreground">知识关联</p>
                       {(snapshot?.relations ?? [])
-                        .filter((edge) => edge.source === draft.id || edge.target === draft.id)
+                        .filter(
+                          (edge) =>
+                            edge.relation !== 'supports-reflection' &&
+                            (edge.source === draft.id || edge.target === draft.id)
+                        )
                         .map((edge) => (
                           <div
                             key={`${edge.source}:${edge.target}:${edge.relation}`}

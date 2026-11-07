@@ -1,0 +1,552 @@
+
+> moxun@1.0.12 ci
+> npm run lint && npm run test && npm run build
+
+
+> moxun@1.0.12 lint
+> eslint --cache .
+
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/agent/ipc.ts
+  147:1  warning  Delete `⏎`  prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/agent/multimodal.test.ts
+  140:17  warning  Insert `⏎······`                                                                                                                                                                                                  prettier/prettier
+  141:1   warning  Insert `··`                                                                                                                                                                                                       prettier/prettier
+  153:14  warning  Replace `.map((n)·=>·`${String(n).padStart(10,·'0')}·00000·n·`).join('\n')⏎····` with `⏎····.map((n)·=>·`${String(n).padStart(10,·'0')}·00000·n·`)⏎····.join('\n')`                                               prettier/prettier
+  163:91  warning  Replace `'No·text·layer'` with `⏎····'No·text·layer'⏎··`                                                                                                                                                          prettier/prettier
+  171:10  warning  Replace `(await·reader.read({·path:·pages.path,·cursor:·page.nextCursor,·limit:·1·})).lines[0]?.line` with `⏎····(await·reader.read({·path:·pages.path,·cursor:·page.nextCursor,·limit:·1·})).lines[0]?.line⏎··`  prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/agent/turn-queue.test.ts
+  7:11  warning  Replace `"CREATE·TABLE·conversations(conversation_id·TEXT·PRIMARY·KEY);·INSERT·INTO·conversations·VALUES·('a'),('b'),('chat')"` with `⏎····"CREATE·TABLE·conversations(conversation_id·TEXT·PRIMARY·KEY);·INSERT·INTO·conversations·VALUES·('a'),('b'),('chat')"⏎··`  prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/code-intelligence/service.test.ts
+  128:19  warning  Replace `join(root,·'medium.ts'),·'export·function·mediumSymbol()·{}\n'·+·('//·'·+·'padding·'.repeat(20)·+·'\n').repeat(3500)` with `⏎····join(root,·'medium.ts'),⏎····'export·function·mediumSymbol()·{}\n'·+·('//·'·+·'padding·'.repeat(20)·+·'\n').repeat(3500)⏎··`  prettier/prettier
+  131:45  warning  Replace `·'file-too-large':·1,·sensitive:·1,·symlink:·1,·unsupported:·1` with `⏎····'file-too-large':·1,⏎····sensitive:·1,⏎····symlink:·1,⏎····unsupported:·1⏎·`                                                                                                        prettier/prettier
+  132:52  warning  Replace `expect.objectContaining({·path:·'huge.ts',·reason:·'file-too-large'·})` with `⏎····expect.objectContaining({·path:·'huge.ts',·reason:·'file-too-large'·})⏎··`                                                                                                  prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/local-document-performance.test.ts
+  14:48  warning  Replace `'benchmarks·large·documents·and·incremental·code·index',` with `⏎··'benchmarks·large·documents·and·incremental·code·index',⏎·`                                                                                                                                                                                                                                                           prettier/prettier
+  15:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  16:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  17:1   warning  Replace `··` with `····`                                                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+  18:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  19:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  20:3   warning  Replace `const·rss·=·setInterval(()·=>·{·peak·=·Math.max(peak,·process.memoryUsage.rss())` with `··const·rss·=·setInterval(()·=>·{⏎······peak·=·Math.max(peak,·process.memoryUsage.rss())⏎···`                                                                                                                                                                                                    prettier/prettier
+  21:1   warning  Replace `··` with `····`                                                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+  22:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  23:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  24:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  25:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  26:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  27:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  28:1   warning  Replace `······` with `········`                                                                                                                                                                                                                                                                                                                                                                  prettier/prettier
+  29:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  30:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  31:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  32:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  33:1   warning  Replace `········` with `··········`                                                                                                                                                                                                                                                                                                                                                              prettier/prettier
+  34:7   warning  Replace `}·finally·{·await·file.close()` with `··}·finally·{⏎··········await·file.close()⏎·······`                                                                                                                                                                                                                                                                                                prettier/prettier
+  35:1   warning  Replace `······` with `········`                                                                                                                                                                                                                                                                                                                                                                  prettier/prettier
+  36:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  37:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  38:9   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  39:1   warning  Replace `········const·page·=·await·reader.read({·path,·byteOffset:·Math.floor(size·*·MiB·/·2·/·width)·*·width,·limit:·120` with `··········const·page·=·await·reader.read({⏎············path,⏎············byteOffset:·Math.floor((size·*·MiB)·/·2·/·width)·*·width,⏎············limit:·120⏎·········`                                                                                            prettier/prettier
+  40:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  41:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  42:9   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  43:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  44:9   warning  Replace `expect((await·reader.read({·path,·operation:·'tail',·limit:·2·})).lines.at(-1)?.text` with `··expect(⏎············(await·reader.read({·path,·operation:·'tail',·limit:·2·})).lines.at(-1)?.text⏎··········`                                                                                                                                                                              prettier/prettier
+  45:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  46:9   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  47:1   warning  Replace `········let·result·=·await·reader.read({·path,·operation:·'search',·query:·'unique-needle-final'` with `··········let·result·=·await·reader.read({⏎············path,⏎············operation:·'search',⏎············query:·'unique-needle-final'⏎·········`                                                                                                                                prettier/prettier
+  48:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  49:11  warning  Replace `result·=·await·reader.read({·path,·operation:·'search',·query:·'unique-needle-final',·cursor:·result.nextCursor` with `··result·=·await·reader.read({⏎··············path,⏎··············operation:·'search',⏎··············query:·'unique-needle-final',⏎··············cursor:·result.nextCursor⏎···········`                                                                            prettier/prettier
+  50:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  51:9   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  52:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  53:1   warning  Replace `······` with `········`                                                                                                                                                                                                                                                                                                                                                                  prettier/prettier
+  54:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  55:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  56:9   warning  Replace `measurements:·Object.fromEntries(Object.entries(measurements).map(([name,·values])·=>` with `··measurements:·Object.fromEntries(⏎············Object.entries(measurements).map(([name,·values])·=>·[`                                                                                                                                                                                     prettier/prettier
+  57:1   warning  Replace `··········[name,·{·p50:·percentile(values,·0.5),·p95:·percentile(values,·0.95)·}])` with `··············name,⏎··············{·p50:·percentile(values,·0.5),·p95:·percentile(values,·0.95)·}⏎············])⏎··········`                                                                                                                                                                   prettier/prettier
+  58:1   warning  Replace `········outputBytes,` with `··········outputBytes,⏎·········`                                                                                                                                                                                                                                                                                                                            prettier/prettier
+  59:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  60:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  61:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  62:1   warning  Replace `····` with `······`                                                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  63:1   warning  Replace `····await·Promise.all(` with `······await·Promise.all(⏎········`                                                                                                                                                                                                                                                                                                                         prettier/prettier
+  64:7   warning  Replace `writeFile(join(code,·`mod-${i}.ts`),·Array.from({·length:·12·},·(_,·n)·=>⏎········`export·function·fixture${i}_${n}()·{·return·${n}·}\n`).join('')` with `····writeFile(⏎············join(code,·`mod-${i}.ts`),⏎············Array.from(⏎··············{·length:·12·},⏎··············(_,·n)·=>·`export·function·fixture${i}_${n}()·{·return·${n}·}\n`⏎············).join('')⏎··········`  prettier/prettier
+  66:1   warning  Replace `····)` with `········)⏎······`                                                                                                                                                                                                                                                                                                                                                           prettier/prettier
+  67:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  68:1   warning  Replace `····` with `······`                                                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  69:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  70:1   warning  Replace `····` with `······`                                                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  71:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  72:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  73:7   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  74:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  75:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  76:1   warning  Replace `······codeFiles:·150,·firstIndexStatus:·full,·incrementalIndexStatus:·incremental,·firstIndexMs:·full.elapsedMs,` with `········codeFiles:·150,⏎········firstIndexStatus:·full,⏎········incrementalIndexStatus:·incremental,⏎········firstIndexMs:·full.elapsedMs,⏎·······`                                                                                                              prettier/prettier
+  77:1   warning  Replace `······` with `········`                                                                                                                                                                                                                                                                                                                                                                  prettier/prettier
+  78:7   warning  Replace `peakRssMiB:·Math.round(peak·/·MiB),` with `··peakRssMiB:·Math.round(peak·/·MiB),⏎·······`                                                                                                                                                                                                                                                                                                prettier/prettier
+  79:1   warning  Replace `······eventLoopDelayP95Ms:·Number((delay.percentile(95)·/·1e6).toFixed(2)),` with `········eventLoopDelayP95Ms:·Number((delay.percentile(95)·/·1e6).toFixed(2)),⏎·······`                                                                                                                                                                                                                prettier/prettier
+  80:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  81:1   warning  Replace `····` with `······`                                                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  82:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  83:1   warning  Replace `····` with `······`                                                                                                                                                                                                                                                                                                                                                                      prettier/prettier
+  84:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  85:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  86:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  87:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  88:5   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  89:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  90:1   warning  Replace `},·120000` with `··},⏎··120000⏎`                                                                                                                                                                                                                                                                                                                                                         prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/local-document-reader.test.ts
+   47:35  warning  Replace `·path,·operation:·'search',·query:·'NEEDLE',·cursor:·first.nextCursor` with `⏎····path,⏎····operation:·'search',⏎····query:·'NEEDLE',⏎····cursor:·first.nextCursor⏎·`                                                                                                                                                                      prettier/prettier
+   54:19  warning  Replace `path,·Buffer.concat([Buffer.from('ordinary\n'.repeat(14_000)),·Buffer.from([0xc3,·0x28,·10])])` with `⏎····path,⏎····Buffer.concat([Buffer.from('ordinary\n'.repeat(14_000)),·Buffer.from([0xc3,·0x28,·10])])⏎··`                                                                                                                          prettier/prettier
+   59:10  warning  Replace `(await·reader.read({·path,·operation:·'search',·query:·'needle'·})).lines[0]` with `⏎····(await·reader.read({·path,·operation:·'search',·query:·'needle'·})).lines[0]⏎··`                                                                                                                                                                  prettier/prettier
+  112:96  warning  Replace `/cursor/` with `⏎····/cursor/⏎··`                                                                                                                                                                                                                                                                                                          prettier/prettier
+  178:14  warning  Insert `⏎···`                                                                                                                                                                                                                                                                                                                                       prettier/prettier
+  179:28  warning  Replace `'-c',·'import·sys,zipfile;·z=zipfile.ZipFile(sys.argv[1],"w",zipfile.ZIP_DEFLATED);·z.writestr("word/document.xml",sys.argv[2]);·z.close()',·path,·xml` with `⏎····'-c',⏎····'import·sys,zipfile;·z=zipfile.ZipFile(sys.argv[1],"w",zipfile.ZIP_DEFLATED);·z.writestr("word/document.xml",sys.argv[2]);·z.close()',⏎····path,⏎····xml⏎··`  prettier/prettier
+  194:28  warning  Replace `'-c',` with `⏎····'-c',⏎···`                                                                                                                                                                                                                                                                                                               prettier/prettier
+  202:3   warning  Replace `·path` with `⏎····path⏎··`                                                                                                                                                                                                                                                                                                                 prettier/prettier
+  220:90  warning  Replace `'last·unique-target'` with `⏎····'last·unique-target'⏎··`                                                                                                                                                                                                                                                                                  prettier/prettier
+  221:10  warning  Replace `(await·reader.read({·path,·operation:·'search',·query:·'unique-target'·})).lines[0]?.text` with `⏎····(await·reader.read({·path,·operation:·'search',·query:·'unique-target'·})).lines[0]?.text⏎··`                                                                                                                                        prettier/prettier
+  251:10  warning  Replace `(await·reader.read({·path,·query:·'^publ[ia]c$',·queryMode:·'regex'·})).lines` with `⏎····(await·reader.read({·path,·query:·'^publ[ia]c$',·queryMode:·'regex'·})).lines⏎··`                                                                                                                                                                prettier/prettier
+  259:28  warning  Replace `'-c',` with `⏎····'-c',⏎···`                                                                                                                                                                                                                                                                                                               prettier/prettier
+  268:3   warning  Replace `·path,·bomb` with `⏎····path,⏎····bomb⏎··`                                                                                                                                                                                                                                                                                                 prettier/prettier
+  272:97  warning  Replace `'fixture·two'` with `⏎····'fixture·two'⏎··`                                                                                                                                                                                                                                                                                                prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/macos-application-icon.test.ts
+   3:29  warning  Replace `·app:·{·get·isPackaged()·{·return·fixture.packaged·}·}·` with `⏎··app:·{⏎····get·isPackaged()·{⏎······return·fixture.packaged⏎····}⏎··}⏎`                                                                                                                                                                                                                                                                                                          prettier/prettier
+  12:42  warning  Replace `'registers·only·the·current·bundle·using·an·argv·boundary·and·a·bounded·timeout',` with `⏎··'registers·only·the·current·bundle·using·an·argv·boundary·and·a·bounded·timeout',⏎·`                                                                                                                                                                                                                                                                   prettier/prettier
+  13:1   warning  Replace `··Object.defineProperty(process,·'execPath',·{·...executable,·value:·'/Applications/墨巡·fixture.app/Contents/MacOS/墨巡'` with `····Object.defineProperty(process,·'execPath',·{⏎······...executable,⏎······value:·'/Applications/墨巡·fixture.app/Contents/MacOS/墨巡'⏎···`                                                                                                                                                                              prettier/prettier
+  14:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                                                                                 prettier/prettier
+  15:1   warning  Replace `··` with `····`                                                                                                                                                                                                                                                                                                                                                                                                                                    prettier/prettier
+  16:1   warning  Replace `··expect(fixture.exec).toHaveBeenCalledWith(expect.stringContaining('/LaunchServices.framework/Support/lsregister'),·['-f',·'/Applications/墨巡·fixture.app'],·{·timeout:·5000·},·expect.any(Function)` with `····expect(fixture.exec).toHaveBeenCalledWith(⏎······expect.stringContaining('/LaunchServices.framework/Support/lsregister'),⏎······['-f',·'/Applications/墨巡·fixture.app'],⏎······{·timeout:·5000·},⏎······expect.any(Function)⏎····`  prettier/prettier
+  17:1   warning  Replace `}` with `··}⏎`                                                                                                                                                                                                                                                                                                                                                                                                                                     prettier/prettier
+  26:42  warning  Replace `'a·registration·error·leaves·startup·available',` with `⏎··'a·registration·error·leaves·startup·available',⏎·`                                                                                                                                                                                                                                                                                                                                     prettier/prettier
+  27:1   warning  Replace `··Object.defineProperty(process,·'execPath',·{·...executable,·value:·'/Applications/墨巡.app/Contents/MacOS/墨巡'` with `····Object.defineProperty(process,·'execPath',·{⏎······...executable,⏎······value:·'/Applications/墨巡.app/Contents/MacOS/墨巡'⏎···`                                                                                                                                                                                              prettier/prettier
+  28:1   warning  Replace `··fixture.exec.mockImplementation((_command,·_args,·_options,·callback)·=>·callback(Error('unavailable'))` with `····fixture.exec.mockImplementation((_command,·_args,·_options,·callback)·=>⏎······callback(Error('unavailable'))⏎····`                                                                                                                                                                                                           prettier/prettier
+  29:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                                                                                                                 prettier/prettier
+  30:3   warning  Replace `try·{·await·expect(refreshMacApplicationRegistration()).resolves.toBeUndefined()·}·finally·{·warning.mockRestore()` with `··try·{⏎······await·expect(refreshMacApplicationRegistration()).resolves.toBeUndefined()⏎····}·finally·{⏎······warning.mockRestore()⏎···`                                                                                                                                                                                prettier/prettier
+  31:1   warning  Replace `}` with `··}⏎`                                                                                                                                                                                                                                                                                                                                                                                                                                     prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/moxun-data-migration.test.ts
+   1:9   warning  Replace `·closeSync,·existsSync,·mkdirSync,·mkdtempSync,·openSync,·readFileSync,·rmSync,·symlinkSync,·writeFileSync·` with `⏎··closeSync,⏎··existsSync,⏎··mkdirSync,⏎··mkdtempSync,⏎··openSync,⏎··readFileSync,⏎··rmSync,⏎··symlinkSync,⏎··writeFileSync⏎`                                                                                                           prettier/prettier
+  41:66  warning  Replace `'{"apiKey":"synthetic-encrypted-fixture"}'` with `⏎····'{"apiKey":"synthetic-encrypted-fixture"}'⏎··`                                                                                                                                                                                                                                                       prettier/prettier
+  44:8   warning  Replace `·expect(moved.prepare('SELECT·title·FROM·conversations').get()).toEqual({·title:·'fixture'·})·}·finally·{·moved.close()` with `⏎····expect(moved.prepare('SELECT·title·FROM·conversations').get()).toEqual({·title:·'fixture'·})⏎··}·finally·{⏎····moved.close()⏎·`                                                                                         prettier/prettier
+  52:30  warning  Replace `[source,'legacy-data'],[target,'existing-data'],[oldProfile,'legacy-profile'],[newProfile,'existing-profile']])·writeFileSync(join(dir,'fixture'),` with `⏎····[source,·'legacy-data'],⏎····[target,·'existing-data'],⏎····[oldProfile,·'legacy-profile'],⏎····[newProfile,·'existing-profile']⏎··])⏎····writeFileSync(join(dir,·'fixture'),·`              prettier/prettier
+  54:30  warning  Replace `[source,'legacy-data'],[target,'existing-data'],[oldProfile,'legacy-profile'],[newProfile,'existing-profile']])·expect(readFileSync(join(dir,'fixture'),` with `⏎····[source,·'legacy-data'],⏎····[target,·'existing-data'],⏎····[oldProfile,·'legacy-profile'],⏎····[newProfile,·'existing-profile']⏎··])⏎····expect(readFileSync(join(dir,·'fixture'),·`  prettier/prettier
+  57:42  warning  Replace `'does·not·move·either·tree·while·the·old·database·is·open',` with `⏎··'does·not·move·either·tree·while·the·old·database·is·open',⏎·`                                                                                                                                                                                                                        prettier/prettier
+  58:1   warning  Replace `··const·db·=·join(source,` with `····const·db·=·join(source,·`                                                                                                                                                                                                                                                                                              prettier/prettier
+  59:1   warning  Replace `··writeFileSync(db,` with `····writeFileSync(db,·`                                                                                                                                                                                                                                                                                                          prettier/prettier
+  60:1   warning  Replace `··const·handle·=·openSync(db,` with `····const·handle·=·openSync(db,·`                                                                                                                                                                                                                                                                                      prettier/prettier
+  61:3   warning  Replace `try·{·expect(()·=>·migrate()).toThrow(/仍在使用数据/)·}·finally·{·closeSync(handle)` with `··try·{⏎······expect(()·=>·migrate()).toThrow(/仍在使用数据/)⏎····}·finally·{⏎······closeSync(handle)⏎···`                                                                                                                                                                   prettier/prettier
+  62:1   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+  63:1   warning  Replace `··` with `····`                                                                                                                                                                                                                                                                                                                                             prettier/prettier
+  64:3   warning  Insert `··`                                                                                                                                                                                                                                                                                                                                                          prettier/prettier
+  65:1   warning  Replace `··` with `····`                                                                                                                                                                                                                                                                                                                                             prettier/prettier
+  66:1   warning  Replace `}` with `··}⏎`                                                                                                                                                                                                                                                                                                                                              prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/sqlite/conversations.test.ts
+  36:14  warning  Replace `db.prepare("SELECT·tab_id·FROM·session_tabs·WHERE·tab_id='batch-first'").get())` with `⏎········db.prepare("SELECT·tab_id·FROM·session_tabs·WHERE·tab_id='batch-first'").get()`                                                            prettier/prettier
+  37:7   warning  Replace `··` with `)`                                                                                                                                                                                                                               prettier/prettier
+  38:14  warning  Replace `db.prepare("SELECT·conversation_id·FROM·conversations·WHERE·conversation_id='batch-first'").get()` with `⏎········db⏎··········.prepare("SELECT·conversation_id·FROM·conversations·WHERE·conversation_id='batch-first'")⏎··········.get(`  prettier/prettier
+  39:7   warning  Replace `··` with `)`                                                                                                                                                                                                                               prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/sqlite/project-association.test.ts
+  19:63   warning  Replace `·projectId:·undefined,·since:·expect.any(String)` with `⏎····projectId:·undefined,⏎····since:·expect.any(String)⏎·`  prettier/prettier
+  21:101  warning  Replace `'keep·history'` with `⏎····'keep·history'⏎··`                                                                        prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/terminal/external/electron-proactive.test.ts
+  16:26  warning  Replace `·String.raw`preexec()·{·printf·'\033]133;C\a';·};·precmd()·{·printf·'\033]133;D\a\033]133;A\a';·};·PS1=$'ops@fixture-host:~$·%{\e]133;B\a%}';·printf·'monitoring·prometheus-%s·2/2·Running\n'·'0'`·+` with `⏎······String.raw`preexec()·{·printf·'\033]133;C\a';·};·precmd()·{·printf·'\033]133;D\a\033]133;A\a';·};·PS1=$'ops@fixture-host:~$·%{\e]133;B\a%}';·printf·'monitoring·prometheus-%s·2/2·Running\n'·'0'`·+⏎·····`  prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/terminal/external/live-iterm.test.ts
+   92:36  warning  Replace `['native-exit-zero',·';0'],·['native-exit-nonzero',·';7'],·['native-exit-missing',·'']` with `⏎········['native-exit-zero',·';0'],⏎········['native-exit-nonzero',·';7'],⏎········['native-exit-missing',·'']⏎······`                        prettier/prettier
+   93:29  warning  Replace `externalId,·`printf·'\\033]133;C\\a';·printf·'%s\\n'·'${label}';·printf·'\\033]133;D${exit}\\a'\r`` with `⏎··········externalId,⏎··········`printf·'\\033]133;C\\a';·printf·'%s\\n'·'${label}';·printf·'\\033]133;D${exit}\\a'\r`⏎········`  prettier/prettier
+   95:24  warning  Insert `⏎········`                                                                                                                                                                                                                                    prettier/prettier
+   96:1   warning  Replace `········const·actual·=·lifecycle.evidence()` with `··········const·actual·=·lifecycle⏎············.evidence()⏎············`                                                                                                                  prettier/prettier
+   97:1   warning  Insert `··`                                                                                                                                                                                                                                           prettier/prettier
+   98:11  warning  Replace `['completed',·0],·['failed',·7],` with `··['completed',·0],⏎············['failed',·7],⏎···········`                                                                                                                                          prettier/prettier
+   99:1   warning  Replace `········` with `··········`                                                                                                                                                                                                                  prettier/prettier
+  100:7   warning  Replace `},·{·timeout:·5000·}` with `··},⏎········{·timeout:·5000·}⏎······`                                                                                                                                                                           prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/main/terminal/observer/terminal-observer.test.ts
+  233:12  warning  Replace `events.map((item)·=>·[item.status,·item.exitCode,·item.groupState,·item.command])` with `⏎······events.map((item)·=>·[item.status,·item.exitCode,·item.groupState,·item.command])⏎····`                                              prettier/prettier
+  252:12  warning  Replace `events.every(({·groupState,·command·})·=>·groupState·===·'incomplete'·&&·command·===·undefined)` with `⏎······events.every(⏎········({·groupState,·command·})·=>·groupState·===·'incomplete'·&&·command·===·undefined⏎······)⏎····`  prettier/prettier
+  264:34  warning  Replace `·boundary:·'osc633',` with `⏎······boundary:·'osc633',⏎·····`                                                                                                                                                                        prettier/prettier
+  278:32  warning  Replace `·source:·'user-confirmation',` with `⏎····source:·'user-confirmation',⏎···`                                                                                                                                                          prettier/prettier
+
+/Users/xusong.yu/Desktop/moxun-test/src/renderer/src/hooks/useAgentController.test.ts
+    7:16  warning  Replace `·cancel:·vi.fn(),·enqueueTurn:·vi.fn(),·listTurns:·vi.fn<()·=>·Promise<[]>>(async·()·=>·[]),·claimTurn:·vi.fn(),·releaseTurn:·vi.fn(async·()·=>·{}),` with `⏎··cancel:·vi.fn(),⏎··enqueueTurn:·vi.fn(),⏎··listTurns:·vi.fn<()·=>·Promise<[]>>(async·()·=>·[]),⏎··claimTurn:·vi.fn(),⏎··releaseTurn:·vi.fn(async·()·=>·{}),⏎·`  prettier/prettier
+  100:10  warning  Insert `⏎····`                                                                                                                                                                                                                                                                                                                          prettier/prettier
+  116:73  warning  Replace `'first',·'second',·'third',·'fourth'` with `⏎····'first',⏎····'second',⏎····'third',⏎····'fourth'⏎··`                                                                                                                                                                                                                          prettier/prettier
+
+✖ 150 problems (0 errors, 150 warnings)
+  0 errors and 150 warnings potentially fixable with the `--fix` option.
+
+
+> moxun@1.0.12 test
+> node scripts/check-security-boundaries.cjs && node --test scripts/verify-managed-terminal.cjs
+
+Security boundary policy: 580 checks passed.
+Vitest suites are local-only. CI also runs the managed command protocol tests.
+✔ matches session/generation, command, nonce, exit status, and next prompt (11.101032ms)
+✔ rejection, invalid grammar, visibility change, and expiry send no bytes (2.16804ms)
+✔ start-marker timeout and user takeover keep ambiguous commands locked (1.897521ms)
+✔ soft timeout leaves the running command locked and can accept a later result (1.513964ms)
+✔ wait and query follow the original ID after soft timeout (2.851919ms)
+✔ aborting a wait does not alter the original command or send bytes (1.047572ms)
+✔ cancel is idempotent and requires matching completion and prompt evidence (1.608627ms)
+✔ an unavailable journal prevents dispatch (0.485223ms)
+✔ SSH probe requires an exact nonce, shell identity and a subsequent ready prompt (0.937213ms)
+✔ SQLite keeps command identity and reconciles an unfinished command after restart (19.464222ms)
+✔ exit 127 requires correlated end and rejects a duplicate success frame (0.887489ms)
+✔ never discloses a private key split across lines or output chunks (4.531968ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 258.968218
+
+> moxun@1.0.12 build
+> npm run typecheck && electron-vite build
+
+
+> moxun@1.0.12 typecheck
+> npm run typecheck:node && npm run typecheck:web
+
+
+> moxun@1.0.12 typecheck:node
+> tsc --noEmit -p tsconfig.node.json --composite false
+
+
+> moxun@1.0.12 typecheck:web
+> tsc --noEmit -p tsconfig.web.json --composite false
+
+vite v7.3.6 building ssr environment for production...
+transforming...
+✓ 577 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/xusong.yu/Desktop/moxun-test/src/main/crescent-sqlite.ts is dynamically imported by /Users/xusong.yu/Desktop/moxun-test/src/main/index.ts but also statically imported by /Users/xusong.yu/Desktop/moxun-test/src/main/agent/compaction-checkpoint.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/context-assembly.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/guided-ops.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/ipc.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/pi-host.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/pi-knowledge.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/agent/turn-queue-ipc.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/connections/ipc.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/crescent-store.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/memory/auto-learning.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/memory/extraction.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/memory/service.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/projects.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/renderer-recovery.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/sqlite/guided-ops-repository.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/storage/ipc.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/terminal/ipc.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/terminal/managed/window.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) /Users/xusong.yu/Desktop/moxun-test/src/main/connections/ipc.ts is dynamically imported by /Users/xusong.yu/Desktop/moxun-test/src/main/index.ts but also statically imported by /Users/xusong.yu/Desktop/moxun-test/src/main/agent/pi-open-subterminal.ts, /Users/xusong.yu/Desktop/moxun-test/src/main/terminal/ipc.ts, dynamic import will not move module into another chunk.
+
+out/main/safe-ipc-send-Dw6zjdk2.js         0.34 kB
+out/main/code-index-worker.js              0.42 kB
+out/main/ipc-DL8fwM-g.js                   1.06 kB
+out/main/secret-redaction-D70jFqbO.js      1.77 kB
+out/main/crescent-paths-B-mtfkbs.js        1.89 kB
+out/main/attachment-cleanup-v1Q_MhwB.js    2.02 kB
+out/main/utility-parser-w-oASwRl.js        2.43 kB
+out/main/ipc-security-BeB1cfSI.js          3.98 kB
+out/main/parser-DB3V9yFi.js                4.54 kB
+out/main/renderer-secrets-dXBf_X0e.js      5.06 kB
+out/main/menu-x4OGipBk.js                  5.37 kB
+out/main/instruction-files-BhlQfHlR.js     7.07 kB
+out/main/ipc-DedqVPFG.js                  11.93 kB
+out/main/updater-CBj5vT73.js              14.87 kB
+out/main/ipc-DI8RDIWm.js                 130.47 kB
+out/main/pi-host-CM6Wfxra.js             186.46 kB
+out/main/index.js                        583.53 kB
+✓ built in 1.91s
+vite v7.3.6 building ssr environment for production...
+transforming...
+✓ 13 modules transformed.
+rendering chunks...
+out/preload/terminal.js   1.46 kB
+out/preload/index.js     22.82 kB
+✓ built in 54ms
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 4616 modules transformed.
+rendering chunks...
+../../out/renderer/index.html                                            1.20 kB
+../../out/renderer/terminal.html                                         1.21 kB
+../../out/renderer/assets/moxun-mark-CgTbnxe8.png                       20.57 kB
+../../out/renderer/assets/whale-idle-poster-CpYzN18g.png               120.38 kB
+../../out/renderer/assets/whale-pet-avatar-B6YVlzOE.png                138.64 kB
+../../out/renderer/assets/gravity_squash-DtY37nXB.webm                 215.05 kB
+../../out/renderer/assets/jump_scare-Bxwfup0a.webm                     282.77 kB
+../../out/renderer/assets/petting_a_cat-p2cz8Hsb.webm                  348.43 kB
+../../out/renderer/assets/whale_tail_slap-CGyWiblL.webm                352.21 kB
+../../out/renderer/assets/maid_curtsy-BIhqWAbq.webm                    365.71 kB
+../../out/renderer/assets/eating_qingtuan-dZr7vRZE.webm                377.52 kB
+../../out/renderer/assets/releasing_a_river_lantern-gDOe-0Na.webm      379.12 kB
+../../out/renderer/assets/coding-CHB9rYez.webm                         383.96 kB
+../../out/renderer/assets/tsundere_pout-BDxUtaoy.webm                  392.34 kB
+../../out/renderer/assets/big_stretch-OCm82B-V.webm                    396.99 kB
+../../out/renderer/assets/desk_tap-DeTLIkGo.webm                       403.03 kB
+../../out/renderer/assets/cheerful_wave-BfLFLJqt.webm                  421.67 kB
+../../out/renderer/assets/cute_little_ghost-D7oaIsX1.webm              421.99 kB
+../../out/renderer/assets/sleepy_yawn-CdsAcXtz.webm                    424.35 kB
+../../out/renderer/assets/ticklish_giggle-DpP5vt0A.webm                425.39 kB
+../../out/renderer/assets/morning_brushing-CeAPfZqU.webm               425.46 kB
+../../out/renderer/assets/looking_around-Do4pDyU0.webm                 427.01 kB
+../../out/renderer/assets/caught_snacking-BM-ytcrF.webm                432.20 kB
+../../out/renderer/assets/quick_nap-Dq2RCThs.webm                      433.77 kB
+../../out/renderer/assets/eating_tangyuan-ChuVuz3M.webm                437.15 kB
+../../out/renderer/assets/breathing-aaxvZQyt.webm                      441.44 kB
+../../out/renderer/assets/eating_breakfast-DNWICxEA.webm               441.48 kB
+../../out/renderer/assets/solving_a_rubiks_cube-DZ8C6X63.webm          442.95 kB
+../../out/renderer/assets/eating_zongzi-Bh4Bf2A3.webm                  446.27 kB
+../../out/renderer/assets/taking_notes-BdbvLFnC.webm                   447.73 kB
+../../out/renderer/assets/eating_rice_cake-BlZlqc6G.webm               451.26 kB
+../../out/renderer/assets/whale_bubbles-DxjMGzPk.webm                  452.10 kB
+../../out/renderer/assets/startled_awake-DlNR47el.webm                 454.03 kB
+../../out/renderer/assets/deep_thought-BVtPCVQb.webm                   458.03 kB
+../../out/renderer/assets/eating_rice-CNmSQPOR.webm                    459.59 kB
+../../out/renderer/assets/eating_laba_congee-Dsk5VRqs.webm             460.67 kB
+../../out/renderer/assets/card_magic-1F6M_I_X.webm                     462.00 kB
+../../out/renderer/assets/dragged_in_midair-BTHglTZS.webm              464.76 kB
+../../out/renderer/assets/turn_into_ball-CV_-kQ-c.webm                 465.93 kB
+../../out/renderer/assets/eating_hotpot-DTRDpDOn.webm                  466.55 kB
+../../out/renderer/assets/eating_chongyang_cake-BvcCSHsi.webm          468.95 kB
+../../out/renderer/assets/eating_candied_haw-DvIiFmgA.webm             469.81 kB
+../../out/renderer/assets/receiving_a_red_envelope-CP3FefdS.webm       472.28 kB
+../../out/renderer/assets/qixi_needlework-Cl4unmLF.webm                480.89 kB
+../../out/renderer/assets/blue_whale_appears-d7dQxJ9i.webm             482.90 kB
+../../out/renderer/assets/eating_watermelon-Cy8me05m.webm              482.92 kB
+../../out/renderer/assets/halloween_trick_or_treat-DxuVEDBa.webm       483.29 kB
+../../out/renderer/assets/chongyang_chrysanthemums-BpD7zS3P.webm       486.36 kB
+../../out/renderer/assets/eating_longevity_noodles-DP93kDvv.webm       489.04 kB
+../../out/renderer/assets/eating_lunch-DJXPP3vU.webm                   495.12 kB
+../../out/renderer/assets/writing_the_fu_character-D_5L5_U8.webm       500.31 kB
+../../out/renderer/assets/mirror_check-9zblvnGN.webm                   504.13 kB
+../../out/renderer/assets/playing_with_a_toy_car-B2jVIS7v.webm         505.11 kB
+../../out/renderer/assets/dove_magic-8UxhKFxR.webm                     509.46 kB
+../../out/renderer/assets/melting_ice_cream-6B7-vsbs.webm              509.82 kB
+../../out/renderer/assets/cooling_with_a_hand_fan-4-Sttjro.webm        510.02 kB
+../../out/renderer/assets/moon_festival-C6fsd45h.webm                  512.34 kB
+../../out/renderer/assets/playing_gomoku-D43IH-IU.webm                 514.70 kB
+../../out/renderer/assets/opening_a_gift-C-hL6Zvo.webm                 517.80 kB
+../../out/renderer/assets/building_a_snowman-gNbC7Ka1.webm             519.20 kB
+../../out/renderer/assets/spinning_a_top-Bvvbk8Jz.webm                 521.07 kB
+../../out/renderer/assets/water_gun_play-Ln03fS4j.webm                 523.35 kB
+../../out/renderer/assets/outfit_color_try_on-D-wT2s2f.webm            524.72 kB
+../../out/renderer/assets/gaming_rage-Bh_j9wxX.webm                    525.02 kB
+../../out/renderer/assets/kicking_a_shuttlecock-B8PeBg9e.webm          531.02 kB
+../../out/renderer/assets/happy_hop-B0nx0meu.webm                      538.11 kB
+../../out/renderer/assets/shy_surprise-CXliX8BN.webm                   538.28 kB
+../../out/renderer/assets/light_sway_dance-BQrVgo97.webm               542.93 kB
+../../out/renderer/assets/eating_hairy_crab-BqQwLJAT.webm              545.30 kB
+../../out/renderer/assets/three_ball_juggling-Dx2kin0_.webm            549.32 kB
+../../out/renderer/assets/eating_dumplings-CNtOB7JQ.webm               554.83 kB
+../../out/renderer/assets/eating_tokens-l9q8uSun.webm                  574.75 kB
+../../out/renderer/assets/cute_otaku_dance-CEZUt6pk.webm               576.31 kB
+../../out/renderer/assets/elegant_maid_dance-Cl6g0_yb.webm             578.92 kB
+../../out/renderer/assets/carefree_humming-DnkIdlOx.webm               584.01 kB
+../../out/renderer/assets/gentle_spin-Htjh2Lzk.webm                    585.72 kB
+../../out/renderer/assets/yeah_what_should_we_eat-Bd2EFQZT.webm        588.16 kB
+../../out/renderer/assets/floating_steps-C0JjIoxH.webm                 591.45 kB
+../../out/renderer/assets/releasing_a_sky_lantern-C2IuD_G0.webm        594.14 kB
+../../out/renderer/assets/crab_walk-BKnA1lRa.webm                      596.90 kB
+../../out/renderer/assets/playing_the_violin-C2djfCOl.webm             605.35 kB
+../../out/renderer/assets/running_trip-Br-HtV9F.webm                   614.53 kB
+../../out/renderer/assets/jump_and_smash-DFs6Y23e.webm                 619.28 kB
+../../out/renderer/assets/flower_conjuring-DdrZ9I7k.webm               620.25 kB
+../../out/renderer/assets/lion_dance-BBlMwHE2.webm                     632.11 kB
+../../out/renderer/assets/playground_swing-YxwJFhUH.webm               644.13 kB
+../../out/renderer/assets/rocking_horse-mmEVJNlI.webm                  697.58 kB
+../../out/renderer/assets/eating_dinner-Mj52omoR.webm                  741.97 kB
+../../out/renderer/assets/inflating_a_balloon-CvPG37xE.webm            751.04 kB
+../../out/renderer/assets/buried_in_autumn_leaves-C9nzLxQM.webm        766.83 kB
+../../out/renderer/assets/playing_the_flute-B6ws6j9e.webm              768.35 kB
+../../out/renderer/assets/flying_a_kite-Ch8lWhye.webm                  770.13 kB
+../../out/renderer/assets/eating_snacks-BWDxxsOr.webm                  807.00 kB
+../../out/renderer/assets/decorating_a_christmas_tree-B6lLt1UH.webm    818.46 kB
+../../out/renderer/assets/butterflies_and_blossoms-CgKXmWs9.webm       852.83 kB
+../../out/renderer/assets/attentive_listening-TnUD9PBT.webm            854.92 kB
+../../out/renderer/assets/arrival_wave-C1LEidZG.webm                   978.97 kB
+../../out/renderer/assets/animal_parade-LRz_La1Q.webm                  981.44 kB
+../../out/renderer/assets/target_point_run-D0jupEme.webm             1,240.79 kB
+../../out/renderer/assets/pdf.worker.min-CjEcRF4W.mjs                1,264.34 kB
+../../out/renderer/assets/setting_off_fireworks-CpTZGzQy.webm        1,330.46 kB
+../../out/renderer/assets/terminal-DdXYP-Y6.css                          4.38 kB
+../../out/renderer/assets/xyflow-vendor-BnuhLJ6X.css                    15.87 kB
+../../out/renderer/assets/index-BmEddLkF.css                           114.60 kB
+../../out/renderer/assets/coding-CYXr66B9.js                             0.09 kB
+../../out/renderer/assets/desk_tap-DxyRP3Jb.js                           0.09 kB
+../../out/renderer/assets/happy_hop-DEIAdBWi.js                          0.09 kB
+../../out/renderer/assets/quick_nap-D0kM29Ln.js                          0.09 kB
+../../out/renderer/assets/breathing-B2C9AThD.js                          0.09 kB
+../../out/renderer/assets/crab_walk-Du-JEEXm.js                          0.09 kB
+../../out/renderer/assets/lion_dance-99noayqS.js                         0.09 kB
+../../out/renderer/assets/jump_scare-CIalR5Gb.js                         0.09 kB
+../../out/renderer/assets/card_magic-Cmx-w8uB.js                         0.09 kB
+../../out/renderer/assets/dove_magic-CFm7AUf0.js                         0.09 kB
+../../out/renderer/assets/big_stretch-Gobag85c.js                        0.09 kB
+../../out/renderer/assets/gentle_spin-BBo4dms0.js                        0.09 kB
+../../out/renderer/assets/maid_curtsy-CeJP4KQa.js                        0.09 kB
+../../out/renderer/assets/sleepy_yawn-CmgStcCO.js                        0.09 kB
+../../out/renderer/assets/eating_rice-CExh-aC6.js                        0.09 kB
+../../out/renderer/assets/gaming_rage-Pm9BDiyZ.js                        0.09 kB
+../../out/renderer/assets/arrival_wave-Cjc2JkkK.js                       0.09 kB
+../../out/renderer/assets/shy_surprise-CO1bbiXB.js                       0.09 kB
+../../out/renderer/assets/mirror_check-CCRh6VPC.js                       0.09 kB
+../../out/renderer/assets/eating_lunch-uqtH78Nd.js                       0.09 kB
+../../out/renderer/assets/running_trip-DnH33Yd6.js                       0.09 kB
+../../out/renderer/assets/deep_thought-DQkD652H.js                       0.09 kB
+../../out/renderer/assets/taking_notes-XIY27JUR.js                       0.09 kB
+../../out/renderer/assets/cheerful_wave-BQL3uHsm.js                      0.09 kB
+../../out/renderer/assets/tsundere_pout-BDgYQvNU.js                      0.09 kB
+../../out/renderer/assets/eating_zongzi-DAo43-gp.js                      0.09 kB
+../../out/renderer/assets/moon_festival-x0xYhoqW.js                      0.09 kB
+../../out/renderer/assets/eating_dinner-CErts76U.js                      0.09 kB
+../../out/renderer/assets/eating_hotpot-CRoEV11C.js                      0.09 kB
+../../out/renderer/assets/eating_snacks-Bh_gmoiG.js                      0.09 kB
+../../out/renderer/assets/animal_parade-Cb3FUTiD.js                      0.09 kB
+../../out/renderer/assets/petting_a_cat-DfD1uxko.js                      0.09 kB
+../../out/renderer/assets/rocking_horse-C09rfVsi.js                      0.09 kB
+../../out/renderer/assets/eating_tokens-BtZVdwYF.js                      0.09 kB
+../../out/renderer/assets/flying_a_kite-soKFcfW3.js                      0.09 kB
+../../out/renderer/assets/whale_bubbles-DFSq4jwj.js                      0.09 kB
+../../out/renderer/assets/startled_awake-BfkzbKlM.js                     0.09 kB
+../../out/renderer/assets/turn_into_ball-CgpCJDPQ.js                     0.09 kB
+../../out/renderer/assets/opening_a_gift-B67rCd2B.js                     0.09 kB
+../../out/renderer/assets/gravity_squash-OZ1RvD-k.js                     0.09 kB
+../../out/renderer/assets/jump_and_smash-NOz0x7VF.js                     0.09 kB
+../../out/renderer/assets/playing_gomoku-DIw9Vnyw.js                     0.09 kB
+../../out/renderer/assets/spinning_a_top-Bfa2VvSF.js                     0.09 kB
+../../out/renderer/assets/water_gun_play-CKgavhE5.js                     0.09 kB
+../../out/renderer/assets/floating_steps-CE5ectPP.js                     0.09 kB
+../../out/renderer/assets/looking_around-DPpSmBO5.js                     0.09 kB
+../../out/renderer/assets/ticklish_giggle-DZp2OgKN.js                    0.10 kB
+../../out/renderer/assets/eating_qingtuan-CjEa0wWt.js                    0.10 kB
+../../out/renderer/assets/eating_tangyuan-BKuG1DaP.js                    0.10 kB
+../../out/renderer/assets/qixi_needlework-DQz-6DIh.js                    0.10 kB
+../../out/renderer/assets/caught_snacking-UEqgSfL0.js                    0.10 kB
+../../out/renderer/assets/whale_tail_slap-C3U71J83.js                    0.10 kB
+../../out/renderer/assets/morning_brushing-CVActHd0.js                   0.10 kB
+../../out/renderer/assets/eating_dumplings-C5m_4swh.js                   0.10 kB
+../../out/renderer/assets/eating_rice_cake-CtesJ3BB.js                   0.10 kB
+../../out/renderer/assets/eating_breakfast-BMhMpEGA.js                   0.10 kB
+../../out/renderer/assets/playground_swing-nokUGP6M.js                   0.10 kB
+../../out/renderer/assets/flower_conjuring-Ep1GsblW.js                   0.10 kB
+../../out/renderer/assets/target_point_run-CFHbxjz-.js                   0.10 kB
+../../out/renderer/assets/carefree_humming-D7IiBhMD.js                   0.10 kB
+../../out/renderer/assets/cute_otaku_dance-CDi-0CtP.js                   0.10 kB
+../../out/renderer/assets/light_sway_dance-D1tDZvCx.js                   0.10 kB
+../../out/renderer/assets/dragged_in_midair-HUKM2oLU.js                  0.10 kB
+../../out/renderer/assets/cute_little_ghost-CuE1wgTg.js                  0.10 kB
+../../out/renderer/assets/eating_hairy_crab-CUfBi2cX.js                  0.10 kB
+../../out/renderer/assets/eating_watermelon-D4vunuQt.js                  0.10 kB
+../../out/renderer/assets/melting_ice_cream-B611n8FC.js                  0.10 kB
+../../out/renderer/assets/playing_the_flute-BcDd5RTm.js                  0.10 kB
+../../out/renderer/assets/eating_laba_congee-CPJZLqGh.js                 0.10 kB
+../../out/renderer/assets/eating_candied_haw-D3xe7CDy.js                 0.10 kB
+../../out/renderer/assets/elegant_maid_dance-IfySlKhF.js                 0.10 kB
+../../out/renderer/assets/playing_the_violin-BO3unycL.js                 0.10 kB
+../../out/renderer/assets/building_a_snowman-DDQaEhYC.js                 0.10 kB
+../../out/renderer/assets/blue_whale_appears-ITN8JL8i.js                 0.10 kB
+../../out/renderer/assets/attentive_listening-pG3iiL42.js                0.10 kB
+../../out/renderer/assets/outfit_color_try_on-VGI_Daj7.js                0.10 kB
+../../out/renderer/assets/inflating_a_balloon-C-TMeiZv.js                0.10 kB
+../../out/renderer/assets/three_ball_juggling-DzQ5XCDj.js                0.10 kB
+../../out/renderer/assets/eating_chongyang_cake-Ddo7ckp1.js              0.10 kB
+../../out/renderer/assets/setting_off_fireworks-D90MDNjF.js              0.10 kB
+../../out/renderer/assets/kicking_a_shuttlecock-2CgNc0-J.js              0.10 kB
+../../out/renderer/assets/solving_a_rubiks_cube-o7nmPRIk.js              0.10 kB
+../../out/renderer/assets/playing_with_a_toy_car-KvyE-98n.js             0.10 kB
+../../out/renderer/assets/releasing_a_sky_lantern-CAYG2kXU.js            0.10 kB
+../../out/renderer/assets/yeah_what_should_we_eat-CEMu36pK.js            0.10 kB
+../../out/renderer/assets/buried_in_autumn_leaves-D-7B3Tr6.js            0.10 kB
+../../out/renderer/assets/cooling_with_a_hand_fan-RFG3_R0D.js            0.10 kB
+../../out/renderer/assets/chongyang_chrysanthemums-BqcOKper.js           0.10 kB
+../../out/renderer/assets/halloween_trick_or_treat-D00pN78z.js           0.10 kB
+../../out/renderer/assets/receiving_a_red_envelope-ixgBmeGp.js           0.10 kB
+../../out/renderer/assets/writing_the_fu_character-CKsWfQOi.js           0.10 kB
+../../out/renderer/assets/eating_longevity_noodles-CMqZK2op.js           0.10 kB
+../../out/renderer/assets/butterflies_and_blossoms-CyODkd8p.js           0.10 kB
+../../out/renderer/assets/releasing_a_river_lantern-BSqrHUWT.js          0.11 kB
+../../out/renderer/assets/decorating_a_christmas_tree-Dj-qlAer.js        0.11 kB
+../../out/renderer/assets/channel-B7-BGm59.js                            0.11 kB
+../../out/renderer/assets/chunk-2Q5K7J3B-AaCS09ba.js                     0.20 kB
+../../out/renderer/assets/chunk-JWPE2WC7-Bg7MOSr2.js                     0.23 kB
+../../out/renderer/assets/chunk-XXDRQBXY-D2cO8-8f.js                     0.27 kB
+../../out/renderer/assets/chunk-5VM5RSS4-BRUoNcLG.js                     0.37 kB
+../../out/renderer/assets/chunk-POPQ4Y6H-pWzjWsdw.js                     0.51 kB
+../../out/renderer/assets/stateDiagram-v2-MP3YSRHH-ByiCy8_u.js           0.63 kB
+../../out/renderer/assets/classDiagram-ZZMXUADV-aHawDSgs.js              0.67 kB
+../../out/renderer/assets/classDiagram-v2-VYDZK3BY-aHawDSgs.js           0.67 kB
+../../out/renderer/assets/swimlanesDiagram-VR7AAH4N-DzfzhjKx.js          0.75 kB
+../../out/renderer/assets/infoDiagram-27XIBGKW-BfEuobwl.js               0.79 kB
+../../out/renderer/assets/sizeCapture-INFHLROL-CpaPz2td.js               1.14 kB
+../../out/renderer/assets/index-DSisZwYk.js                              1.60 kB
+../../out/renderer/assets/railroadDiagram-O6MQD6OU-BlX46dd4.js           1.80 kB
+../../out/renderer/assets/chunk-F27PBJKO-DJDuPKDX.js                     1.91 kB
+../../out/renderer/assets/abnfDiagram-VCTEODGH-C31CO_ON.js               2.01 kB
+../../out/renderer/assets/pegDiagram-XKGWAZYB-kq_RmsWE.js                2.16 kB
+../../out/renderer/assets/ebnfDiagram-PWID7BFC-D96WKntF.js               2.21 kB
+../../out/renderer/assets/diagram-Z3DM3KII-DDgpkhA5.js                   4.42 kB
+../../out/renderer/assets/HistoryPanel-NLuaiZNf.js                       4.77 kB
+../../out/renderer/assets/LocalDocumentsSheet-fc10uviJ.js                4.99 kB
+../../out/renderer/assets/pieDiagram-E7YTZNPT-ClNIcc8J.js                5.26 kB
+../../out/renderer/assets/diagram-UQ7AKVKN-D21d3I2q.js                   6.28 kB
+../../out/renderer/assets/diagram-S7CK7UJ4-D3P6Y7sH.js                   8.42 kB
+../../out/renderer/assets/WikiSheet-o1_Q9Fbu.js                          8.93 kB
+../../out/renderer/assets/cynefinDiagram-5FMLGOSQ-CD9dNTYS.js           10.30 kB
+../../out/renderer/assets/stateDiagram-D77RDMKH-Bjz0Aa-5.js             10.57 kB
+../../out/renderer/assets/dagre-GXQ25YYZ-D5SPmgJ2.js                    10.88 kB
+../../out/renderer/assets/diagram-VSXAHHWV-dg7fsT53.js                  10.92 kB
+../../out/renderer/assets/diagram-VX7I27RA-CfLwhsIz.js                  11.29 kB
+../../out/renderer/assets/McpServersSheet-okKvR5pd.js                   13.79 kB
+../../out/renderer/assets/MemoryCenter-CYJ9BKME.js                      14.44 kB
+../../out/renderer/assets/sankeyDiagram-P5KCCOFB-CLecYCGy.js            14.79 kB
+../../out/renderer/assets/SkillManager-tKpkQH0N.js                      15.37 kB
+../../out/renderer/assets/chunk-SVP7TREG-BsnX-bDh.js                    15.73 kB
+../../out/renderer/assets/ChartBlock-FiTddNCW.js                        16.44 kB
+../../out/renderer/assets/SettingsSheet-CNO2-GxJ.js                     17.05 kB
+../../out/renderer/assets/lucide-vendor-0bqEBUiH.js                     17.20 kB
+../../out/renderer/assets/ishikawaDiagram-5VMMS53U-DEAnQ8sT.js          17.67 kB
+../../out/renderer/assets/kanban-definition-UXKFOSKX-DlIClS7o.js        20.49 kB
+../../out/renderer/assets/ArchitectureBlock-DjvqSFk1.js                 22.79 kB
+../../out/renderer/assets/mindmap-definition-YA3MSWOX-B8HYoCb8.js       23.38 kB
+../../out/renderer/assets/journeyDiagram-3NMN7TZE-C6YdIk8R.js           23.75 kB
+../../out/renderer/assets/wardleyDiagram-VM6X3IG4-CJi4tkwv.js           25.70 kB
+../../out/renderer/assets/gitGraphDiagram-WWUBYQGX-BFtl5hgH.js          29.63 kB
+../../out/renderer/assets/erDiagram-RLTQ6QDP-D2WbbJUj.js                30.99 kB
+../../out/renderer/assets/timeline-definition-24CTP7MA-CMRDQwrl.js      31.01 kB
+../../out/renderer/assets/requirementDiagram-BXWQKSXE-BzM9ThFU.js       31.20 kB
+../../out/renderer/assets/quadrantDiagram-AXDQQJYC-CsY4w0T4.js          34.12 kB
+../../out/renderer/assets/layout-b4vNUXJe.js                            35.44 kB
+../../out/renderer/assets/chunk-IMKFNOWR-Cth1u6OH.js                    38.15 kB
+../../out/renderer/assets/WhaleMonitor-BnvTNZ3K.js                      39.11 kB
+../../out/renderer/assets/blockDiagram-I7D4REHJ-6bG_GiRI.js             41.95 kB
+../../out/renderer/assets/vennDiagram-4TSXK5OY-cBKkAHiG.js              42.17 kB
+../../out/renderer/assets/xychartDiagram-S5SC5T6Z-Bn51cUwo.js           43.30 kB
+../../out/renderer/assets/chunk-TICWLB2K-D1f_6uD0.js                    49.25 kB
+../../out/renderer/assets/ganttDiagram-EL5Y4UJY-BNjMdrIS.js             49.98 kB
+../../out/renderer/assets/flowDiagram-HODETNUW-CN84o4mb.js              61.91 kB
+../../out/renderer/assets/c4Diagram-7LVT6UL2-DG3LsOsG.js                65.68 kB
+../../out/renderer/assets/cose-bilkent-JH36ORCC-CrilnxvI.js             81.91 kB
+../../out/renderer/assets/radix-vendor-B40C0DUM.js                     115.08 kB
+../../out/renderer/assets/i18n-BqQPaYPQ.js                             115.16 kB
+../../out/renderer/assets/swimlanes-42K2YHIH-B_NkBi1m.js               115.99 kB
+../../out/renderer/assets/sequenceDiagram-WJ2MYXX4-KILpil7b.js         117.17 kB
+../../out/renderer/assets/xyflow-vendor-BzV-nTpD.js                    127.02 kB
+../../out/renderer/assets/d3-aSVxnOFW.js                               136.05 kB
+../../out/renderer/assets/architectureDiagram-5GKGNRK7-B1MUCSq2.js     152.03 kB
+../../out/renderer/assets/react-vendor-D7Va1eUs.js                     192.94 kB
+../../out/renderer/assets/katex-HP8lGamR.js                            261.31 kB
+../../out/renderer/assets/recharts-vendor-sSng-mEX.js                  366.14 kB
+../../out/renderer/assets/terminal-wLzjTozv.js                         391.36 kB
+../../out/renderer/assets/LocalPdfPreview-Dkh5IgZx.js                  437.89 kB
+../../out/renderer/assets/cytoscape.esm-D3_iZ_3b.js                    442.92 kB
+../../out/renderer/assets/renderer-ui-D2iRC-3_.js                      561.56 kB
+../../out/renderer/assets/mermaid.core-Bgo22_iX.js                     593.03 kB
+../../out/renderer/assets/cynefin-5N6L4GKY-WGP42QSZ.js                 677.38 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 15.73s

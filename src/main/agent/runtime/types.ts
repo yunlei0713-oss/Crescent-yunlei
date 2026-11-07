@@ -14,11 +14,21 @@ export interface RuntimeEventMeta {
   locale?: string
   fromSubagent?: boolean
 }
+export interface RuntimeCompactionResult {
+  summary: string
+  tokensBefore: number
+  estimatedTokensAfter?: number
+}
 export interface RuntimeEvent {
   events: AgentEvent[]
   usageChanged: boolean
   retryError?: string
-  compaction?: { reason: 'manual' | 'threshold' | 'overflow'; aborted: boolean }
+  compactionStart?: 'manual' | 'threshold' | 'overflow'
+  compaction?: {
+    reason: 'manual' | 'threshold' | 'overflow'
+    aborted: boolean
+    result?: RuntimeCompactionResult
+  }
 }
 /** Host-facing session contract. Runtime adapters do not own execution policy. */
 export interface AgentRuntimeSession {
@@ -34,7 +44,8 @@ export interface AgentRuntimeSession {
   abort(): Promise<void>
   waitForIdle(): Promise<void>
   abortRetry(): void
-  compact(instructions?: string): Promise<{ tokensBefore: number; estimatedTokensAfter?: number }>
+  compact(instructions?: string): Promise<RuntimeCompactionResult>
+  abortCompaction?(): void
   setModel(model: RuntimeModel): Promise<void>
   setThinkingLevel(level: RuntimeThinkingLevel): void
   setActiveToolsByName(names: string[]): void

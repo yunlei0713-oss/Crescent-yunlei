@@ -154,8 +154,9 @@ export async function listPiAvailableModels(config: AgentConfig): Promise<
     capabilities: ModelCapabilities
   }>
 > {
-  const runtime = await syncCrescentProvidersToModelRuntime(config)
   const providers = getAgentProviders(config)
+  if (providers.length === 0 && !runtimePromise) return []
+  const runtime = await syncCrescentProvidersToModelRuntime(config)
   const providerNames = new Map(
     providers.map((provider) => [sanitizeProviderId(provider.id), provider.name || provider.id])
   )

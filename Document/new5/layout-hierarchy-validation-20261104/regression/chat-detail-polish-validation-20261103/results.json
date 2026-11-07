@@ -1,0 +1,67 @@
+{
+  "scope": "Real Electron, actual hooks/renderer with synthetic Main protocol events; no provider/terminal",
+  "checks": [
+    "interleaved token and reasoning events stay in one actual hook message",
+    "reasoning retains its own content block",
+    "live and legacy rows have no isolated first-character paragraphs",
+    "composer starts at a shorter input height",
+    "navigation exposes loaded user turns",
+    "focus preview describes the selected turn",
+    "preview contains prose rather than serialized state",
+    "jump to a previous turn pauses automatic following",
+    "continued streaming does not pull the reader away from history",
+    "final streamed result is deduplicated with its table intact",
+    "finished duplicate streaming text is removed as a whole",
+    "ArrowDown moves focus to the next turn",
+    "Escape closes the navigation preview",
+    "roles, timestamps and copy controls are hidden at rest",
+    "hover reveals metadata below the bubble without layout movement",
+    "keyboard focus reveals message actions",
+    "idle rail hugs the left edge with uniformly tiny marks",
+    "native mouse hover produces graduated wave widths",
+    "wave returns to tiny marks when pointer leaves",
+    "duration and subtle divider precede the final answer",
+    "wrapped inline code clones its border and padding on each line without overflow"
+  ],
+  "layouts": [
+    {
+      "width": 1440,
+      "height": 752,
+      "bodyWidth": 1440,
+      "logWidth": 1440,
+      "logScrollWidth": 1440,
+      "readingWidth": 760,
+      "dockWidth": 784,
+      "dockBottom": 752,
+      "logBottom": 581,
+      "dockTop": 581,
+      "railVisible": true
+    },
+    {
+      "width": 800,
+      "height": 700,
+      "bodyWidth": 800,
+      "logWidth": 800,
+      "logScrollWidth": 800,
+      "readingWidth": 704,
+      "dockWidth": 784,
+      "dockBottom": 700,
+      "logBottom": 529,
+      "dockTop": 529,
+      "railVisible": true
+    },
+    {
+      "width": 560,
+      "height": 700,
+      "bodyWidth": 560,
+      "logWidth": 560,
+      "logScrollWidth": 560,
+      "readingWidth": 528,
+      "dockWidth": 560,
+      "dockBottom": 700,
+      "logBottom": 529,
+      "dockTop": 529,
+      "railVisible": false
+    }
+  ]
+}

@@ -216,17 +216,23 @@ export function useAgentRuns({
 
       // Keep actions on the ref for export/trace; React live map uses toLiveRunView (no actions).
       const updated = updater(run)
-      const nextRun = {
-        ...syncActionsFromStructuredRun(updated),
+      const normalized = {
+        ...updated,
         steps: stampMissingStepSeq(updated.steps ?? [])
       }
-      activeAgentRunRef.current.set(tabId, nextRun)
 
       if (options?.streaming) {
+        // Exports derive actions from steps when needed. Rebuilding them for
+        // every token repeats all earlier tool results and command text.
+        activeAgentRunRef.current.set(tabId, { ...normalized, actions: [] })
         scheduleLiveFlush(tabId, true)
         return
       }
 
+      const nextRun = syncActionsFromStructuredRun(normalized)
+      activeAgentRunRef.current.set(tabId, nextRun)
+      dirtyTabIdsRef.current.delete(tabId)
+      if (options?.immediatePersist !== false) persistDirtyTabIdsRef.current.delete(tabId)
       publishLiveRun(nextRun)
       updateLogEntryText(
         tabId,

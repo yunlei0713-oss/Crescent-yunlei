@@ -1,0 +1,632 @@
+[
+  {
+    "name": "chat-light-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<div class=\"app-composer-body\" role=\"textbox\" aria-multiline=\"true\" aria-label=\"询问 AI，或添加日志、截图和文件一起分析…\" contenteditable=\"true\" spellcheck=\"false\" data-placeholder=\"询问 AI，或添加日志、截图和文件一起分析…\" data-empty=\""
+  },
+  {
+    "name": "settings-light-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-light-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-light-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-light-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "chat-light-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<body style=\"\">\n    <div id=\"root\"><div class=\"flex h-full min-h-0 flex-col\"><main class=\"app-shell flex h-full flex-col bg-background\"><section aria-label=\"Notifications alt+T\" tabindex=\"-1\" aria-liv"
+  },
+  {
+    "name": "settings-light-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-light-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-light-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-light-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "chat-light-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<body style=\"\">\n    <div id=\"root\"><div class=\"flex h-full min-h-0 flex-col\"><main class=\"app-shell flex h-full flex-col bg-background\"><section aria-label=\"Notifications alt+T\" tabindex=\"-1\" aria-liv"
+  },
+  {
+    "name": "settings-light-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-light-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-light-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-light-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "chat-dark-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<div class=\"app-composer-body\" role=\"textbox\" aria-multiline=\"true\" aria-label=\"询问 AI，或添加日志、截图和文件一起分析…\" contenteditable=\"true\" spellcheck=\"false\" data-placeholder=\"询问 AI，或添加日志、截图和文件一起分析…\" data-empty=\""
+  },
+  {
+    "name": "settings-dark-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-dark-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-dark-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-dark-1440",
+    "width": 1440,
+    "height": 752,
+    "scrollWidth": 1440,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "chat-dark-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<body style=\"\">\n    <div id=\"root\"><div class=\"flex h-full min-h-0 flex-col\"><main class=\"app-shell flex h-full flex-col bg-background\"><section aria-label=\"Notifications alt+T\" tabindex=\"-1\" aria-liv"
+  },
+  {
+    "name": "settings-dark-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-dark-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-dark-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 671,
+        "scrollWidth": 671
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-dark-800",
+    "width": 800,
+    "height": 752,
+    "scrollWidth": 800,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "chat-dark-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      }
+    ],
+    "active": "<body style=\"\">\n    <div id=\"root\"><div class=\"flex h-full min-h-0 flex-col\"><main class=\"app-shell flex h-full flex-col bg-background\"><section aria-label=\"Notifications alt+T\" tabindex=\"-1\" aria-liv"
+  },
+  {
+    "name": "settings-dark-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Agent 设置\n\n配置模型供应商、MCP 工具、命令审核和本地指令文件。\n\n供应商列表 · 0\n\n新增供应商\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n模型\n\n配置 OpenAI 兼容模型供应商；API Key 仅保存在本地。\n\n工作风格\n简洁\n阶段最",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"xs\" class=\"inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-[background-color,border-color,color,b"
+  },
+  {
+    "name": "mcp-dark-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "MCP 服务\n\n粘贴 Cursor 格式的 mcpServers JSON 以添加 HTTP 或 stdio 服务。保存后会把工具暴露给 Agent。\n\nMCP 服务列表 · 0\n保存设置\n从 JSON 添加\n添加\n\n粘贴 { \"mcpServers\": { \"name\": { ",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"default\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  },
+  {
+    "name": "skills-dark-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "Skills 管理\n\n管理本机可用的 Agent Skills。可以从 skills.sh 搜索安装，也可以把本机 SKILL.md 文件或 Skill 目录导入到配置的 Skills 目录。\n\n本地 Skills\n0\n发现\n导入\n安装日志\nSkill 加载目录\n保存目录\n\n生成",
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ],
+    "active": "<button type=\"button\" role=\"tab\" aria-selected=\"true\" class=\"inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 bg-background text-for"
+  },
+  {
+    "name": "skills-keyboard",
+    "selected": [
+      {
+        "text": "本地 Skills0",
+        "selected": "true",
+        "focused": true
+      },
+      {
+        "text": "发现",
+        "selected": "false",
+        "focused": false
+      }
+    ]
+  },
+  {
+    "name": "wiki-dark-560",
+    "width": 560,
+    "height": 752,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "text": "外观墨巡 · 宣纸（浅色）墨巡 · 夜墨（深色）",
+        "width": 0,
+        "scrollWidth": 0
+      },
+      {
+        "text": "知识库\n\n选择本机文件夹作为知识库，Markdown 文档也可被 Agent 检索使用。\n\n当前目录: /tmp/moxun-ui-new5-data/wiki\n选择文件夹\n暂无知识库文档。可以从历史运维记录保存生成。\nClose",
+        "width": 419,
+        "scrollWidth": 419
+      }
+    ],
+    "active": "<button data-slot=\"button\" data-variant=\"outline\" data-size=\"sm\" class=\"inline-flex shrink-0 items-center justify-center text-sm font-medium whitespace-nowrap transition-[background-color,border-color"
+  }
+]

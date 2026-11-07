@@ -121,8 +121,8 @@
 }
 
 .app-titlebar-brand {
-  width: var(--app-sidebar-width);
-  padding-inline: 0.75rem;
+  width: 100%;
+  padding-inline: 0.25rem;
   background: var(--app-chrome);
 }
 

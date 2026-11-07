@@ -1,11 +1,12 @@
 import { realpath, stat } from 'node:fs/promises'
 import { rendererIpc } from './ipc-security'
 import { codeIntelligence } from './code-intelligence/service'
+import { activatedProjectRoot } from './projects'
 import { localDocumentReaderForOwner } from './local-document-ipc'
 import { readAgentConfig } from './crescent-store'
 import { resolveAgentWorkspaceCwd } from './agent/pi-cwd'
 import { memoryService, knowledgeText } from './memory/service'
-import { extractHistory } from './memory/extraction'
+import { extractHistory, generateReflections } from './memory/extraction'
 import { learningTarget, assertLearningAuthorized } from './memory/learning-target'
 import { startAutoLearning, cancelAutoLearning, autoLearnError } from './memory/auto-learning'
 import type {
@@ -19,10 +20,12 @@ import type { WebContents } from 'electron'
 
 const jobs = new Map<number, AbortController>()
 const learning = new Map<number, AbortController>()
-async function scopedRoot(owner: number, root?: string): Promise<string> {
+async function scopedRoot(owner: WebContents, root?: string): Promise<string> {
   const path =
     root === undefined ? resolveAgentWorkspaceCwd(readAgentConfig()) : knowledgeText(root, 4096)
-  const canonical = await (await localDocumentReaderForOwner(owner)).authorize(path)
+  const canonical =
+    (await activatedProjectRoot(owner, path)) ??
+    (await (await localDocumentReaderForOwner(owner.id)).authorize(path))
   if (!(await stat(canonical)).isDirectory()) throw new Error('索引根目录必须是已授权目录')
   return realpath(canonical)
 }
@@ -32,11 +35,13 @@ function ownedJob(owner: WebContents, map: Map<number, AbortController>): AbortC
   const abort = (): void => controller.abort()
   owner.once('destroyed', abort)
   owner.once('did-start-navigation', abort)
+  owner.once('render-process-gone', abort)
   controller.signal.addEventListener(
     'abort',
     () => {
       owner.removeListener('destroyed', abort)
       owner.removeListener('did-start-navigation', abort)
+      owner.removeListener('render-process-gone', abort)
     },
     { once: true }
   )
@@ -46,10 +51,15 @@ function ownedJob(owner: WebContents, map: Map<number, AbortController>): AbortC
 export function registerKnowledgeIpc(): void {
   startAutoLearning()
   rendererIpc.handle('knowledge:code-status', async (event, root?: string) =>
-    codeIntelligence().status(await scopedRoot(event.sender.id, root))
+    codeIntelligence().status(await scopedRoot(event.sender, root))
+  )
+  rendererIpc.handle(
+    'knowledge:code-skips',
+    async (event, input: { root: string; after: string }) =>
+      codeIntelligence().skipped(await scopedRoot(event.sender, input?.root), input?.after)
   )
   rendererIpc.handle('knowledge:code-index', async (event, root?: string) => {
-    const canonical = await scopedRoot(event.sender.id, root)
+    const canonical = await scopedRoot(event.sender, root)
     const job = ownedJob(event.sender, jobs)
     try {
       return await codeIntelligence().index(canonical, job.signal)
@@ -62,12 +72,12 @@ export function registerKnowledgeIpc(): void {
     jobs.get(event.sender.id)?.abort()
   })
   rendererIpc.handle('knowledge:code-clear', async (event, root?: string) =>
-    codeIntelligence().clear(await scopedRoot(event.sender.id, root))
+    codeIntelligence().clear(await scopedRoot(event.sender, root))
   )
   rendererIpc.handle(
     'knowledge:code-search',
     async (event, payload: { root?: string; query: string; mode: string }) => {
-      const root = await scopedRoot(event.sender.id, payload?.root),
+      const root = await scopedRoot(event.sender, payload?.root),
         query = knowledgeText(payload?.query, 200)
       switch (payload?.mode) {
         case 'search':
@@ -141,6 +151,22 @@ export function registerKnowledgeIpc(): void {
       } finally {
         job.abort()
         learning.delete(event.sender.id)
+      }
+    }
+  )
+  rendererIpc.handle('knowledge:memory-evidence', (_event, id: string) =>
+    memoryService().evidence(id)
+  )
+  rendererIpc.handle(
+    'knowledge:memory-reflect',
+    async (event, ids: string[], options?: MemoryLearnOptions) => {
+      const ownerId = event.sender.id
+      const job = ownedJob(event.sender, learning)
+      try {
+        return { count: await generateReflections(ids, job.signal, options) }
+      } finally {
+        job.abort()
+        learning.delete(ownerId)
       }
     }
   )

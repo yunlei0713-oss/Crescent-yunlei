@@ -121,8 +121,8 @@ export function WikiSheet({
           } as CSSProperties
         }
       >
-        <SheetHeader className="flex-row items-start justify-between gap-3 pr-16">
-          <div className="min-w-0">
+        <SheetHeader className="flex-row flex-wrap items-start justify-between gap-3 pr-16">
+          <div className="min-w-0 flex-1 basis-64">
             <SheetTitle>{t.wiki.title}</SheetTitle>
             <SheetDescription>{t.wiki.description}</SheetDescription>
             {wikiDirectory && (

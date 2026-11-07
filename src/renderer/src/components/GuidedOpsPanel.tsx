@@ -1,27 +1,35 @@
+import { ConversationRecords } from './ConversationRecords'
 import { GuidedOpsHistory } from './GuidedOpsHistory'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { agentClient, terminalClient } from '../clients'
+import { guidedOpsStateLabel } from '../lib/guided-ops-labels'
 import type { GuidedOpsAction, GuidedOpsSnapshot } from '../../../shared/guided-ops-types'
 import { Button } from './ui/button'
 
 export function GuidedOpsPanel({
+  recordsTarget,
   chatId,
   eventChatId,
   terminalId,
   runId,
+  hasStarted,
   zh,
   onAsk,
+  onAnalyze,
   onStart,
   paused,
   onPausedChange
 }: {
+  recordsTarget?: HTMLElement | null
   chatId: string
   eventChatId?: string
   terminalId: string
   runId?: string
+  hasStarted: boolean
   zh: boolean
   onAsk: (text: string) => void
+  onAnalyze: (text: string) => void
   onStart: () => void
   paused: boolean
   onPausedChange: (paused: boolean) => void
@@ -98,6 +106,7 @@ export function GuidedOpsPanel({
     }
   }
   const proposal = snapshot?.proposal
+  const showGettingStarted = !hasStarted && !snapshot
   async function copySuggestion(command: string): Promise<void> {
     try {
       const current = await agentClient.guidedSnapshot(chatId, terminalId)
@@ -119,18 +128,86 @@ export function GuidedOpsPanel({
       toast.error(String(error))
     }
   }
-  const labels: Record<string, string> = {
-    ANALYZING: '分析中',
-    ANALYZING_NEXT: '分析下一步',
-    PROPOSAL_READY: '建议已准备',
-    WAITING_OPERATOR: '等待人工操作',
-    COMMAND_RUNNING: '观察到命令提交',
-    OBSERVING: '观察输出',
-    EVIDENCE_READY: '结果证据已就绪',
-    COMPLETED: '已结束',
-    INTERRUPTED: '已打断 / 目标变化',
-    OBSERVATION_UNCERTAIN: '命令边界 / 结果不确定'
-  }
+  const records = (
+    <>
+      {snapshot && (
+        <details>
+          <summary>
+            {zh ? '终端证据时间线' : 'Terminal evidence timeline'} (
+            {snapshot.evidence.observations.length})
+          </summary>
+          {snapshot.evidence.observations.map((event) => (
+            <div key={event.eventId} className="border-t border-border py-2">
+              <p>
+                {new Date(event.startedAt).toLocaleTimeString()} · {event.host ?? '?'} ·{' '}
+                {
+                  {
+                    submitted: zh ? '已提交' : 'Submitted',
+                    running: zh ? '执行中' : 'Running',
+                    completed: zh ? '成功' : 'Succeeded',
+                    failed: zh ? '失败' : 'Failed',
+                    'finished-unknown':
+                      event.boundary === 'user-confirmation'
+                        ? zh
+                          ? '人工确认已结束 · 退出码未知'
+                          : 'Operator confirmed completion · exit code unknown'
+                        : zh
+                          ? '已结束 · 退出码未知'
+                          : 'Finished · exit code unknown',
+                    'prompt-returned': zh
+                      ? '疑似返回 Shell · 退出码未知'
+                      : 'Likely Shell prompt · exit code unknown',
+                    interrupted: zh ? '人工中断' : 'Interrupted by operator',
+                    'timeout-unconfirmed': zh ? '尚无结束证据' : 'Completion still unconfirmed',
+                    'session-lost': zh ? '终端目标已变化' : 'Terminal target changed',
+                    interactive: zh ? '交互中' : 'Interactive',
+                    unknown: zh ? '状态无法确认' : 'Status unknown'
+                  }[event.status]
+                }{' '}
+                {event.exitCode !== undefined
+                  ? `exit=${event.exitCode} · ${event.boundary.toUpperCase()}`
+                  : ''}
+                {event.groupState === 'incomplete' &&
+                  (zh ? ' · 批次状态不完整' : ' · Batch boundary unconfirmed')}
+              </p>
+              <code>
+                {event.command ??
+                  (zh
+                    ? '输入未采集（边界不确定或敏感）'
+                    : 'Input withheld (uncertain or sensitive)')}
+              </code>
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap">{event.output}</pre>
+            </div>
+          ))}
+          <Button
+            disabled={
+              !snapshot.evidence.available ||
+              !snapshot.evidence.observations.some(
+                (event) => event.output.trim() && !event.sensitive
+              )
+            }
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              onAnalyze(
+                zh
+                  ? '我已执行完。请分析最新的授权终端输出，并给出下一步建议。我的确认只说明执行已结束，退出码以可信证据为准。'
+                  : 'I have finished executing. Analyze the latest authorized terminal output and suggest a next step. My confirmation establishes completion only. Use trusted evidence for exit codes.'
+              )
+            }
+          >
+            {zh ? '我已执行完，分析最新输出' : 'I finished executing · analyze latest output'}
+          </Button>
+        </details>
+      )}
+      <GuidedOpsHistory
+        key={chatId}
+        conversationId={chatId}
+        revision={snapshot?.proposal?.id + ':' + snapshot?.state}
+        zh={zh}
+      />
+    </>
+  )
   return (
     <section
       aria-label={zh ? '下一步命令建议' : 'Next-command suggestions'}
@@ -148,8 +225,8 @@ export function GuidedOpsPanel({
                 ? '主动建议已暂停'
                 : 'Proactive suggestions paused'
               : zh
-                ? '可以先描述问题，也可以直接操作终端。授权后自动分析后续输出；仅复制，不执行。'
-                : 'Start with a problem or a terminal command. Authorized output triggers follow-ups; copy only, never execute.'}
+                ? '授权观察后，收到可信的命令结束标记会自动跟进。也可在「排查记录」中确认执行结束。'
+                : 'With observation authorized, a trusted command completion marker triggers a follow-up. You can also confirm completion in Diagnostic records.'}
           </p>
         </div>
         <Button size="xs" variant="ghost" onClick={() => onPausedChange(!paused)}>
@@ -169,7 +246,7 @@ export function GuidedOpsPanel({
             : 'Observation unavailable; your terminal remains usable'}
         </p>
       )}
-      {!proposal && (
+      {showGettingStarted && (
         <div className="py-2">
           <p>{zh ? '想排查什么问题？' : 'What would you like to diagnose?'}</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -185,7 +262,7 @@ export function GuidedOpsPanel({
       {snapshot && (
         <div className="mt-3">
           <p className="text-xs text-muted-foreground" role="status">
-            {zh ? labels[snapshot.state] : snapshot.state} ·{' '}
+            {guidedOpsStateLabel(snapshot.state, zh)} ·{' '}
             {snapshot.evidence.identity.connectionName &&
               `${snapshot.evidence.identity.connectionName} · `}
             {snapshot.evidence.identity.host ?? '?'}
@@ -194,8 +271,8 @@ export function GuidedOpsPanel({
           {!snapshot.evidence.available && (
             <p className="mt-2 text-xs text-muted-foreground">
               {zh
-                ? '当前未观察终端输出。建议仅依据你描述的问题和会话信息；授权观察后可自动跟进人工执行结果。'
-                : 'No terminal output is observed. Guidance uses your question and session metadata only; authorize observation for automatic follow-ups.'}
+                ? '当前未观察终端输出。建议仅依据对话和会话信息。'
+                : 'No terminal output is observed. Guidance uses the conversation and session metadata.'}
             </p>
           )}
           <div className="space-y-4 pt-3 select-text">
@@ -344,7 +421,7 @@ export function GuidedOpsPanel({
                       )
                     }
                   >
-                    {zh ? '追问' : 'Ask'}
+                    {zh ? '解释建议与风险' : 'Explain suggestion and risks'}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => void action('skip')}>
                     {zh ? '跳过' : 'Skip'}
@@ -372,49 +449,16 @@ export function GuidedOpsPanel({
                 </div>
               </div>
             )}
-            <details>
-              <summary>
-                {zh ? '终端证据时间线' : 'Terminal evidence timeline'} (
-                {snapshot.evidence.observations.length})
-              </summary>
-              {snapshot.evidence.observations.map((event) => (
-                <div key={event.eventId} className="border-t border-border py-2">
-                  <p>
-                    {new Date(event.startedAt).toLocaleTimeString()} · {event.host ?? '?'} ·{' '}
-                    {event.status} {event.exitCode !== undefined ? `exit=${event.exitCode}` : ''}
-                  </p>
-                  <code>
-                    {event.command ??
-                      (zh
-                        ? '输入未采集（边界不确定或敏感）'
-                        : 'Input withheld (uncertain or sensitive)')}
-                  </code>
-                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap">{event.output}</pre>
-                </div>
-              ))}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  onAsk(
-                    zh
-                      ? '请结合当前终端证据分析结果，并给出一个下一步建议。'
-                      : 'Analyze current terminal evidence and suggest one next step.'
-                  )
-                }
-              >
-                {zh ? '分析结果' : 'Analyze evidence'}
-              </Button>
-            </details>
           </div>
         </div>
       )}
-      <GuidedOpsHistory
-        key={chatId}
-        conversationId={chatId}
-        revision={snapshot?.proposal?.id + ':' + snapshot?.state}
-        zh={zh}
-      />
+      {recordsTarget === undefined ? (
+        records
+      ) : (
+        <ConversationRecords target={recordsTarget} zh={zh}>
+          {records}
+        </ConversationRecords>
+      )}
     </section>
   )
 }

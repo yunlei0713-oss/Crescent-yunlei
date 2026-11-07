@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
+import { memo, useEffect, useId, useMemo, useRef, useState, type RefObject } from 'react'
 import type { AgentLogEntry } from '@renderer/lib/terminal-tabs'
 import type { Dictionary } from '@renderer/i18n'
 import { conversationTitleText } from '../../../shared/conversation-title'
@@ -7,7 +7,7 @@ import { CONVERSATION_JUMP_EVENT } from '@renderer/lib/scroll-follow'
 
 const MARK_WAVE_WIDTHS = [26, 20, 12, 8, 6]
 
-export function ConversationNavigator({
+export const ConversationNavigator = memo(function ConversationNavigator({
   entries,
   logRef,
   t
@@ -27,19 +27,22 @@ export function ConversationNavigator({
   useEffect(() => {
     const log = logRef.current
     if (!log || turns.length < 2) return
+    const rows = [...log.querySelectorAll<HTMLElement>('[data-log-kind="user"]')]
     let frame: number | undefined
     const update = (): void => {
       frame = undefined
       setMaxHeight(Math.max(26, Math.min(360, log.clientHeight - 40)))
       const boundary = log.getBoundingClientRect().top + 48
-      let current = turns[0]?.id
-      for (const turn of turns) {
-        const row = log.querySelector<HTMLElement>(`[data-agent-log-entry="${turn.id}"]`)
-        if (!row) continue
-        if (row.getBoundingClientRect().top > boundary) break
-        current = turn.id
+      // Rows are ordered vertically. Find the last turn at or above the viewport.
+      let low = 0
+      let high = rows.length
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2)
+        if (rows[middle].getBoundingClientRect().top <= boundary) low = middle + 1
+        else high = middle
       }
-      setActiveId(current)
+      const id = rows[Math.max(0, low - 1)]?.dataset.agentLogEntry
+      setActiveId(id === undefined ? turns[0]?.id : Number(id))
     }
     const schedule = (): void => {
       if (frame === undefined) frame = requestAnimationFrame(update)
@@ -173,4 +176,4 @@ export function ConversationNavigator({
       )}
     </nav>
   )
-}
+})

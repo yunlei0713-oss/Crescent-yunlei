@@ -1,0 +1,154 @@
+diff --git a/src/renderer/src/components/SettingsSheet.tsx b/src/renderer/src/components/SettingsSheet.tsx
+index 882f784..52bc412 100644
+--- a/src/renderer/src/components/SettingsSheet.tsx
++++ b/src/renderer/src/components/SettingsSheet.tsx
+@@ -40,7 +40,7 @@ import {
+   SelectValue
+ } from '@renderer/components/ui/select'
+ import type { Dictionary } from '@renderer/i18n'
+-import { agentStyleSelectOptions } from '@renderer/lib/agent-style-ui'
++import { agentStyleSelectOptions, agentStyleTitle } from '@renderer/lib/agent-style-ui'
+ import { buildModelSelectionValue, parseModelSelectionValue } from '@renderer/lib/app-runtime'
+ import {
+   formatPinnedWorkflowsText,
+@@ -409,7 +409,9 @@ export function SettingsSheet({
+                   onValueChange={(value) => onAgentStyleChange(normalizeAgentStyle(value))}
+                 >
+                   <SelectTrigger id="agent-style" className="w-full">
+-                    <SelectValue />
++                    <SelectValue>
++                      {agentStyleTitle(normalizeAgentStyle(config.agentStyle), t)}
++                    </SelectValue>
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectGroup>
+diff --git a/src/renderer/src/components/SkillManager.tsx b/src/renderer/src/components/SkillManager.tsx
+index bf3b044..0a03edb 100644
+--- a/src/renderer/src/components/SkillManager.tsx
++++ b/src/renderer/src/components/SkillManager.tsx
+@@ -223,10 +223,18 @@ export function SkillManager({
+   }
+ 
+   function handlePaneKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+-    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+-      event.preventDefault()
+-      setPane((current) => (current === 'installed' ? 'discover' : 'installed'))
+-    }
++    const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
++    const index = tabs.indexOf(event.target as HTMLButtonElement)
++    if (index < 0) return
++    let nextIndex: number
++    if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length
++    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length
++    else if (event.key === 'Home') nextIndex = 0
++    else if (event.key === 'End') nextIndex = tabs.length - 1
++    else return
++    event.preventDefault()
++    tabs[nextIndex].focus()
++    tabs[nextIndex].click()
+   }
+ 
+   return (
+@@ -241,7 +249,7 @@ export function SkillManager({
+         </SheetHeader>
+         <div className="app-sheet-split flex min-h-0 flex-1 flex-row gap-3 overflow-hidden px-4">
+           <div className="app-sheet-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+-            <div className="flex shrink-0 items-center justify-between gap-2 pb-2">
++            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 pb-2">
+               <div
+                 role="tablist"
+                 aria-label={t.settings.skillsManagement}
+@@ -814,6 +822,7 @@ function PaneTab({
+       type="button"
+       role="tab"
+       aria-selected={selected}
++      tabIndex={selected ? 0 : -1}
+       className={`inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+         selected
+           ? 'bg-background text-foreground shadow-sm'
+diff --git a/src/renderer/src/components/WikiSheet.tsx b/src/renderer/src/components/WikiSheet.tsx
+index 87929b6..ba90223 100644
+--- a/src/renderer/src/components/WikiSheet.tsx
++++ b/src/renderer/src/components/WikiSheet.tsx
+@@ -121,8 +121,8 @@ export function WikiSheet({
+           } as CSSProperties
+         }
+       >
+-        <SheetHeader className="flex-row items-start justify-between gap-3 pr-16">
+-          <div className="min-w-0">
++        <SheetHeader className="flex-row flex-wrap items-start justify-between gap-3 pr-16">
++          <div className="min-w-0 flex-1 basis-64">
+             <SheetTitle>{t.wiki.title}</SheetTitle>
+             <SheetDescription>{t.wiki.description}</SheetDescription>
+             {wikiDirectory && (
+diff --git a/src/renderer/src/components/timeline/RunDiagnostics.tsx b/src/renderer/src/components/timeline/RunDiagnostics.tsx
+index ef2d286..192a01b 100644
+--- a/src/renderer/src/components/timeline/RunDiagnostics.tsx
++++ b/src/renderer/src/components/timeline/RunDiagnostics.tsx
+@@ -125,17 +125,32 @@ export function RunDiagnostics({
+         )}
+         <div className="flex flex-wrap gap-1">
+           {onView && (
+-            <Button size="xs" variant="ghost" onClick={onView}>
++            <Button
++              size="xs"
++              variant="ghost"
++              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
++              onClick={onView}
++            >
+               {t.input.fullRunViewSteps}
+             </Button>
+           )}
+           {onExportFull && (
+-            <Button size="xs" variant="ghost" onClick={onExportFull}>
++            <Button
++              size="xs"
++              variant="ghost"
++              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
++              onClick={onExportFull}
++            >
+               {t.common.exportFullMarkdownTooltip}
+             </Button>
+           )}
+           {onExportTrace && (
+-            <Button size="xs" variant="ghost" onClick={onExportTrace}>
++            <Button
++              size="xs"
++              variant="ghost"
++              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
++              onClick={onExportTrace}
++            >
+               {t.common.exportTraceJsonTooltip}
+             </Button>
+           )}
+diff --git a/src/renderer/src/components/ui/sheet.tsx b/src/renderer/src/components/ui/sheet.tsx
+index 1da1381..c4d1650 100644
+--- a/src/renderer/src/components/ui/sheet.tsx
++++ b/src/renderer/src/components/ui/sheet.tsx
+@@ -52,7 +52,7 @@ function SheetContent({
+       <SheetPrimitive.Content
+         data-slot="sheet-content"
+         className={cn(
+-          'fixed z-50 flex flex-col gap-4 overflow-y-auto overscroll-contain bg-card/98 shadow-2xl shadow-black/30 backdrop-blur transition-[transform,opacity] ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500',
++          'fixed z-50 flex flex-col gap-4 overflow-y-auto overscroll-contain bg-card/98 shadow-2xl shadow-black/30 backdrop-blur transition-[transform,opacity] ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:duration-200',
+           side === 'right' &&
+             'inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm',
+           side === 'left' &&
+@@ -81,7 +81,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
+   return (
+     <div
+       data-slot="sheet-header"
+-      className={cn('flex flex-col gap-1 px-4 py-3', className)}
++      className={cn('flex shrink-0 flex-col gap-1 px-4 py-3 pr-14', className)}
+       {...props}
+     />
+   )
+@@ -114,7 +114,7 @@ function SheetDescription({
+   return (
+     <SheetPrimitive.Description
+       data-slot="sheet-description"
+-      className={cn('text-[11px] leading-snug text-muted-foreground', className)}
++      className={cn('text-xs leading-relaxed text-muted-foreground', className)}
+       {...props}
+     />
+   )

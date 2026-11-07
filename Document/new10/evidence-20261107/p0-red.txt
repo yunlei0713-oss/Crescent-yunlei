@@ -1,0 +1,38 @@
+
+> moxun@1.0.12 test
+> node scripts/check-security-boundaries.cjs && node --test scripts/verify-managed-terminal.cjs
+
+Security boundary policy: 576 checks passed.
+Vitest suites are local-only. CI also runs the managed command protocol tests.
+✔ matches session/generation, command, nonce, exit status, and next prompt (11.357588ms)
+✔ rejection, invalid grammar, visibility change, and expiry send no bytes (2.380369ms)
+✔ start-marker timeout and user takeover keep ambiguous commands locked (1.481647ms)
+✔ soft timeout leaves the running command locked and can accept a later result (0.849002ms)
+✖ wait and query follow the original ID after soft timeout (1.482652ms)
+✖ aborting a wait does not alter the original command or send bytes (0.906373ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5232.33884
+
+✖ failing tests:
+
+test at scripts/verify-managed-terminal.cjs:203:1
+✖ wait and query follow the original ID after soft timeout (1.482652ms)
+  TypeError: executor.getResult is not a function
+      at TestContext.<anonymous> (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-terminal.cjs:210:25)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+
+test at scripts/verify-managed-terminal.cjs:226:1
+✖ aborting a wait does not alter the original command or send bytes (0.906373ms)
+  TypeError: executor.waitForResult is not a function
+      at TestContext.<anonymous> (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-terminal.cjs:234:28)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)

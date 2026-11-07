@@ -1,11 +1,21 @@
-import { createHash } from 'node:crypto'
-import { opendir, realpath } from 'node:fs/promises'
+import { createHash, randomUUID } from 'node:crypto'
+import { setTimeout as delayFor } from 'node:timers/promises'
+import { lstat, opendir, realpath } from 'node:fs/promises'
 import { join, relative, dirname, resolve, posix } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { openKnowledgeDatabase } from '../knowledge-database'
+import { documentRootIdentity } from '../document-cursor'
 import { LocalDocumentReader, sensitiveDocumentPath } from '../local-document-reader'
-import { codeLanguage, parseCode } from './parser'
-import type { CodeIndexStatus, CodeHit, CodeSymbol, CodeReference } from '../../shared/knowledge'
+import { codeLanguage } from './language'
+import { IndexParserUnavailable, type IndexParser } from './parser-protocol'
+import type {
+  CodeIndexStatus,
+  CodeHit,
+  CodeSymbol,
+  CodeReference,
+  CodeSkipReason,
+  CodeIndexSkip
+} from '../../shared/knowledge'
 import { redactSensitiveText } from '../../shared/secret-redaction'
 
 function redactedSource(text: string): string {
@@ -21,6 +31,15 @@ function redactedSource(text: string): string {
     })
     .join('\n')
 }
+
+const FULL_FILE_BYTES = 512 * 1024
+const SYMBOL_FILE_BYTES = 1024 * 1024
+const PROJECT_BYTES = 32 * 1024 * 1024
+const PROJECT_FILES = 2000
+const DIRECTORY_ENTRIES = 20000
+const FILE_LINES = 10000
+const RSS_HEADROOM = 256 * 1024 * 1024
+const CACHE_VERSION = 'ast-v3'
 
 const ignored = new Set([
   'node_modules',
@@ -46,13 +65,27 @@ export class CodeIntelligenceService {
     this.db
       .exec(`CREATE TABLE IF NOT EXISTS files(root TEXT, path TEXT, language TEXT, hash TEXT, content TEXT, symbols TEXT, refs TEXT, updated_at TEXT, PRIMARY KEY(root,path));
       CREATE TABLE IF NOT EXISTS index_metadata(root TEXT PRIMARY KEY, value TEXT NOT NULL);`)
-    if (
-      !this.db
+    const columns = new Set(
+      this.db
         .prepare('PRAGMA table_info(files)')
         .all()
-        .some((row) => row.name === 'parse_error')
+        .map((row) => row.name)
     )
-      this.db.exec('ALTER TABLE files ADD COLUMN parse_error INTEGER NOT NULL DEFAULT 0')
+    for (const [name, type] of [
+      ['parse_error', 'INTEGER NOT NULL DEFAULT 0'],
+      ['identity', 'TEXT'],
+      ['tier', 'TEXT'],
+      ['cost', 'INTEGER NOT NULL DEFAULT 0'],
+      ['symbol_count', 'INTEGER NOT NULL DEFAULT 0']
+    ])
+      if (!columns.has(name)) this.db.exec(`ALTER TABLE files ADD COLUMN ${name} ${type}`)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS index_skips(root TEXT,path TEXT,reason TEXT,size INTEGER,PRIMARY KEY(root,path));
+      CREATE TEMP TABLE staged_files AS SELECT * FROM files WHERE 0;
+      CREATE INDEX temp.staged_root ON staged_files(root,path);
+      CREATE TEMP TABLE staged_skips(root TEXT,path TEXT,reason TEXT,size INTEGER,PRIMARY KEY(root,path));
+      CREATE TEMP TABLE seen_files(root TEXT,path TEXT,PRIMARY KEY(root,path));
+    `)
   }
   status(root: string): CodeIndexStatus {
     const row = this.db.prepare('SELECT value FROM index_metadata WHERE root=?').get(root)
@@ -72,155 +105,302 @@ export class CodeIntelligenceService {
   async index(root: string, signal?: AbortSignal): Promise<CodeIndexStatus> {
     root = await realpath(root)
     if (this.jobs.has(root)) throw new Error('此目录正在索引，请稍后重试')
-    if (this.jobs.size >= 2) throw new Error('索引任务繁忙，请稍后重试')
-    const job = this.scan(root, signal).finally(() => this.jobs.delete(root))
+    if (this.jobs.size >= 1) throw new Error('索引任务繁忙，请稍后重试')
+    const job = this.scan(root, signal)
+      .catch((error: unknown) => {
+        if (!signal?.aborted)
+          this.saveStatus(root, { ...this.status(root), indexing: false, failed: true })
+        throw error
+      })
+      .finally(() => this.jobs.delete(root))
     this.jobs.set(root, job)
     return job
   }
+
+  skipped(root: string, after: string): CodeIndexSkip[] {
+    if (typeof after !== 'string' || after.length > 4096) throw new Error('Invalid index cursor')
+    return this.db
+      .prepare(
+        'SELECT path,reason,size FROM index_skips WHERE root=? AND path>? ORDER BY path LIMIT 40'
+      )
+      .all(root, after) as unknown as CodeIndexSkip[]
+  }
+
+  private saveStatus(root: string, status: CodeIndexStatus): void {
+    this.db
+      .prepare(
+        'INSERT INTO index_metadata VALUES(?,?) ON CONFLICT(root) DO UPDATE SET value=excluded.value'
+      )
+      .run(root, JSON.stringify(status))
+  }
+
   private async scan(root: string, signal?: AbortSignal): Promise<CodeIndexStatus> {
-    const reader = new LocalDocumentReader([root])
+    const reader = new LocalDocumentReader([root], {
+      path: root,
+      identity: await documentRootIdentity(root)
+    })
     await reader.authorize(root)
-    const rows: Array<{
-      path: string
-      language: string
-      hash: string
-      content: string
-      symbols: CodeSymbol[]
-      refs: CodeReference[]
-      parseError: boolean
-    }> = []
-    let skipped = 0,
-      errors = 0,
-      bytes = 0,
-      visited = 0,
-      limited = false
+    const job = randomUUID()
+    const started = performance.now()
+    const now = new Date().toISOString()
+    const status: CodeIndexStatus = {
+      root,
+      files: 0,
+      symbols: 0,
+      updatedAt: now,
+      indexing: false,
+      skipped: 0,
+      errors: 0,
+      limited: false,
+      skipReasons: {},
+      symbolOnly: 0,
+      reused: 0,
+      parsed: 0
+    }
+    let bytes = 0
+    let visited = 0
+    let memoryLimited = false
+    let parser: IndexParser | undefined
+    const getParser = async (): Promise<IndexParser> => {
+      if (!parser) {
+        try {
+          if (process.versions.electron) {
+            const { openIndexParser } = await import('./utility-parser')
+            parser = openIndexParser(signal)
+          } else {
+            const { parseCode } = await import('./parser')
+            parser = {
+              parse: (path, text) => parseCode(path, text).catch(() => undefined),
+              close: () => {}
+            }
+          }
+        } catch {
+          signal?.throwIfAborted()
+          throw new IndexParserUnavailable()
+        }
+      }
+      return parser
+    }
+    const baselineRss = process.memoryUsage.rss()
+    async function yieldForMemory(): Promise<void> {
+      if (process.memoryUsage.rss() - baselineRss <= RSS_HEADROOM) {
+        await new Promise<void>((done) => setImmediate(done))
+        return
+      }
+      // macOS can hold reclaimed native WASM/SQLite pages briefly after a batch.
+      // Wait off the Main event loop before reducing the coverage of this scan.
+      for (const delay of [150, 350, 650]) {
+        await delayFor(delay, undefined, { signal })
+        if (process.memoryUsage.rss() - baselineRss <= RSS_HEADROOM) return
+      }
+      memoryLimited = true
+      status.limited = true
+    }
+    const oldFile = this.db.prepare(
+      'SELECT identity,tier,cost,symbol_count,parse_error FROM files WHERE root=? AND path=?'
+    )
+    const seen = this.db.prepare('INSERT OR IGNORE INTO seen_files VALUES(?,?)')
+    const stage = this.db.prepare(
+      `INSERT INTO staged_files(root,path,language,hash,content,symbols,refs,updated_at,parse_error,identity,tier,cost,symbol_count)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    )
+    const stageSkip = this.db.prepare('INSERT OR IGNORE INTO staged_skips VALUES(?,?,?,?)')
+    const skip = (path: string, reason: CodeSkipReason, size?: number): void => {
+      if (stageSkip.run(job, path, reason, size ?? null).changes) {
+        status.skipped++
+        status.skipReasons![reason] = (status.skipReasons![reason] ?? 0) + 1
+      }
+    }
+
+    const indexFile = async (absolute: string, path: string, language: string): Promise<void> => {
+      try {
+        await reader.authorize(absolute)
+        const metadata = await lstat(absolute, { bigint: true })
+        const size = Number(metadata.size)
+        if (!metadata.isFile()) return skip(path, 'unreadable')
+        if (size > SYMBOL_FILE_BYTES) return skip(path, 'file-too-large', size)
+        const tier = size <= FULL_FILE_BYTES ? 'full' : 'symbols'
+        const identity = [
+          CACHE_VERSION,
+          metadata.dev,
+          metadata.ino,
+          metadata.size,
+          metadata.mtimeNs,
+          metadata.ctimeNs
+        ].join(':')
+        const old = oldFile.get(root, path)
+        if (old?.identity === identity && old.tier === tier) {
+          const cost = Number(old.cost)
+          if (bytes + cost > PROJECT_BYTES) return skip(path, 'global-budget', size)
+          seen.run(job, path)
+          bytes += cost
+          status.reused!++
+          status.files++
+          status.symbols += Number(old.symbol_count)
+          if (old.parse_error === 1) {
+            status.errors++
+            skip(path, 'parse-error', size)
+          }
+          if (tier === 'symbols') status.symbolOnly!++
+          return
+        }
+
+        if (memoryLimited) return skip(path, 'global-budget', size)
+        const parts: string[] = []
+        let cursor: string | undefined
+        let lines = 0
+        do {
+          const page = await reader.read({ path: absolute, cursor, limit: 500 }, signal, {
+            rawForIndex: true
+          })
+          if (page.lines.some((item) => item.byteOffset !== undefined))
+            return skip(path, 'line-budget', size)
+          lines += page.lines.length
+          if (lines > FILE_LINES) return skip(path, 'line-budget', size)
+          parts.push(page.lines.map((item) => item.text).join('\n'))
+          cursor = page.nextCursor
+        } while (cursor)
+        const check = await lstat(absolute, { bigint: true })
+        if (
+          identity !==
+          [CACHE_VERSION, check.dev, check.ino, check.size, check.mtimeNs, check.ctimeNs].join(':')
+        )
+          return skip(path, 'unreadable', size)
+
+        const raw = parts.join('\n')
+        const hash = CACHE_VERSION + ':' + createHash('sha256').update(raw).digest('hex')
+        const parsed = await (await getParser()).parse(path, raw)
+        if (!parsed) {
+          status.errors++
+          return skip(path, 'parse-error', size)
+        }
+        status.parsed!++
+        if (parsed.errors) {
+          status.errors++
+          skip(path, 'parse-error', size)
+        }
+        const content = tier === 'full' ? redactedSource(raw) : ''
+        const symbols = JSON.stringify(parsed.symbols)
+        const refs = JSON.stringify(parsed.references)
+        const cost =
+          Buffer.byteLength(content) + Buffer.byteLength(symbols) + Buffer.byteLength(refs)
+        if (bytes + cost > PROJECT_BYTES) {
+          status.limited = true
+          if (!parsed.errors) skip(path, 'global-budget', size)
+          return
+        }
+        stage.run(
+          job,
+          path,
+          language,
+          hash,
+          content,
+          symbols,
+          refs,
+          now,
+          Number(parsed.errors),
+          identity,
+          tier,
+          cost,
+          parsed.symbols.length
+        )
+        seen.run(job, path)
+        bytes += cost
+        status.files++
+        status.symbols += parsed.symbols.length
+        if (tier === 'symbols') status.symbolOnly!++
+      } catch (error) {
+        signal?.throwIfAborted()
+        if (error instanceof IndexParserUnavailable || !(error instanceof Error)) throw error
+        skip(path, 'unreadable')
+      }
+    }
+
     const scan = async (directory: string, depth: number): Promise<void> => {
       if (depth > 24) {
-        skipped++
+        status.limited = true
+        skip(relative(root, directory), 'global-budget')
         return
       }
       await reader.authorize(directory)
       const entries = await opendir(directory)
       for await (const entry of entries) {
         signal?.throwIfAborted()
-        if (++visited > 20000 || rows.length >= 2000 || bytes >= 32 * 1024 * 1024) {
-          limited = true
-          break
-        }
         const absolute = join(directory, entry.name)
-        if (entry.isSymbolicLink() || ignored.has(entry.name) || sensitiveDocumentPath(absolute)) {
-          skipped++
-          continue
+        const path = relative(root, absolute)
+        if (++visited > DIRECTORY_ENTRIES) {
+          status.limited = true
+          skip(path, 'global-budget')
+          return
         }
-        if (entry.isDirectory()) {
-          await scan(absolute, depth + 1)
-          continue
+        if (entry.isSymbolicLink()) skip(path, 'symlink')
+        else if (sensitiveDocumentPath(absolute)) skip(path, 'sensitive')
+        else if (ignored.has(entry.name)) skip(path, 'ignored')
+        else if (entry.isDirectory()) await scan(absolute, depth + 1)
+        else {
+          const language = codeLanguage(absolute)
+          if (!entry.isFile() || !language) skip(path, 'unsupported')
+          else if (status.files >= PROJECT_FILES || bytes >= PROJECT_BYTES) {
+            status.limited = true
+            skip(path, 'global-budget')
+          } else await indexFile(absolute, path, language)
         }
-        const language = codeLanguage(absolute)
-        if (!entry.isFile() || !language) continue
-        try {
-          // Raw text remains in main memory only for AST parsing; persist only redacted lines.
-          // Refuse partial files so graph claims never silently describe a truncated source.
-          let content = '',
-            offset = 1
-          for (;;) {
-            const page = await reader.read({ path: absolute, offset, limit: 500 }, signal, {
-              rawForIndex: true
-            })
-            content += page.lines.map((line) => line.text).join('\n') + '\n'
-            if (Buffer.byteLength(content) > 512 * 1024 || offset > 10000)
-              throw new Error('File exceeds index budget')
-            if (!page.hasMore) break
-            if (!page.lines.length) throw new Error('Long line exceeds index budget')
-            offset = page.lines[page.lines.length - 1].line + 1
-          }
-          const path = relative(root, absolute).split('\\').join('/')
-          const hash = 'ast-v2:' + createHash('sha256').update(content).digest('hex')
-          const old = this.db
-            .prepare('SELECT hash,symbols,refs,parse_error FROM files WHERE root=? AND path=?')
-            .get(root, path)
-          const parsed =
-            old?.hash === hash
-              ? {
-                  symbols: JSON.parse(String(old.symbols)),
-                  references: JSON.parse(String(old.refs)),
-                  errors: old.parse_error === 1
-                }
-              : await parseCode(path, content)
-          if (parsed.errors) errors++
-          rows.push({
-            path,
-            language,
-            hash,
-            content: redactedSource(content),
-            symbols: parsed.symbols,
-            refs: parsed.references,
-            parseError: parsed.errors
-          })
-          bytes += Buffer.byteLength(content) + Buffer.byteLength(JSON.stringify(parsed))
-        } catch (error) {
-          signal?.throwIfAborted()
-          skipped++
-          if (!(error instanceof Error)) throw error
-        }
-        await new Promise<void>((done) => setImmediate(done))
+        if (visited > DIRECTORY_ENTRIES) return
+        if (visited % 8 === 0 && !memoryLimited) await yieldForMemory()
       }
     }
-    await scan(root, 0)
-    signal?.throwIfAborted()
-    const now = new Date().toISOString()
-    const status: CodeIndexStatus = {
-      root,
-      files: rows.length,
-      symbols: rows.reduce((n, row) => n + row.symbols.length, 0),
-      updatedAt: now,
-      indexing: false,
-      skipped,
-      errors,
-      limited
-    }
-    this.db.exec('BEGIN IMMEDIATE')
+
     try {
-      this.db.prepare('DELETE FROM files WHERE root=?').run(root)
-      const put = this.db.prepare(
-        'INSERT INTO files(root,path,language,hash,content,symbols,refs,updated_at,parse_error) VALUES(?,?,?,?,?,?,?,?,?)'
-      )
-      for (const row of rows)
-        put.run(
-          root,
-          row.path,
-          row.language,
-          row.hash,
-          row.content,
-          JSON.stringify(row.symbols),
-          JSON.stringify(row.refs),
-          now,
-          Number(row.parseError)
-        )
-      this.db
-        .prepare(
-          'INSERT INTO index_metadata VALUES(?,?) ON CONFLICT(root) DO UPDATE SET value=excluded.value'
-        )
-        .run(root, JSON.stringify(status))
-      this.db.exec('COMMIT')
-    } catch (error) {
-      this.db.exec('ROLLBACK')
-      throw error
+      await scan(root, 0)
+      await reader.authorize(root)
+      signal?.throwIfAborted()
+      status.elapsedMs = Math.round(performance.now() - started)
+      this.db.exec('BEGIN IMMEDIATE')
+      try {
+        this.db
+          .prepare(
+            'DELETE FROM files WHERE root=? AND path NOT IN (SELECT path FROM seen_files WHERE root=?)'
+          )
+          .run(root, job)
+        this.db
+          .prepare(
+            `INSERT OR REPLACE INTO files(root,path,language,hash,content,symbols,refs,updated_at,parse_error,identity,tier,cost,symbol_count)
+          SELECT ?,path,language,hash,content,symbols,refs,updated_at,parse_error,identity,tier,cost,symbol_count FROM staged_files WHERE root=?`
+          )
+          .run(root, job)
+        this.db.prepare('DELETE FROM index_skips WHERE root=?').run(root)
+        this.db
+          .prepare(
+            'INSERT INTO index_skips SELECT ?,path,reason,size FROM staged_skips WHERE root=?'
+          )
+          .run(root, job)
+        this.saveStatus(root, status)
+        this.db.exec('COMMIT')
+      } catch (error) {
+        this.db.exec('ROLLBACK')
+        throw error
+      }
+      return status
+    } finally {
+      parser?.close()
+      this.db.prepare('DELETE FROM staged_files WHERE root=?').run(job)
+      this.db.prepare('DELETE FROM staged_skips WHERE root=?').run(job)
+      this.db.prepare('DELETE FROM seen_files WHERE root=?').run(job)
     }
-    return status
   }
   search(root: string, query: string): CodeHit[] {
     this.validateQuery(query)
     const hits: Array<CodeHit & { score: number }> = []
-    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 24)
     for (const row of this.rows(root)) {
       String(row.content)
         .split('\n')
         .forEach((text, index) => {
+          const lower = text.toLowerCase()
           const score = words.reduce(
             (n, word) =>
               n +
-              Number(text.toLowerCase().includes(word)) * 2 +
+              Number(lower.includes(word)) * 2 +
               Number(index === 0 && row.path.toLowerCase().includes(word)),
             0
           )
@@ -237,7 +417,7 @@ export class CodeIntelligenceService {
     this.validateQuery(query)
     const definitions: CodeSymbol[] = [],
       references: CodeReference[] = []
-    for (const row of this.rows(root)) {
+    for (const row of this.rows(root, false)) {
       definitions.push(
         ...(JSON.parse(row.symbols) as CodeSymbol[])
           .filter((s) => s.name.toLowerCase().includes(query.toLowerCase()))
@@ -253,7 +433,7 @@ export class CodeIntelligenceService {
   }
   trace(root: string, query: string, reverse = false) {
     this.validateQuery(query)
-    const rows = this.rows(root)
+    const rows = [...this.rows(root, false)]
     const seeds = new Set(
       rows
         .filter(
@@ -303,8 +483,27 @@ export class CodeIntelligenceService {
       }
       frontier = next
     }
+    const degree = new Map<string, number>()
+    for (const { source, target } of result) {
+      degree.set(source, (degree.get(source) ?? 0) + 1)
+      degree.set(target, (degree.get(target) ?? 0) + 1)
+    }
     return {
       seeds: [...seeds].slice(0, 20),
+      repoMap: rows
+        .filter((row) => reached.has(row.path))
+        .flatMap((row) =>
+          (JSON.parse(row.symbols) as CodeSymbol[]).slice(0, 24).map((symbol) => ({
+            symbol,
+            score:
+              Number(symbol.name.toLowerCase().includes(query.toLowerCase())) * 8 +
+              Number(seeds.has(row.path)) * 3 +
+              (degree.get(row.path) ?? 0)
+          }))
+        )
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 24)
+        .map(({ symbol }) => symbol),
       edges: result,
       paths: [...reached].slice(0, 120),
       caveat:
@@ -315,17 +514,21 @@ export class CodeIntelligenceService {
     if (this.jobs.has(root)) throw new Error('请先取消索引')
     this.db.prepare('DELETE FROM files WHERE root=?').run(root)
     this.db.prepare('DELETE FROM index_metadata WHERE root=?').run(root)
+    this.db.prepare('DELETE FROM index_skips WHERE root=?').run(root)
   }
   private validateQuery(query: string): void {
     if (typeof query !== 'string' || !query.trim() || query.length > 200)
       throw new Error('Invalid code query')
   }
   private rows(
-    root: string
-  ): Array<{ path: string; content: string; symbols: string; refs: string }> {
+    root: string,
+    content = true
+  ): Iterable<{ path: string; content: string; symbols: string; refs: string }> {
     return this.db
-      .prepare('SELECT path,content,symbols,refs FROM files WHERE root=? ORDER BY path')
-      .all(resolve(root)) as unknown as Array<{
+      .prepare(
+        `SELECT path,${content ? 'content' : "'' AS content"},symbols,refs FROM files WHERE root=? ORDER BY path`
+      )
+      .iterate(resolve(root)) as unknown as Iterable<{
       path: string
       content: string
       symbols: string

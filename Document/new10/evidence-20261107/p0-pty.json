@@ -1,0 +1,78 @@
+{
+  "checks": [
+    "sandboxed independent terminal",
+    "detach and same PID/env on reattach",
+    "burst has no truncation on attached terminal",
+    "chat close and activate preserve terminal",
+    "explicit end kills PTY with fixture confirmation"
+  ],
+  "echoes": 20,
+  "p50Ms": 35.707014999999956,
+  "p95Ms": 41.31556999999975,
+  "burstMs": 2498.6139040000007,
+  "chatEvalMs": 0.7825229999998555,
+  "eventLoopP95Ms": 6.078463,
+  "eventLoopMaxMs": 7.151615,
+  "processes": [
+    {
+      "type": "Browser",
+      "cpu": {
+        "cumulativeCPUUsage": 4.245332,
+        "percentCPUUsage": 0,
+        "idleWakeupsPerSecond": 0
+      },
+      "memory": {
+        "workingSetSize": 160352,
+        "peakWorkingSetSize": 160360
+      }
+    },
+    {
+      "type": "GPU",
+      "cpu": {
+        "cumulativeCPUUsage": 1.70529,
+        "percentCPUUsage": 0,
+        "idleWakeupsPerSecond": 0
+      },
+      "memory": {
+        "workingSetSize": 90092,
+        "peakWorkingSetSize": 90312
+      }
+    },
+    {
+      "type": "Utility",
+      "cpu": {
+        "cumulativeCPUUsage": 0.222207,
+        "percentCPUUsage": 0,
+        "idleWakeupsPerSecond": 0
+      },
+      "memory": {
+        "workingSetSize": 26788,
+        "peakWorkingSetSize": 26824
+      }
+    },
+    {
+      "type": "Tab",
+      "cpu": {
+        "cumulativeCPUUsage": 2.086327,
+        "percentCPUUsage": 0,
+        "idleWakeupsPerSecond": 0
+      },
+      "memory": {
+        "workingSetSize": 163012,
+        "peakWorkingSetSize": 163912
+      }
+    },
+    {
+      "type": "Tab",
+      "cpu": {
+        "cumulativeCPUUsage": 0.181091,
+        "percentCPUUsage": 0,
+        "idleWakeupsPerSecond": 0
+      },
+      "memory": {
+        "workingSetSize": 46276,
+        "peakWorkingSetSize": 46276
+      }
+    }
+  ]
+}

@@ -15,7 +15,7 @@
 
 ## 明确废弃的旧方向
 
-此前的月亮/月牙、墨滴、圆环、巡检轨道、节点图形全部废弃。相关历史设计已移动至 `archive/previous-orbit-concept/`，只作历史留档，不得被新品牌引用。
+旧 Crescent 月亮/月牙图标已从项目移除。早期墨巡的墨滴、圆环、巡检轨道、节点图形方案保留在 `archive/previous-orbit-concept/`，只作历史留档，不得被新品牌引用。
 
 ## 视觉约束
 
@@ -43,4 +43,4 @@
 
 ## 正式接入边界
 
-设计资源包现位于 `Document/new/brand/`。正式接入由 `scripts/generate-icons.cjs` 从批准的 `source/` 主图生成 `build/`、`resources/` 和 Renderer 资源，替换前的历史设计保留在 `archive/`，不进入运行包。macOS ICNS 使用铺满画布的山水图，不额外留边或预烘焙圆角、阴影；macOS 26 自动适配 Dock 外框，避免二次缩小和灰色底板。运行和最小化图标都使用同一原生 ICNS，系统渲染验收规则详见 `Document/DEVELOPMENT.md`。
+设计资源包现位于 `Document/new/brand/`。正式接入由 `scripts/generate-icons.cjs` 从批准的 `source/` 主图生成 `build/`、`resources/` 和 Renderer 资源，旧 Crescent 图标和生成脚本已移除，正式生成流程不再保留旧图标备份；`archive/previous-orbit-concept/` 仅保留早期墨巡设计方案，不进入运行包。macOS ICNS 使用铺满画布的山水图，不额外留边或预烘焙圆角、阴影；macOS 26 自动适配 Dock 外框，避免二次缩小和灰色底板。启动、运行及原生窗口徽标统一使用原生 ICNS，禁止用未经系统外框处理的 PNG 覆盖运行时 Dock 图标，系统渲染验收规则详见 `Document/DEVELOPMENT.md`。

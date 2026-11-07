@@ -1,20 +1,30 @@
 # 墨巡 Security Model
 
-This document records the chat-first, external-iTerm workbench. Agent terminal execution is permanently forbidden, not enabled by approval, style, legacy settings or observation consent.
+The workbench supports operator input in the MoXun terminal and in compatible iTerm sessions. The reviewed Agent tool can request one approved command in a visible local collaboration terminal. Main blocks raw Agent terminal input and legacy execution paths.
 
 ## Capability Boundaries
 
 | Capability                      | Boundary                                                 | Expected Control                                                        |
 | ------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Agent execution/input/interrupt | PTY, pipe, iTerm, SSH or indirect tools                  | Permanently denied in Main Agent-origin scope and runtime allowlists    |
+| Agent terminal commands | Visible, conversation-bound local collaboration PTY | Per-command native approval and an exact Main-reviewed command set |
 | Terminal observation            | Exact owner/tab/iTerm UUID/connection/generation/host    | Native operator confirmation, Main-only grant, finite redacted evidence |
-| User terminal operation         | User-owned iTerm or Main-owned shared PTY                | Manual input in iTerm; existing bindings are read-only                  |
+| User terminal operation         | MoXun terminal or user-owned iTerm                       | Operator input through authorized windows. Existing iTerm bindings are read-only |
 | Local file writes               | Crescent client filesystem                               | User-supplied or confirmed destination, no implicit report path         |
 | Local document parsing          | Crescent client filesystem                               | User-referenced path, extension-specific parsers                        |
 | SSH connections                 | Remote shell                                             | Explicit connection selection and user-driven credential prompt         |
 | OpenAPI configuration           | Legacy migration data                                    | No OpenAPI tools exposed to the current Pi agent                        |
 | Agent MCP tools                 | Configured stdio or HTTP server with unverified behavior | Denied: reviewed implementation allowlist is empty                      |
 | Model providers                 | External AI endpoint                                     | API key storage and secret redaction in logs/UI                         |
+
+## MoXun terminal window
+
+- Main binds the terminal document to a Session ID and generation. IPC checks the registered WebContents, committed top-level document URL, and attachment on every operation. Crash, navigation, and window destruction revoke the attachment.
+- The terminal has a dedicated sandboxed preload and in-memory partition. Popups, navigation, web permissions, and automatic hyperlink activation are denied. Clipboard access is limited to the focused terminal and bounded text.
+- Terminal replay is held in memory. It stays outside the Agent context and log path. During replay, xterm cannot send terminal responses to the PTY.
+- The collaboration path starts a known local Bash with startup profiles, inherited environment and history disabled. Main binds the terminal to one chat owner and conversation. Native approval shows the exact command, local host, cwd, session, risk, expiry and bounded result disclosure.
+- Main verifies the current attachment, visibility, active run and target again after approval. Only the reviewed writer receives the fixed command envelope. Raw Agent input, subagents, legacy/iTerm targets and SSH remain outside this capability.
+- A matching structured start, finish with exit code, and return to the trusted prompt confirm command completion. Soft timeout preserves the lock. Missing or stale evidence and operator takeover fail closed. Raw operator input revokes collaboration for that PTY before passing input through.
+- PTY control frames provide correlation inside this constrained local environment. A producer that learns the nonce can create a matching frame. Arbitrary Shell code and remote Shells require a separately verified authority boundary.
 
 ## Tool Metadata
 

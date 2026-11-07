@@ -12,24 +12,46 @@ export function createLocalFileTools(pi: PiSdkFacade, cwd: string, sessionKey: s
     name: 'read',
     label: 'Read local document',
     description:
-      'Read/list/search local client files and directories (absolute paths or workspace-relative paths; ~ means the client home) only, independently of the SSH bash target. Authorized workspace/selected roots only; bounded UTF-8/UTF-16 lines with citations. Reject secrets, symlinks and binaries. Never auto-upload an entire large file.',
+      'Read/list/search local client files and directories (absolute paths or workspace-relative paths; ~ means the client home) only, independently of the SSH bash target. Authorized workspace/selected roots only; bounded UTF-8/UTF-16 text, PDF pages or DOCX body paragraphs. Use operation inspect, read_range, search, tail or structure. Use byteOffset for fast text seeks and pass nextCursor with the same operation/query for continuation. PDF offsets are page numbers. DOCX images and scanned PDF contents require another source. Reject secrets, symlinks and other binaries. Never auto-upload an entire large file.',
     parameters: Type.Object({
       path: Type.String({ maxLength: 4096 }),
-      offset: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000000 })),
+      operation: Type.Optional(
+        Type.Union([
+          Type.Literal('inspect'),
+          Type.Literal('read_range'),
+          Type.Literal('search'),
+          Type.Literal('tail'),
+          Type.Literal('structure')
+        ])
+      ),
+      offset: Type.Optional(Type.Integer({ minimum: 1 })),
+      byteOffset: Type.Optional(Type.Integer({ minimum: 0 })),
+      byteLength: Type.Optional(Type.Integer({ minimum: 1 })),
+      cursor: Type.Optional(Type.String({ maxLength: 800 })),
       limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
-      query: Type.Optional(Type.String({ maxLength: 200 }))
+      query: Type.Optional(Type.String({ maxLength: 2048 })),
+      contextLines: Type.Optional(Type.Integer({ minimum: 0, maximum: 3 })),
+      queryMode: Type.Optional(Type.Union([Type.Literal('literal'), Type.Literal('regex')]))
     }),
     executionMode: 'sequential',
     async execute(_id, params, signal) {
       const context = getPtyBashExecContext(sessionKey)
       if (!context || context.webContents.isDestroyed())
         throw new Error('No active local document scope')
-      const reader = await localDocumentReaderForOwner(context.webContents.id, cwd)
+      const reader = await localDocumentReaderForOwner(
+        context.webContents.id,
+        cwd,
+        context.attachmentPaths,
+        context.projectRootIdentity
+      )
+      const readSignal = AbortSignal.any(
+        [context.signal, signal].filter((value): value is AbortSignal => Boolean(value))
+      )
       let result
       try {
         const path = await reader.resolvePath(params.path, cwd)
         if ((await lstat(path)).isDirectory()) {
-          const entries = await reader.list(path, signal)
+          const entries = await reader.list(path, readSignal)
           let hasMore = entries.length === 200
           while (Buffer.byteLength(JSON.stringify({ path, entries })) > 45000 && entries.length) {
             entries.pop()
@@ -42,13 +64,9 @@ export function createLocalFileTools(pi: PiSdkFacade, cwd: string, sessionKey: s
             details: { path, directory: true, hasMore }
           }
         }
-        result = await reader.read({ ...params, path }, signal)
+        result = await reader.read({ ...params, path }, readSignal)
       } catch (error) {
         throw localDocumentError(error)
-      }
-      while (Buffer.byteLength(JSON.stringify(result)) > 50000 && result.lines.length) {
-        result.lines.pop()
-        result.hasMore = true
       }
       return {
         content: [{ type: 'text', text: JSON.stringify(result) }],
@@ -84,7 +102,12 @@ export function createLocalFileTools(pi: PiSdkFacade, cwd: string, sessionKey: s
       const context = getPtyBashExecContext(sessionKey)
       if (!context || context.webContents.isDestroyed())
         throw new Error('No active file review scope')
-      const reader = await localDocumentReaderForOwner(context.webContents.id, cwd)
+      const reader = await localDocumentReaderForOwner(
+        context.webContents.id,
+        cwd,
+        context.attachmentPaths,
+        context.projectRootIdentity
+      )
       const result = await fileChangeApprovals.request({
         ...params,
         cwd,

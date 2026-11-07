@@ -1,150 +1,73 @@
 #!/usr/bin/env node
 /**
- * Packaging smoke checks for Crescent release artifacts.
- * Validates that expected platform packages and updater metadata exist.
- *
- * Usage:
- *   node scripts/smoke-packaging.cjs [artifactDir]
- * Default artifactDir: dist
+ * Checks the macOS Intel release artifact layout.
+ * Usage: node scripts/smoke-packaging.cjs [artifactDir]
  */
 const fs = require('node:fs')
 const path = require('node:path')
 
-/** @typedef {{ id: string; patterns: RegExp[] }} SmokeRule */
-
-/** @type {SmokeRule[]} */
-const PLATFORM_RULES = [
-  {
-    id: 'macos-dmg-or-zip',
-    patterns: [/\.dmg$/i, /mac.*\.zip$/i, /darwin.*\.zip$/i, /-arm64.*\.zip$/i, /-x64.*\.zip$/i]
-  },
-  {
-    id: 'windows-installer',
-    patterns: [/\.exe$/i]
-  },
-  {
-    id: 'linux-package',
-    patterns: [/\.AppImage$/i, /\.deb$/i]
-  }
-]
-
-const UPDATER_PATTERNS = [/^latest(-mac|-linux)?\.yml$/i, /\.yml$/i]
-const ARTIFACT_EXTENSIONS = /\.(dmg|zip|exe|AppImage|deb|yml|blockmap)$/i
-
-/**
- * @param {string[]} files
- * @param {SmokeRule} rule
- */
-function matchRule(files, rule) {
-  return files.filter((name) => rule.patterns.some((pattern) => pattern.test(name)))
-}
+const MAC_DMG = /^moxun-(.+)-x64\.dmg$/
+const MAC_ZIP = /^moxun-(.+)-x64-mac\.zip$/
+const PACKAGE_EXTENSION = /\.(dmg|zip|pkg|exe|msi|AppImage|deb|snap|rpm)$/i
+const METADATA_EXTENSION = /\.(yml|blockmap)$/i
 
 /**
  * @param {string[]} files
  * @param {Record<string, number>} [sizesByName]
- * @returns {{ ok: boolean; errors: string[]; platforms: { mac: boolean; win: boolean; linux: boolean } }}
  */
 function evaluatePackagingArtifacts(files, sizesByName = {}) {
-  const platforms = {
-    mac: matchRule(files, PLATFORM_RULES[0]).length > 0,
-    win: matchRule(files, PLATFORM_RULES[1]).length > 0,
-    linux: matchRule(files, PLATFORM_RULES[2]).length > 0
-  }
   const errors = []
-
-  if (!platforms.mac && !platforms.win && !platforms.linux) {
-    errors.push(
-      'Expected at least one of: macOS (.dmg/.zip), Windows (.exe), Linux (.AppImage/.deb)'
-    )
-  }
-
-  const updaterFiles = files.filter((name) =>
-    UPDATER_PATTERNS.some((pattern) => pattern.test(name))
-  )
-  if (updaterFiles.length === 0) {
-    errors.push(
-      'Expected electron-builder updater metadata (*.yml such as latest.yml / latest-mac.yml)'
-    )
-  }
+  const dmgs = files.map((name) => MAC_DMG.exec(name)).filter(Boolean)
+  const zips = files.map((name) => MAC_ZIP.exec(name)).filter(Boolean)
+  if (dmgs.length !== 1 || zips.length !== 1 || dmgs[0][1] !== zips[0][1])
+    errors.push('Expected one moxun-<version>-x64.dmg and one matching moxun-<version>-x64-mac.zip')
+  if (!files.includes('latest-mac.yml')) errors.push('Expected latest-mac.yml updater metadata')
 
   for (const name of files) {
-    if (!ARTIFACT_EXTENSIONS.test(name)) continue
+    const isPackage = PACKAGE_EXTENSION.test(name)
+    if (isPackage && !MAC_DMG.test(name) && !MAC_ZIP.test(name))
+      errors.push(`Unexpected package for the macOS Intel release: ${name}`)
+    if (!isPackage && !METADATA_EXTENSION.test(name)) continue
     const size = sizesByName[name]
-    if (typeof size === 'number' && size < 64) {
+    if (typeof size === 'number' && size < 64)
       errors.push(`Artifact too small (${size} bytes): ${name}`)
-    }
   }
 
-  return { ok: errors.length === 0, errors, platforms }
+  return { ok: errors.length === 0, errors }
 }
 
-/**
- * @param {string} dir
- */
-function listFiles(dir) {
-  if (!fs.existsSync(dir)) {
-    return []
-  }
-  return fs.readdirSync(dir).filter((name) => {
-    const full = path.join(dir, name)
-    return fs.statSync(full).isFile()
-  })
-}
-
-/**
- * @param {string} artifactDir
- */
 function runSmokePackaging(artifactDir) {
-  const files = listFiles(artifactDir)
-  if (files.length === 0) {
-    return {
-      ok: false,
-      errors: [`No files found in ${artifactDir}`],
-      platforms: { mac: false, win: false, linux: false },
-      files
-    }
-  }
+  const files = fs.existsSync(artifactDir)
+    ? fs
+        .readdirSync(artifactDir)
+        .filter((name) => fs.statSync(path.join(artifactDir, name)).isFile())
+    : []
+  if (!files.length) return { ok: false, errors: [`No files found in ${artifactDir}`], files }
 
-  /** @type {Record<string, number>} */
-  const sizesByName = {}
-  for (const name of files) {
-    sizesByName[name] = fs.statSync(path.join(artifactDir, name)).size
-  }
-
-  const result = evaluatePackagingArtifacts(files, sizesByName)
-  return { ...result, files }
+  const sizesByName = Object.fromEntries(
+    files.map((name) => [name, fs.statSync(path.join(artifactDir, name)).size])
+  )
+  return { ...evaluatePackagingArtifacts(files, sizesByName), files }
 }
 
 function main() {
   const artifactDir = path.resolve(process.argv[2] || 'dist')
   const result = runSmokePackaging(artifactDir)
 
-  if (result.files.length > 0) {
+  if (result.files.length) {
     console.log(`[smoke:packaging] Checking ${result.files.length} file(s) in ${artifactDir}`)
-    for (const name of result.files) {
-      console.log(`  - ${name}`)
-    }
+    for (const name of result.files) console.log(`  - ${name}`)
   }
 
   if (!result.ok) {
     console.error('[smoke:packaging] FAILED')
-    for (const error of result.errors) {
-      console.error(`  • ${error}`)
-    }
+    for (const error of result.errors) console.error(`  • ${error}`)
     process.exit(1)
   }
 
-  console.log(
-    `[smoke:packaging] OK (platforms: mac=${result.platforms.mac} win=${result.platforms.win} linux=${result.platforms.linux})`
-  )
+  console.log('[smoke:packaging] OK (macOS Intel)')
 }
 
-module.exports = {
-  evaluatePackagingArtifacts,
-  runSmokePackaging,
-  PLATFORM_RULES
-}
+module.exports = { evaluatePackagingArtifacts, runSmokePackaging }
 
-if (require.main === module) {
-  main()
-}
+if (require.main === module) main()

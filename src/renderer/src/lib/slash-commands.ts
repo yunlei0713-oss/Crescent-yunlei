@@ -34,7 +34,7 @@ const TRAILING_SLASH_COMMAND = /(?:^|\s)\/([^\s]*)\s*$/
 export function getSlashCommandQuery(value: string, cursor = value.length): string | undefined {
   const clamped = Math.max(0, Math.min(cursor, value.length))
   const before = value.slice(0, clamped)
-  const lastLine = before.includes('\n') ? (before.split('\n').pop() ?? '') : before
+  const lastLine = before.slice(before.lastIndexOf('\n') + 1)
   const match = TRAILING_SLASH_COMMAND.exec(lastLine)
   if (!match) return undefined
   return match[1].toLowerCase()

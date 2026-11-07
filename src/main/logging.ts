@@ -12,9 +12,9 @@ import {
 
 export type { SystemLogLevel } from '../shared/log-levels'
 
-const LOG_PREFIX = 'crescent-'
+const LOG_PREFIX = 'moxun-'
 const LOG_SUFFIX = '.log'
-const LOG_FILE_NAME_RE = /^crescent-(\d{4}-\d{2}-\d{2})\.log$/
+const LOG_FILE_NAME_RE = /^(?:moxun|crescent)-(\d{4}-\d{2}-\d{2})\.log$/
 /** Keep today plus the previous two daily files; anything older is removed. */
 const RETENTION_DAYS = 3
 
@@ -110,7 +110,7 @@ export function getCurrentLogFilePath(): string {
 
 /**
  * Install the system logger: mirror every main-process console call into
- * `~/.crescent/logs/crescent-YYYY-MM-DD.log` and capture fatal process errors.
+ * `~/.moxun/logs/moxun-YYYY-MM-DD.log` and capture fatal process errors.
  * Call once at startup, before other modules start logging.
  */
 export function initSystemLogging(): void {
@@ -160,7 +160,7 @@ export function initSystemLogging(): void {
   if (shouldRecordLogLevel('info', logThreshold)) {
     writeSystemLog(
       'info',
-      `Crescent started (pid=${process.pid}, platform=${process.platform}, arch=${process.arch})`
+      `MoXun started (pid=${process.pid}, platform=${process.platform}, arch=${process.arch})`
     )
   }
 }

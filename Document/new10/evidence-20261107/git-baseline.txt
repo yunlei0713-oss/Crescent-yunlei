@@ -1,0 +1,1479 @@
+
+$ git status --short --branch
+## test...origin/test
+ M .cursor/rules/architecture-first.mdc
+ M Document/ARCHITECTURE.md
+ M Document/DEVELOPMENT.md
+ M Document/EXTERNAL_TERMINALS.md
+ M Document/INDEX.md
+ M Document/RELEASE_OPERATIONS.md
+ M Document/SECURITY_MODEL.md
+ M Document/TESTING.md
+ M Document/UI_DESIGN_SYSTEM.md
+ M Document/new/brand/README.md
+ D Document/new/brand/archive/crescent-legacy/build/icon.icns
+ D Document/new/brand/archive/crescent-legacy/build/icon.ico
+ D Document/new/brand/archive/crescent-legacy/build/icon.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-app.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-circuit.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-logo.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-mark.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-1024.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-64.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-1024.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-64.png
+ D Document/new/brand/archive/crescent-legacy/resources/icon.png
+ D Document/new/brand/archive/crescent-legacy/scripts/generate-icons.cjs
+ D Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-logo.png
+ D Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-mark.png
+ D Document/new/brand/archive/crescent-legacy/website/docs/public/favicon.ico
+ D Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-logo.png
+ D Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-mark.png
+ M Document/new/brand/brand-guide.md
+ M electron-builder.yml
+ M electron.vite.config.ts
+ M package-lock.json
+ M package.json
+ M scripts/build-macos-local.cjs
+ M scripts/check-security-boundaries.cjs
+ M scripts/generate-icons.cjs
+ M scripts/patch-electron-dock-icon.cjs
+ M scripts/patch-macos-app-icon.cjs
+ M scripts/smoke-packaging.cjs
+ M src/main/agent/command-auditor.ts
+ M src/main/agent/generate-skill.ts
+ M src/main/agent/generate-sop.ts
+ M src/main/agent/guided-ops.ts
+ M src/main/agent/instruction-files.ts
+ M src/main/agent/ipc.ts
+ M src/main/agent/model-provider-config.ts
+ M src/main/agent/multimodal.ts
+ M src/main/agent/pi-host.ts
+ M src/main/agent/pi-knowledge.ts
+ M src/main/agent/pi-local-files.ts
+ M src/main/agent/pi-model-runtime.ts
+ M src/main/agent/pi-terminal-bash.ts
+ M src/main/agent/runtime/pi/runtime.ts
+ M src/main/agent/runtime/types.ts
+ M src/main/agent/skills.ts
+ M src/main/code-intelligence/parser.ts
+ M src/main/code-intelligence/service.ts
+ M src/main/crescent-paths.ts
+ M src/main/crescent-sqlite.ts
+ M src/main/crescent-store.ts
+ M src/main/index.ts
+ M src/main/ipc-security.ts
+ M src/main/knowledge-ipc.ts
+ M src/main/local-document-errors.ts
+ M src/main/local-document-ipc.ts
+ M src/main/local-document-reader.ts
+ M src/main/logging.ts
+ M src/main/memory/auto-learning.ts
+ M src/main/memory/extraction.ts
+ M src/main/memory/service.ts
+ M src/main/menu.ts
+ M src/main/projects.ts
+ M src/main/security/agent-capability-policy.ts
+ M src/main/security/security-audit.ts
+ M src/main/sqlite/conversations.ts
+ M src/main/storage/ipc.ts
+ M src/main/terminal/execution-state.ts
+ M src/main/terminal/ipc.ts
+ M src/main/terminal/observer/evidence-notifications.ts
+ M src/main/terminal/observer/observation-grants.ts
+ M src/main/terminal/observer/registry.ts
+ M src/main/terminal/observer/terminal-observer.ts
+ M src/main/terminal/session/pty-session.ts
+ M src/main/terminal/session/types.ts
+ M src/main/terminal/terminal-text-stream.ts
+ M src/preload/modules/agent.ts
+ M src/preload/modules/documents.ts
+ M src/preload/modules/knowledge.ts
+ M src/preload/modules/projects.ts
+ M src/preload/modules/terminal.ts
+ M src/renderer/src/App.tsx
+ M src/renderer/src/assets/chat-workspace.css
+ M src/renderer/src/assets/main.css
+ M src/renderer/src/components/AgentLogList.tsx
+ M src/renderer/src/components/AgentLogMessage.tsx
+ M src/renderer/src/components/AgentRunTimeline.tsx
+ M src/renderer/src/components/AppModals.tsx
+ M src/renderer/src/components/AppSidebar.tsx
+ M src/renderer/src/components/ChatWorkspace.tsx
+ M src/renderer/src/components/CodeIntelligenceSettings.tsx
+ M src/renderer/src/components/ComposerAttachments.tsx
+ M src/renderer/src/components/ComposerEditor.tsx
+ M src/renderer/src/components/ConnectionList.tsx
+ M src/renderer/src/components/ConversationNavigator.tsx
+ M src/renderer/src/components/ExternalTerminalControls.tsx
+ M src/renderer/src/components/GuidedOpsHistory.tsx
+ M src/renderer/src/components/GuidedOpsPanel.tsx
+ M src/renderer/src/components/LocalDocumentsSheet.tsx
+ M src/renderer/src/components/LocalPdfPreview.tsx
+ M src/renderer/src/components/MemoryCenter.tsx
+ M src/renderer/src/components/ProjectSidebar.tsx
+ M src/renderer/src/components/SettingsSheet.tsx
+ M src/renderer/src/components/SharedTerminalActions.tsx
+ M src/renderer/src/components/SkillManager.tsx
+ M src/renderer/src/components/WikiSheet.tsx
+ M src/renderer/src/components/timeline/RunDiagnostics.tsx
+ M src/renderer/src/components/ui/sheet.tsx
+ M src/renderer/src/hooks/useAgentController.ts
+ M src/renderer/src/hooks/useAgentRuns.ts
+ M src/renderer/src/hooks/useMemoryCenter.ts
+ M src/renderer/src/hooks/useSkillsController.ts
+ M src/renderer/src/hooks/useTerminalObservation.ts
+ M src/renderer/src/i18n/en.ts
+ M src/renderer/src/i18n/zh-CN.ts
+ M src/renderer/src/lib/agent-message-refs.ts
+ M src/renderer/src/lib/app-controller-support.ts
+ M src/renderer/src/lib/slash-commands.ts
+ M src/shared/agent-prompt-discipline.ts
+ M src/shared/agent-run-prompt.ts
+ M src/shared/agent-tool-catalog.ts
+ M src/shared/agent-types.ts
+ M src/shared/knowledge.ts
+ M src/shared/local-documents.ts
+ M src/shared/projects.ts
+ M src/shared/terminal-observation-types.ts
+?? Document/new10/
+?? Document/new4/MOXUN_BRAND_AND_TERMINAL_ACTIONS_FIX_REPORT_20261104.md
+?? Document/new4/issue-actions-validation-20261104/
+?? Document/new5/
+?? Document/new6/
+?? Document/new7/
+?? Document/new8/
+?? Document/new9/
+?? resources/licenses/
+?? scripts/smoke-macos-app.cjs
+?? scripts/verify-managed-terminal.cjs
+?? src/main/agent/compaction-checkpoint.ts
+?? src/main/agent/context-assembly.ts
+?? src/main/agent/pi-managed-terminal-tool.ts
+?? src/main/agent/turn-queue-ipc.ts
+?? src/main/agent/turn-queue.ts
+?? src/main/code-intelligence/language.ts
+?? src/main/code-intelligence/parser-protocol.ts
+?? src/main/code-intelligence/utility-parser.ts
+?? src/main/code-intelligence/worker.ts
+?? src/main/document-cursor.ts
+?? src/main/local-docx-reader.ts
+?? src/main/local-pdf-reader.ts
+?? src/main/local-text-reader.ts
+?? src/main/macos-application-icon.ts
+?? src/main/memory/context-jobs.ts
+?? src/main/memory/evidence.ts
+?? src/main/memory/schema.ts
+?? src/main/moxun-data-migration.ts
+?? src/main/sqlite/context-checkpoints.ts
+?? src/main/sqlite/history-search.ts
+?? src/main/sqlite/project-association.ts
+?? src/main/terminal/managed/
+?? src/main/terminal/observer/command-observation.ts
+?? src/preload/terminal.ts
+?? src/renderer/src/components/AgentTurnQueuePanel.tsx
+?? src/renderer/src/components/ConversationRecords.tsx
+?? src/renderer/src/components/MemoryEvidenceList.tsx
+?? src/renderer/src/components/TerminalSessionMenu.tsx
+?? src/renderer/src/lib/guided-ops-labels.ts
+?? src/renderer/src/terminal/
+?? src/renderer/terminal.html
+?? src/shared/agent-turn-queue.ts
+?? src/shared/managed-terminal.ts
+exit=0
+
+$ git diff --stat
+ .cursor/rules/architecture-first.mdc               |   2 +-
+ Document/ARCHITECTURE.md                           |  14 +-
+ Document/DEVELOPMENT.md                            |  18 +-
+ Document/EXTERNAL_TERMINALS.md                     |   8 +-
+ Document/INDEX.md                                  |   3 +
+ Document/RELEASE_OPERATIONS.md                     |  10 +
+ Document/SECURITY_MODEL.md                         |  16 +-
+ Document/TESTING.md                                |  96 ++--
+ Document/UI_DESIGN_SYSTEM.md                       |  13 +-
+ Document/new/brand/README.md                       |   2 +-
+ .../brand/archive/crescent-legacy/build/icon.icns  | Bin 102683 -> 0 bytes
+ .../brand/archive/crescent-legacy/build/icon.ico   | Bin 40599 -> 0 bytes
+ .../brand/archive/crescent-legacy/build/icon.png   | Bin 200525 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_128x128.png     | Bin 20574 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_128x128@2x.png  | Bin 65605 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_16x16.png       | Bin 788 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_16x16@2x.png    | Bin 2272 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_256x256.png     | Bin 65605 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_256x256@2x.png  | Bin 184998 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_32x32.png       | Bin 2272 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_32x32@2x.png    | Bin 6707 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_512x512.png     | Bin 184998 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_512x512@2x.png  | Bin 678608 -> 0 bytes
+ .../crescent-legacy/build/icons/crescent-app.svg   |  58 ---
+ .../build/icons/crescent-circuit.svg               |  51 --
+ .../crescent-legacy/build/icons/crescent-logo.png  | Bin 354080 -> 0 bytes
+ .../crescent-legacy/build/icons/crescent-mark.svg  |  23 -
+ .../build/icons/preview/icon-1024.png              | Bin 220518 -> 0 bytes
+ .../build/icons/preview/icon-128.png               | Bin 8156 -> 0 bytes
+ .../build/icons/preview/icon-16.png                | Bin 533 -> 0 bytes
+ .../build/icons/preview/icon-256.png               | Bin 22280 -> 0 bytes
+ .../build/icons/preview/icon-32.png                | Bin 1223 -> 0 bytes
+ .../build/icons/preview/icon-512.png               | Bin 69685 -> 0 bytes
+ .../build/icons/preview/icon-64.png                | Bin 2998 -> 0 bytes
+ .../build/icons/preview/macos-icon-1024.png        | Bin 542127 -> 0 bytes
+ .../build/icons/preview/macos-icon-128.png         | Bin 16702 -> 0 bytes
+ .../build/icons/preview/macos-icon-16.png          | Bin 588 -> 0 bytes
+ .../build/icons/preview/macos-icon-256.png         | Bin 53639 -> 0 bytes
+ .../build/icons/preview/macos-icon-32.png          | Bin 1861 -> 0 bytes
+ .../build/icons/preview/macos-icon-512.png         | Bin 174287 -> 0 bytes
+ .../build/icons/preview/macos-icon-64.png          | Bin 5662 -> 0 bytes
+ .../archive/crescent-legacy/resources/icon.png     | Bin 200525 -> 0 bytes
+ .../crescent-legacy/scripts/generate-icons.cjs     | 225 ---------
+ .../src/renderer/src/assets/crescent-logo.png      | Bin 81834 -> 0 bytes
+ .../src/renderer/src/assets/crescent-mark.png      | Bin 25383 -> 0 bytes
+ .../website/docs/public/favicon.ico                | Bin 40599 -> 0 bytes
+ .../src/renderer/src/assets/crescent-logo.png      | Bin 184998 -> 0 bytes
+ .../src/renderer/src/assets/crescent-mark.png      | Bin 20574 -> 0 bytes
+ Document/new/brand/brand-guide.md                  |   4 +-
+ electron-builder.yml                               |   4 +-
+ electron.vite.config.ts                            |  64 +--
+ package-lock.json                                  | 129 ++++-
+ package.json                                       |  17 +-
+ scripts/build-macos-local.cjs                      |  23 +-
+ scripts/check-security-boundaries.cjs              |  34 +-
+ scripts/generate-icons.cjs                         |   8 +-
+ scripts/patch-electron-dock-icon.cjs               |   2 +-
+ scripts/patch-macos-app-icon.cjs                   |  21 +-
+ scripts/smoke-packaging.cjs                        | 145 ++----
+ src/main/agent/command-auditor.ts                  |   2 +-
+ src/main/agent/generate-skill.ts                   |   2 +-
+ src/main/agent/generate-sop.ts                     |   2 +-
+ src/main/agent/guided-ops.ts                       |   6 +-
+ src/main/agent/instruction-files.ts                |  29 +-
+ src/main/agent/ipc.ts                              | 339 ++++++++-----
+ src/main/agent/model-provider-config.ts            |   2 +-
+ src/main/agent/multimodal.ts                       | 128 ++---
+ src/main/agent/pi-host.ts                          | 340 +++++++++----
+ src/main/agent/pi-knowledge.ts                     |  98 +++-
+ src/main/agent/pi-local-files.ts                   |  45 +-
+ src/main/agent/pi-model-runtime.ts                 |   3 +-
+ src/main/agent/pi-terminal-bash.ts                 |   2 +
+ src/main/agent/runtime/pi/runtime.ts               |   4 +-
+ src/main/agent/runtime/types.ts                    |  15 +-
+ src/main/agent/skills.ts                           |  29 +-
+ src/main/code-intelligence/parser.ts               |  78 +--
+ src/main/code-intelligence/service.ts              | 467 +++++++++++++-----
+ src/main/crescent-paths.ts                         |  15 +-
+ src/main/crescent-sqlite.ts                        |  80 +--
+ src/main/crescent-store.ts                         |   7 +-
+ src/main/index.ts                                  |  62 ++-
+ src/main/ipc-security.ts                           |  35 +-
+ src/main/knowledge-ipc.ts                          |  40 +-
+ src/main/local-document-errors.ts                  |   4 +-
+ src/main/local-document-ipc.ts                     |  85 +++-
+ src/main/local-document-reader.ts                  | 255 ++++++----
+ src/main/logging.ts                                |   8 +-
+ src/main/memory/auto-learning.ts                   |   3 +-
+ src/main/memory/extraction.ts                      | 326 ++++++++----
+ src/main/memory/service.ts                         | 549 +++++++++++++++++----
+ src/main/menu.ts                                   |  12 +-
+ src/main/projects.ts                               | 305 ++++++++++--
+ src/main/security/agent-capability-policy.ts       |   2 +
+ src/main/security/security-audit.ts                |   1 +
+ src/main/sqlite/conversations.ts                   |   7 +
+ src/main/storage/ipc.ts                            |  97 ++--
+ src/main/terminal/execution-state.ts               |  16 +-
+ src/main/terminal/ipc.ts                           | 134 +++--
+ .../terminal/observer/evidence-notifications.ts    |  78 ++-
+ src/main/terminal/observer/observation-grants.ts   |  17 +-
+ src/main/terminal/observer/registry.ts             |  32 +-
+ src/main/terminal/observer/terminal-observer.ts    | 248 ++++++++--
+ src/main/terminal/session/pty-session.ts           |   2 +
+ src/main/terminal/session/types.ts                 |   2 +
+ src/main/terminal/terminal-text-stream.ts          |  20 +-
+ src/preload/modules/agent.ts                       |  21 +
+ src/preload/modules/documents.ts                   |  19 +-
+ src/preload/modules/knowledge.ts                   |  10 +
+ src/preload/modules/projects.ts                    |  10 +-
+ src/preload/modules/terminal.ts                    |   4 +
+ src/renderer/src/App.tsx                           | 270 ++++++----
+ src/renderer/src/assets/chat-workspace.css         |   4 +
+ src/renderer/src/assets/main.css                   |   4 +-
+ src/renderer/src/components/AgentLogList.tsx       |   9 +-
+ src/renderer/src/components/AgentLogMessage.tsx    |   4 +-
+ src/renderer/src/components/AgentRunTimeline.tsx   |   4 +-
+ src/renderer/src/components/AppModals.tsx          |  18 +-
+ src/renderer/src/components/AppSidebar.tsx         |  45 +-
+ src/renderer/src/components/ChatWorkspace.tsx      | 107 ++--
+ .../src/components/CodeIntelligenceSettings.tsx    |  74 ++-
+ .../src/components/ComposerAttachments.tsx         |  18 +-
+ src/renderer/src/components/ComposerEditor.tsx     |  26 +-
+ src/renderer/src/components/ConnectionList.tsx     |   2 +-
+ .../src/components/ConversationNavigator.tsx       |  23 +-
+ .../src/components/ExternalTerminalControls.tsx    |  23 +-
+ src/renderer/src/components/GuidedOpsHistory.tsx   |   3 +-
+ src/renderer/src/components/GuidedOpsPanel.tsx     | 162 +++---
+ .../src/components/LocalDocumentsSheet.tsx         |  33 +-
+ src/renderer/src/components/LocalPdfPreview.tsx    |  88 +++-
+ src/renderer/src/components/MemoryCenter.tsx       | 234 +++++++--
+ src/renderer/src/components/ProjectSidebar.tsx     | 186 +++++--
+ src/renderer/src/components/SettingsSheet.tsx      |  36 +-
+ .../src/components/SharedTerminalActions.tsx       |  23 +-
+ src/renderer/src/components/SkillManager.tsx       |  21 +-
+ src/renderer/src/components/WikiSheet.tsx          |   4 +-
+ .../src/components/timeline/RunDiagnostics.tsx     |  45 +-
+ src/renderer/src/components/ui/sheet.tsx           |   6 +-
+ src/renderer/src/hooks/useAgentController.ts       | 348 ++++++++++---
+ src/renderer/src/hooks/useAgentRuns.ts             |  12 +-
+ src/renderer/src/hooks/useMemoryCenter.ts          |  22 +-
+ src/renderer/src/hooks/useSkillsController.ts      |   2 +-
+ src/renderer/src/hooks/useTerminalObservation.ts   |  19 +-
+ src/renderer/src/i18n/en.ts                        |  21 +-
+ src/renderer/src/i18n/zh-CN.ts                     |  21 +-
+ src/renderer/src/lib/agent-message-refs.ts         |   8 +-
+ src/renderer/src/lib/app-controller-support.ts     |  24 +-
+ src/renderer/src/lib/slash-commands.ts             |   2 +-
+ src/shared/agent-prompt-discipline.ts              |   9 +-
+ src/shared/agent-run-prompt.ts                     |   4 +-
+ src/shared/agent-tool-catalog.ts                   |  13 +
+ src/shared/agent-types.ts                          |   9 +-
+ src/shared/knowledge.ts                            |  45 +-
+ src/shared/local-documents.ts                      |  47 +-
+ src/shared/projects.ts                             |  15 +
+ src/shared/terminal-observation-types.ts           |  19 +-
+ 155 files changed, 4937 insertions(+), 2262 deletions(-)
+exit=0
+
+$ git diff --check
+exit=0
+
+$ git diff --cached --stat
+exit=0
+
+$ git diff --cached --check
+exit=0
+
+$ git ls-files --stage
+100644 7770d35f34e6a841e6f9d7d2031be85497e31994 0	.cursor/rules/architecture-first.mdc
+100644 b6085b87c13ea9d713e7a47a679ed07828976b9b 0	.cursor/rules/ci-before-commit.mdc
+100644 9aae9acfe66637be81cc668580d0fb36c17c3393 0	.cursor/rules/development-standards.mdc
+100644 bea4b9a69a002620bc33f37966bcbb5454479990 0	.cursor/rules/git-commit-author.mdc
+100644 1c698e4bc35622e1adf123d1cceebef5172a0cdd 0	.cursor/skills/electron-development/SKILL.md
+100644 f9deba7cf7c0d54fe66612abd3d419ba678196de 0	.cursor/skills/pi-dev/SKILL.md
+100644 cf640d53fbc2ebac28b14a7ab44ece043cf67e37 0	.editorconfig
+100755 3326737e32a91d434ce3cd3295343ebda29281c9 0	.githooks/commit-msg
+100755 ab750851a96b141573475e0fcee727542ee0c0a1 0	.githooks/pre-commit
+100644 88df04d907487ffb6b7c69f878e1513f253ec836 0	.github/ISSUE_TEMPLATE/bug_report.yml
+100644 fb331476b07e66a19ae43bd3004897107d73bca7 0	.github/ISSUE_TEMPLATE/config.yml
+100644 f06383b7561a55f8e26b30b0fdfbdae5204691a5 0	.github/ISSUE_TEMPLATE/feature_request.yml
+100644 f0a85fd281a55720faccaaf51c6641d91a158973 0	.github/ISSUE_TEMPLATE/task.yml
+100644 d2123e63f3a690972914ea4f80bee61fbe6f46ab 0	.github/PULL_REQUEST_TEMPLATE.md
+100644 70c9eac214740e18ca922c931e2e2bbc07547f8d 0	.github/release-template.md
+100644 5ef8ab8a1578ad7378a47e48056f11ff19a9ed10 0	.github/release.yml
+100644 fab2cd1ea2250bb922d2bf1a89a938b95f64932d 0	.github/workflows/ci.yml
+100644 bfb58dac2e232ea8fce9529579d93ba37dff9933 0	.github/workflows/docs.yml
+100644 9e345d6ddf7efe4ee4e4c0c1b91e9bd3837343e7 0	.github/workflows/release.yml
+100644 11ed0582fb138acf49a0bc25f0244e86bd7b86c4 0	.gitignore
+100644 08b2df0cc39134b212c42895a8140011ec899061 0	.npmrc
+100644 9c6b791d5344235f6d2cbe8153adccd8cc8d8b04 0	.prettierignore
+100644 35893b3be3373f34a67dfa5124d953fedc819919 0	.prettierrc.yaml
+100644 940260d85687fb0e7ef60401e703c86f1e8f2943 0	.vscode/extensions.json
+100644 0b6b9a64994d259cf234e00df182f2be13e9176d 0	.vscode/launch.json
+100644 4c05394ec8062f1e99929d187d6f181532d4b132 0	.vscode/settings.json
+100644 0c2ab3030f28652238bf1db420278c2a802efa17 0	AGENTS.md
+100644 4a787bbf9e6a33dd975092db18bed328935a0034 0	CHANGELOG.md
+100644 f1b0232e0441777a2d8e1bffc9ef7646a3c40dfa 0	Document/ARCHITECTURE.md
+100644 8fbba7990bbac8df1a11f47f6b38d4e8b2af9640 0	Document/CODE_SIGNING.md
+100644 43e27d748a76b9633af3d204f34d4427c5255ff6 0	Document/DEVELOPMENT.md
+100644 1ed5d9b848eb31a0bc3e814f184ae1a15d838a3c 0	Document/EXECUTION_PLANS.md
+100644 b0c8cf1378be2df03cd81e833e81999ca13acd1a 0	Document/EXTERNAL_TERMINALS.md
+100644 8315df049275250b9f2bdbe806386c8bc121a0e1 0	Document/INDEX.md
+100644 c1631541aa604aebbadcb19cb8097715e7acf68f 0	Document/RELEASE_OPERATIONS.md
+100644 6f3417f21013035bf9d724cd591198e93a6dee82 0	Document/SECURITY_MODEL.md
+100644 432848ebc04bac1968c93740c385ff29811e7247 0	Document/TESTING.md
+100644 0ecf8039f1f386a59b61cd257bed383dc7a4a672 0	Document/UI_DESIGN_SYSTEM.md
+100644 96ef90781f94355aecea0f83f634ffda0adc5845 0	Document/archive/README.md
+100644 675fd53520d10ac750a0d0bd9241e2ae37a19143 0	Document/new/CODEX_MOXUN_GUIDED_OPS_REDESIGN_PLAN.md
+100644 4e3a27771a1701cae42b52f7958579e48f4ffbec 0	Document/new/IMPLEMENTATION.md
+100644 3ea7104c789f1847a6850d7127f59f4ca2b2f8d7 0	Document/new/SECURITY_AUDIT.md
+100644 e67a4004fe77d0d05642835314ec3f7080331639 0	Document/new/TEST_REPORT.md
+100644 9c40440910ce32143a9aaf3e8a947fac86d1b67b 0	Document/new/USER_GUIDE.md
+100644 b22b5b7d3d61de0f2745c1fc5615c34222719656 0	Document/new/brand/README.md
+100644 f91cd579d61b7dace8f0636415be6b71f83acf98 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_128x128.png
+100644 a1b869d1c596aa6cb1e0f612b049d524fb348384 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_128x128@2x.png
+100644 f9ab953a881f97d2723838ceef451cf2058625b2 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_16x16.png
+100644 d202d968f1ac56bf14ab4395b5ab818b923dc4b8 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_16x16@2x.png
+100644 a1b869d1c596aa6cb1e0f612b049d524fb348384 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_256x256.png
+100644 818c2cf9de96efab3ff68fdd9d0f4f302ed98a8d 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_256x256@2x.png
+100644 d202d968f1ac56bf14ab4395b5ab818b923dc4b8 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_32x32.png
+100644 0e57374c7ff3bf1d2fffb1cddd659ee380f9341b 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_32x32@2x.png
+100644 818c2cf9de96efab3ff68fdd9d0f4f302ed98a8d 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_512x512.png
+100644 90766cb78f8f515c1b9de4a93313968223f27c7e 0	Document/new/brand/app-icons/macos/MoXun.iconset/icon_512x512@2x.png
+100644 8e477b9d00558aab73d7e7b016747d9008cdc113 0	Document/new/brand/app-icons/moxun-app-icon-1024.png
+100644 58a25b2fc8a1a0cfc4c93d46fbac425375c0b093 0	Document/new/brand/app-icons/moxun-app-icon-128.png
+100644 eda9a35c6b9c806f95b8f5d3aba9349502b6cbb7 0	Document/new/brand/app-icons/moxun-app-icon-16.png
+100644 329fcb7ed57559bbd253ad4385eacd6b9b0fca01 0	Document/new/brand/app-icons/moxun-app-icon-256.png
+100644 4b7eb55ff2f73435ff53c277b86399c6587ca554 0	Document/new/brand/app-icons/moxun-app-icon-32.png
+100644 ab1a57148c0dfcd43b7734aa24f83cc40b43f9fe 0	Document/new/brand/app-icons/moxun-app-icon-512.png
+100644 fb6e61be3c09df7d3e079f7bd72e3720b7bb3c5d 0	Document/new/brand/app-icons/moxun-app-icon-64.png
+100644 d7e5af3bb2504b995bd7850111540b3d4dbf7ec0 0	Document/new/brand/app-icons/moxun-app-icon.icns
+100644 1093bab6ac89ef715c77065cb7945a9aaf7699b2 0	Document/new/brand/app-icons/moxun-app-icon.ico
+100644 9cb4e19aedcec48f59d01eef521627369ea859df 0	Document/new/brand/archive/crescent-legacy/build/icon.icns
+100644 705534ef7b87f50772f81b2dc3461a94669231cf 0	Document/new/brand/archive/crescent-legacy/build/icon.ico
+100644 e9943565cedf84d62476a5aa2e12731cb8a75d42 0	Document/new/brand/archive/crescent-legacy/build/icon.png
+100644 58a25b2fc8a1a0cfc4c93d46fbac425375c0b093 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128.png
+100644 329fcb7ed57559bbd253ad4385eacd6b9b0fca01 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128@2x.png
+100644 eda9a35c6b9c806f95b8f5d3aba9349502b6cbb7 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16.png
+100644 4b7eb55ff2f73435ff53c277b86399c6587ca554 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16@2x.png
+100644 329fcb7ed57559bbd253ad4385eacd6b9b0fca01 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256.png
+100644 ab1a57148c0dfcd43b7734aa24f83cc40b43f9fe 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256@2x.png
+100644 4b7eb55ff2f73435ff53c277b86399c6587ca554 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32.png
+100644 fb6e61be3c09df7d3e079f7bd72e3720b7bb3c5d 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32@2x.png
+100644 ab1a57148c0dfcd43b7734aa24f83cc40b43f9fe 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512.png
+100644 8e477b9d00558aab73d7e7b016747d9008cdc113 0	Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512@2x.png
+100644 cadd42cec5f92925554325540ea2761f244a1fd0 0	Document/new/brand/archive/crescent-legacy/build/icons/crescent-app.svg
+100644 f4f17c68ebc84598ffb7a059f6fefa73e700f57c 0	Document/new/brand/archive/crescent-legacy/build/icons/crescent-circuit.svg
+100644 a03cea0949cb5f3d1825ead6f2acdc5d78686986 0	Document/new/brand/archive/crescent-legacy/build/icons/crescent-logo.png
+100644 5084c2f97b28eb8da1eec1664b7f3261e74bc56a 0	Document/new/brand/archive/crescent-legacy/build/icons/crescent-mark.svg
+100644 b97f83f859e65643f7e32d4086da2a08d70c998e 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-1024.png
+100644 e59dec6b4c3425c8e1fc27bde037efc9faa556ad 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-128.png
+100644 4c5e8a6d92aecdd1321e0d2202d1dde51b82dae4 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-16.png
+100644 66361a8626e684e604ccbc3a53e0a9aeeafe2ada 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-256.png
+100644 b13011806744509e27382ff617edd5ee4c8dae12 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-32.png
+100644 2b13f958ecc2dd489fb3422d95a4c3468eabde2f 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-512.png
+100644 109e372af578e4d1942945982c403c282853d738 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-64.png
+100644 f22ebb7b53faaab97bc74d1998596fbf24981304 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-1024.png
+100644 c984c630619ac0769123ea54ff89f973c560eb87 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-128.png
+100644 28df9f97afc1187f7ae428aed01470bdc2580f0f 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-16.png
+100644 4933f17f23978cf0fa6f49c1b60c74dd78f7e6f0 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-256.png
+100644 b73fba56243d46912488f245fec21ea749c70b74 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-32.png
+100644 150e8dedc05623b57b41405651c6cfc107f19eff 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-512.png
+100644 68e6cdea5624e7835266145f253040969de6c7c0 0	Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-64.png
+100644 e9943565cedf84d62476a5aa2e12731cb8a75d42 0	Document/new/brand/archive/crescent-legacy/resources/icon.png
+100644 b826b38f0c15557418f6aca5dbc353da495bc9f7 0	Document/new/brand/archive/crescent-legacy/scripts/generate-icons.cjs
+100644 28fcb327f573be6991741dc44c3fcd5503f512e3 0	Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-logo.png
+100644 f663f87f028d4360029ba6dc6559feb9507823dd 0	Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-mark.png
+100644 705534ef7b87f50772f81b2dc3461a94669231cf 0	Document/new/brand/archive/crescent-legacy/website/docs/public/favicon.ico
+100644 cdc12ddf6774683486437d83112e42378c76ad13 0	Document/new/brand/archive/previous-orbit-concept/moxun-app-icon-1024.png
+100644 df273970b5ba65510267b666c11a04c892d9e44f 0	Document/new/brand/archive/previous-orbit-concept/moxun-app-icon.icns
+100644 e9173da25a2c73484104cc29795c8b1f330229b0 0	Document/new/brand/archive/previous-orbit-concept/moxun-app-icon.ico
+100644 dab8f84bbf84c6c6ca69f1b6340ab6fdb7e71cf4 0	Document/new/brand/archive/previous-orbit-concept/moxun-app-icon.svg
+100644 4c1d595246d49a89ad45847e47e2b550e47385d5 0	Document/new/brand/archive/previous-orbit-concept/moxun-brand-guide.md
+100644 e91204aca1c10cb38f6df9874206f98a36e51029 0	Document/new/brand/archive/previous-orbit-concept/moxun-symbol-light.png
+100644 9a232ed286d9505247869151a29baadadb3b1066 0	Document/new/brand/archive/previous-orbit-concept/moxun-symbol-light.svg
+100644 6f53c04f3f6ed47de933ef8a300e5aed4487ca73 0	Document/new/brand/archive/previous-orbit-concept/moxun-symbol.png
+100644 e4d22356c39231178bb53853b14a75edf5047860 0	Document/new/brand/archive/previous-orbit-concept/moxun-symbol.svg
+100644 bf97c0214d6f873b19a7bb3301c35b357e45f053 0	Document/new/brand/archive/previous-orbit-concept/moxun-wordmark-light.png
+100644 99380e233c77bebf19bcc6dd539afea95f2bcfaa 0	Document/new/brand/archive/previous-orbit-concept/moxun-wordmark-light.svg
+100644 e3cdb69061539ea3f209b92750517bad4834172e 0	Document/new/brand/archive/previous-orbit-concept/moxun-wordmark.png
+100644 0b241051ff95dcdb0e1dcd8aef60242b7003d674 0	Document/new/brand/archive/previous-orbit-concept/moxun-wordmark.svg
+100644 ab1a57148c0dfcd43b7734aa24f83cc40b43f9fe 0	Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-logo.png
+100644 58a25b2fc8a1a0cfc4c93d46fbac425375c0b093 0	Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-mark.png
+100644 0816b1696f1741eb1c8b6e682832917ba6141152 0	Document/new/brand/brand-guide.md
+100644 f91cd579d61b7dace8f0636415be6b71f83acf98 0	Document/new/brand/favicon/favicon-128.png
+100644 f9ab953a881f97d2723838ceef451cf2058625b2 0	Document/new/brand/favicon/favicon-16.png
+100644 d202d968f1ac56bf14ab4395b5ab818b923dc4b8 0	Document/new/brand/favicon/favicon-32.png
+100644 67114e48a0d4bd3c21007b437adb43616c4a27aa 0	Document/new/brand/favicon/favicon-48.png
+100644 0e57374c7ff3bf1d2fffb1cddd659ee380f9341b 0	Document/new/brand/favicon/favicon-64.png
+100644 1526266594861407f59f88481d0e4578a2a20ea7 0	Document/new/brand/favicon/favicon.ico
+100644 e3c290fe0d7f6d98adb3780050c106673f641e95 0	Document/new/brand/logos/moxun-stacked-dark.png
+100644 f02e689ffd12f7f00242331173e21ef3d9bb5a31 0	Document/new/brand/logos/moxun-stacked-dark.svg
+100644 48d501448f316ecefe6d5580d3e2842cfe1f730c 0	Document/new/brand/logos/moxun-stacked-light.png
+100644 f5499ac88bb8beb072bbb9226ad55817456d5601 0	Document/new/brand/logos/moxun-stacked-light.svg
+100644 818c2cf9de96efab3ff68fdd9d0f4f302ed98a8d 0	Document/new/brand/logos/moxun-symbol-dark.png
+100644 818c2cf9de96efab3ff68fdd9d0f4f302ed98a8d 0	Document/new/brand/logos/moxun-symbol-light.png
+100644 532e1d7a6dc3a87de59aa5ef74b65d411de6fe28 0	Document/new/brand/logos/moxun-wordmark-dark.png
+100644 f8468c0583dd32f6d56e505d5099ae551a0e45b6 0	Document/new/brand/logos/moxun-wordmark-dark.svg
+100644 e4ad95b86ce8652c4714aed349acd2579ab5cb87 0	Document/new/brand/logos/moxun-wordmark-light.png
+100644 3142e9444c54e8c302f17fd9ef71a814f273ec0a 0	Document/new/brand/logos/moxun-wordmark-light.svg
+100644 40df5ca9842880112219e92c76d2541d86b746dc 0	Document/new/brand/source/README.md
+100644 92a6f1940bad06dfa6c7352281585c40d04f11b0 0	Document/new/brand/source/generate-brand-assets.cjs
+100644 0fff0a6983a2c47b6a5c2d0ff7a54a694e020d3a 0	Document/new/brand/source/moxun-mountain-river-master.png
+100644 ced119e6faf547e862666f4a26fc1b1ce9584fa7 0	Document/new/brand/theme/ink-wash-dark-tokens.json
+100644 12aa8f643b1ebb81d67224dff98b1aed2d045990 0	Document/new/brand/theme/ink-wash-light-tokens.json
+100644 ccd374f36da15c96b56b038f429a3a29b10520cd 0	Document/new/brand/theme/ink-wash-preview-dark.png
+100644 186e243d48c5c64e8030c9179edaef43e82f9fc7 0	Document/new/brand/theme/ink-wash-preview-light.png
+100644 04af6438eb651565de9e7a409bcc67517cf0c6ee 0	Document/new/brand/theme/ink-wash-theme-spec.md
+100644 1b9647f6efad643845bd3933ad8a506e16051534 0	Document/new/brand/theme/ink-wash-tokens.css
+100644 84b68b1c6f1c56d940b6f5b2f52df1814322fea5 0	Document/new/brand/theme/ink-wash-watermark.png
+100644 795b2be3106df1dc3d50d47d863faee772970bd6 0	Document/new1/MOXUN_CHAT_FIRST_ITERM_COLLABORATION_REFACTOR_PLAN_20261031.md
+100644 bc58e52347592d60dc5b2487032512406a87377c 0	Document/new1/MOXUN_CHAT_FIRST_ITERM_IMPLEMENTATION_REPORT_20261031.md
+100644 904fd8e4207b872bf642e6212de9b4d6115f075a 0	Document/new2/MOXUN_FINAL_POLISH_AND_ACCEPTANCE_PLAN_20261101.md
+100644 b21e496cad0ca77ee30aa738c7387f894ce301dc 0	Document/new2/MOXUN_FINAL_POLISH_IMPLEMENTATION_REPORT_20261101.md
+100644 9a302b912f9ebfd18894b2ae5f0ba279a8cfcf88 0	Document/new3/MOXUN_CLEANUP_AUDIT_20261101.md
+100644 5200371475535770f6f3c831a6d9b757ac86dc63 0	Document/new3/MOXUN_PROJECT_CLEANUP_AND_QUALITY_REFACTOR_IMPLEMENTATION_REPORT_20261101.md
+100644 a9485d242008248b92228bea5546c7592956a876 0	Document/new3/MOXUN_PROJECT_CLEANUP_AND_QUALITY_REFACTOR_PLAN_20261101.md
+100644 024a629edcf63efd67a3cb4466093c2f96bd87fe 0	Document/new3/MOXUN_TERMINAL_CONTINUITY_AND_MULTI_TERMINAL_REPORT_20261101.md
+100644 e3d1f381d5d6872d815c22a5e6b3cc15ecbba6a2 0	Document/new4/MOXUN_CHAT_DETAIL_POLISH_REPORT_20261103.md
+100644 63d69314403db929930dc9804ef3e980893a1614 0	Document/new4/MOXUN_CHAT_LAYOUT_OPTIMIZATION_REPORT_20261103.md
+100644 d3dc9f78a844e15a0399239b3ee895aac9d8cdeb 0	Document/new4/MOXUN_CONVERSATION_STREAM_AND_NAVIGATION_REPORT_20261103.md
+100644 1207de5d7174ae16e3d5407d9d5ba2120443704e 0	Document/new4/MOXUN_DOCUMENT_WRITING_IMPLEMENTATION_REPORT_20261103.md
+100644 9772a8f194170fa9f89c277601778c066e6d2297 0	Document/new4/MOXUN_DOCUMENT_WRITING_SKILL_PLAN_20261103.md
+100644 1aede75ed09177634cf282e6f4cef2b9fce1d4fe 0	Document/new4/MOXUN_ISSUE_REFACTOR_IMPLEMENTATION_REPORT_20261103.md
+100644 7dbc7d6d31c8588f169cd3fbbc8c4b630634a4a6 0	Document/new4/MOXUN_ISSUE_REVIEW_AND_REFACTOR_EXECUTION_PLAN_20261103.md
+100644 f3c9ab0bf8bc831690204017cc9882b09aa9fddc 0	Document/new4/MOXUN_MACOS_X64_PACKAGING_REPORT_20261103.md
+100644 bf8e569897336038072a24341a8362a61cc6cc59 0	Document/new4/chat-detail-polish-validation-20261103/compact-conversation.png
+100644 b380c13c9dc6c768d144c3b92c4bb16502d4938a 0	Document/new4/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-dark.png
+100644 17703d7425b945904265f4b98b8b2ac328546f57 0	Document/new4/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-light.png
+100644 82ada1d788429673a5e2559d5e538a824b13696a 0	Document/new4/chat-detail-polish-validation-20261103/layout-1440.png
+100644 bbc0cd921c1c5be5930c8d142fc52bc5dfdd639d 0	Document/new4/chat-detail-polish-validation-20261103/layout-560.png
+100644 0e1f516aa8fa67f4d778893a2e96e2630f7e3e0b 0	Document/new4/chat-detail-polish-validation-20261103/layout-800.png
+100644 7b965902c278ae37b816fe9a6a59681b9420efd6 0	Document/new4/chat-detail-polish-validation-20261103/message-hover-ink-wash-dark.png
+100644 f23cda5349f6c431cd9fdc196a34b9081922669c 0	Document/new4/chat-detail-polish-validation-20261103/message-hover-ink-wash-light.png
+100644 2a6fdb8c6153077a5d05aa18f727f330c3ba0a3c 0	Document/new4/chat-detail-polish-validation-20261103/navigator-ink-wash-dark.png
+100644 bda9b64c820de88ca2204954694810f321d6a5c5 0	Document/new4/chat-detail-polish-validation-20261103/navigator-ink-wash-light.png
+100644 67fe22e42784771243dd8f8d899b269b67920ffa 0	Document/new4/chat-detail-polish-validation-20261103/results.json
+100644 632da193b96aa167b1a0b8fe0d3904de9f474e18 0	Document/new4/chat-detail-polish-validation-20261103/wave-ink-wash-dark.png
+100644 aa1ba9f62ff4084c07b97d8f366637bb323b8158 0	Document/new4/chat-detail-polish-validation-20261103/wave-ink-wash-light.png
+100644 3e4104b08183e1d72f2e4d89141f80ed50cbcc26 0	Document/new4/chat-layout-validation-20261103/details-expanded.png
+100644 d39e8110d6882b155ed1f14e0421888442d8870f 0	Document/new4/chat-layout-validation-20261103/ink-wash-dark.png
+100644 a31c38ad36ced7f3ed2a2e6ef87384fc657ad4bd 0	Document/new4/chat-layout-validation-20261103/ink-wash-light.png
+100644 2420b096400a5cc1eaac74ccfa891113cd5f199a 0	Document/new4/chat-layout-validation-20261103/layout-1440.png
+100644 486ea589ea15dd7f47d072784a0c0aa96c7699d2 0	Document/new4/chat-layout-validation-20261103/layout-800.png
+100644 ae2ceaa25faf5d436c29fb5762a6513eacade3c7 0	Document/new4/chat-layout-validation-20261103/results.json
+100644 4b6837ebd637d0684df06ea1847a5d25fcdb3732 0	Document/new4/conversation-refinement-validation-20261103/compact-conversation.png
+100644 4e120f035022a878a7a2060633e907a904cf467c 0	Document/new4/conversation-refinement-validation-20261103/layout-1440.png
+100644 5024b036ef10af96501195a74dc8cae7df94935c 0	Document/new4/conversation-refinement-validation-20261103/layout-560.png
+100644 b121e18b31b24190ff1feac99b8b8737e8ad9245 0	Document/new4/conversation-refinement-validation-20261103/layout-800.png
+100644 dea58686b1b462116c1b6af2c26dc41380601b68 0	Document/new4/conversation-refinement-validation-20261103/navigator-ink-wash-dark.png
+100644 c4b6b44157ca266baa04e7dd3cb1801a1f16146f 0	Document/new4/conversation-refinement-validation-20261103/navigator-ink-wash-light.png
+100644 c22ce170baad31a8a3bfe329a337c6b7b1b69da0 0	Document/new4/conversation-refinement-validation-20261103/results.json
+100644 b6027221cbe1b2b4bfd173b3c8ba0b12b176e883 0	Document/new4/document-writing-validation-20261103/ink-wash-dark.png
+100644 9d2d96585d5c880963e0dfb40ce6d2a5762950bf 0	Document/new4/document-writing-validation-20261103/ink-wash-light.png
+100644 4e0da38cf1a8e89490bf4a2806c9eb6e4fa26f74 0	Document/new4/document-writing-validation-20261103/resources.json
+100644 e21610152baab4dca741881065fc2dd57f49af26 0	Document/new4/document-writing-validation-20261103/themes.json
+100644 550b82cd05dd86dba94ca6c3bcabf985622d0706 0	README.md
+100644 cad0fe2d0c38a81e7e29a6318ba67cb379d5dbaa 0	README.zh-CN.md
+100644 deedde95c3c7b7808870a070332b1d471a053839 0	ROADMAP.md
+100644 3b23e101c67f0a7d09a1ea07388059fbad33e0be 0	SECURITY.md
+100644 2bea5cad5557ec6fd481b57fb779ee97570636cc 0	SOURCE_BUILD.md
+100644 5fbeaa28517f289cbdc9d218d3dee5a2d6b09889 0	build/entitlements.mac.plist
+100644 e8d750d70dce49d66436f5f0bdd0a906ca9c31d6 0	build/icon.icns
+100644 c068e309f464bd17df8e8279a5f61183296ad3a7 0	build/icon.ico
+100644 8e477b9d00558aab73d7e7b016747d9008cdc113 0	build/icon.png
+100644 2a22d5f982a9735478341af78cdad66c38993ce4 0	components.json
+100644 f629e623afe2cb3a56d93ce5e6ac20bc2912ee13 0	dev-app-update.yml
+100644 5bf1098e3515ec5beaa4b8c8b3f02c63f1076631 0	electron-builder.yml
+100644 b369957e06c96619ef4c616fbe960cfef1ddc557 0	electron.vite.config.ts
+100644 cf170de7f359ba92d3bf6ebfb8e035241bfc5ac3 0	eslint.config.mjs
+100644 0eb19f0fec355d239cd1bea871eb93c53657c23d 0	experiments/agent-runtime/README.md
+100644 a4fe776d6ef9863f1686f3488e9c9e336be16f29 0	experiments/agent-runtime/bench.ts
+100644 d5a4f2ad2f7337d02637ebd1334d193c39db3282 0	experiments/agent-runtime/cline.ts
+100644 708af06360623937cc80fa1a666e246c59c2908e 0	experiments/agent-runtime/host-tools.ts
+100644 b7807c2851d3d87be5a37342683c42277387f758 0	experiments/agent-runtime/openai.ts
+100644 8c33eebecc6af11a230ea2876af14447348cae0d 0	experiments/agent-runtime/package-lock.json
+100644 3361b9813fee6b2a47d61f99a669400900a263ac 0	experiments/agent-runtime/package.json
+100644 99c889253da53f95eae59c5da698370d2b595238 0	experiments/agent-runtime/tsconfig.json
+100644 8bd7e860d94a4fa7e0e78265f813e9da738c35df 0	experiments/agent-runtime/types.ts
+100644 34d721c0ad7881d56f1b4e8385487b79de4134a0 0	package-lock.json
+100644 940dcc379489feca32b0053b292c99f81bf00fe9 0	package.json
+100644 8e477b9d00558aab73d7e7b016747d9008cdc113 0	resources/icon.png
+100644 d57030c7eb58ec17a351691bedb59d4eef5d5de8 0	resources/skills/document-writing/SKILL.md
+100644 a866303ca2fcf2ae1b439c074edde2fd244a9e1c 0	scripts/build-macos-local.cjs
+100644 229e77faba2372fb51cbc275d8467a0b931ee4d2 0	scripts/check-security-boundaries.cjs
+100644 2d0e08c35a0d3616d40755b3aa90c7bd26e59de6 0	scripts/fix-node-pty-permissions.cjs
+100644 2dbc23093155afbd6005f1f936bf0650eaea4570 0	scripts/generate-icons.cjs
+100755 2d7acba3329caf07e9c1a54d738fb789d5dc8d7b 0	scripts/git-commit-policy.cjs
+100755 acf621e578ac7c876057500596487ea9644972bb 0	scripts/install-git-hooks.cjs
+100644 5643c140b66ccd971628ee6a451f9a5469cff095 0	scripts/patch-electron-dock-icon.cjs
+100644 9bc6ce3f18f81d2473d936ab7c223e9d3549216c 0	scripts/patch-macos-app-icon.cjs
+100644 76a5d5aaf57350953e20694d8066c34689954b85 0	scripts/prepare-development-icons.cjs
+100644 e2fcd5d1e94ab7d18296932fa0ef893bd5afac7e 0	scripts/prepare-macos-native.cjs
+100755 1bce678d120eae9e789adcdf8d0196aaf62f3577 0	scripts/restore-local-tests.sh
+100644 b43b9b46a00d085a925e42c7f7546829515a66f9 0	scripts/run-agent-runtime-experiments.cjs
+100644 ad1524ed1fd27a725cb07b0000c6a7ae759ee813 0	scripts/smoke-packaging.cjs
+100644 58f30aff707d512d13ec95138104a40a763e896c 0	src/main/agent/artifacts.ts
+100644 37a2460b728b7a8a79b37a12b408dd6576924563 0	src/main/agent/brain.ts
+100644 4218ae8874a49177db3844e1c3d9b59812494069 0	src/main/agent/builtin-document-writing.ts
+100644 19fa51041c53048835252c4c96d2d2266406eaf6 0	src/main/agent/change-plan-policy.ts
+100644 d1d852f37ad06efe1921b9884f9ffc3921b7b598 0	src/main/agent/change-plan.ts
+100644 51792e6d458c1f83770171c570a18c853fc7a1bb 0	src/main/agent/command-approval.ts
+100644 db48e82fb7916de295e35a7eac544093ac603287 0	src/main/agent/command-auditor.ts
+100644 c871552a069a72bcdb117955f277a2794a4c3935 0	src/main/agent/command-classify.ts
+100644 a6b14ede98f7052cadc4c510d9b6826ea746c8cf 0	src/main/agent/command-failures.ts
+100644 aea9704536a588d951fe512e3104beea14b88eef 0	src/main/agent/command-purpose.ts
+100644 1b15a7369b23d152ee2043b881d2a2f9050a1161 0	src/main/agent/connection-intent.ts
+100644 c71e77115aa234322ad54db64d5d1b117faf2d85 0	src/main/agent/deepseek-compat.ts
+100644 6057c033f2a839fc662f17a59f9e3b055c266166 0	src/main/agent/file-approval-service.ts
+100644 b20d6750acae52085751069b06f3151b6738eea2 0	src/main/agent/generate-capture.ts
+100644 bb93b5870174c9a1832b8b47cf0ebebfa0e5b59e 0	src/main/agent/generate-skill.ts
+100644 5cb86baa238cb7b68ad6bee9201fe9c38bd2a818 0	src/main/agent/generate-sop.ts
+100644 4474289d736ee339e167e9b6f22bf8b7f07fdba7 0	src/main/agent/guided-ops.ts
+100644 a8307e62a504211857a5f2f15108cab37754a041 0	src/main/agent/handoff-context.ts
+100644 74404e9665833e674e2122b061effe1374ebb16b 0	src/main/agent/instruction-files.ts
+100644 1b3e480e0fb2ca2f96468c6c22add9c0ee93a8d9 0	src/main/agent/ipc.ts
+100644 b7e139470d0e18e1453c34adc7ab71491da5884d 0	src/main/agent/mcp-approval.ts
+100644 6e9a78c694f4b38635a5b304804d6935191c50cf 0	src/main/agent/mcp-sdk.ts
+100644 9903599b395246ae8efe55cebeafc11b8d0817ee 0	src/main/agent/memory.ts
+100644 3d0065b5c452a6e0993a0ca9baf82f185d72bde1 0	src/main/agent/model-provider-config.ts
+100644 a1ac8150fea4d19642b9e77c216513c6075b167f 0	src/main/agent/multimodal.ts
+100644 9326d6b34da8ff74d676ced1cdb4d156ed8e6810 0	src/main/agent/ops-history.ts
+100644 126c6539b33a7e7fdee4c36ff69e4c847babe677 0	src/main/agent/pi-create-capture.ts
+100644 4935f4c6ab502c270fdcf0c5f8eef257237dc892 0	src/main/agent/pi-cwd.ts
+100644 a30639327a98233d933893cd94430adb433c812a 0	src/main/agent/pi-event-bridge.ts
+100644 a9a12da40953a696be870237118313e4760ef559 0	src/main/agent/pi-guided-ops.ts
+100644 f90841a147f0b8dbfff26202760f0fbb70c02966 0	src/main/agent/pi-host-policy.ts
+100644 c8079610de6f4836b44c6b2b04e9d348525bd54d 0	src/main/agent/pi-host.ts
+100644 0ec6ac22b77279a35f7d5d69b291e3e803b834b8 0	src/main/agent/pi-knowledge.ts
+100644 3acf521f9b738241a64c2103fd69f70408852946 0	src/main/agent/pi-local-files.ts
+100644 7e913c604a751252260e44ba55cdde2bad4e3aa2 0	src/main/agent/pi-mcp-tools.ts
+100644 6284233238786bd482e6e7af4f9bca8a86ef727b 0	src/main/agent/pi-model-runtime.ts
+100644 f24c6eb943028f6d074b51df9a6b8f58af099d92 0	src/main/agent/pi-open-subterminal.ts
+100644 e42f1620cb99d5a6aef6244bbe8a7c25a1ad9b3a 0	src/main/agent/pi-packages.ts
+100644 7b7492130a62d3a0f14cb0a215d7a07938358188 0	src/main/agent/pi-paths.ts
+100644 5ca47756d544ace10b7c622ad19654a145f3d7c1 0	src/main/agent/pi-sdk.ts
+100644 514ce5ebb45945d2747ff49cb91a9d1f83637d79 0	src/main/agent/pi-subagent.ts
+100644 cb9c3628e1b6decc16a53d04cb7b53429bca765c 0	src/main/agent/pi-terminal-bash.ts
+100644 6f8d537efecb0884809519af13067f315f4b0e3a 0	src/main/agent/runtime-provider.ts
+100644 c3efb09513a6b09a17afa86cf2414bec518240d0 0	src/main/agent/runtime/pi/loader.ts
+100644 bb0e19614d953011d67e3488e372773a70bc3fe6 0	src/main/agent/runtime/pi/runtime.ts
+100644 a8f8c054b04d1690f49e751ba53e846b1c4a03f2 0	src/main/agent/runtime/types.ts
+100644 270ded724c11c234410733288cc31cd3e401ecc5 0	src/main/agent/skills.ts
+100644 56b8ca080d8e1849cf46ff662f8371498d585454 0	src/main/agent/subagent-profiles.ts
+100644 382c0b6ab0ecaeb6223e1f485492155fba6a3e73 0	src/main/agent/transcription-support.ts
+100644 0426ecfebe5f95bae43b8d707125cd0d0654f5d3 0	src/main/agent/types.ts
+100644 6ff5d92276cb16e012a6540fbff1b67ffb3f7e86 0	src/main/agent/wiki.ts
+100644 b9bf07d623de5ddcaeb60af4cc17a6f9fcf999cd 0	src/main/attachment-cleanup.ts
+100644 2478bdc7cc52198c772888f270f5340b3c0bc632 0	src/main/clipboard-write.ts
+100644 59023929f396b601b68e451e8fa81b42ee4abb22 0	src/main/code-intelligence/parser.ts
+100644 9d1b42e09cb91b8ced72b05e558ae747a0a3e332 0	src/main/code-intelligence/service.ts
+100644 c0773aae40906d3df96a46aa0def8af14889794a 0	src/main/connections/ipc.ts
+100644 6df5c0e2e400d0be80c8c99c265f3d9fa5092cde 0	src/main/connections/runtime-env.ts
+100644 fa9e56c43d1bf5370a4f6bcbcdb2f0bdad6c9c1b 0	src/main/connections/ssh-config.ts
+100644 1a979d2ea756c28902e6d6bbecf83d5c4b9684c9 0	src/main/connections/windows-env.ts
+100644 d04f1491b347e8a4223fa8b71793035ebce04957 0	src/main/crescent-paths.ts
+100644 cccd4f5a5b867f285fcd102634343a39a8b62870 0	src/main/crescent-sqlite.ts
+100644 1a05cea12b1d1ccbab2f106e60fbcab9bbabfeb2 0	src/main/crescent-store.ts
+100644 9a0094023d8ffb2fead9a33f3b9935fa544b0ab1 0	src/main/index.ts
+100644 b56a7fe5923a279c593e730825ab8bb076facc45 0	src/main/ipc-security.ts
+100644 6890b6c67400139faac40ee2991485a6ca1a7578 0	src/main/knowledge-database.ts
+100644 c6b08459602e5555be5ab3bfb166d803b5b62a48 0	src/main/knowledge-ipc.ts
+100644 0f342eaa2792f0a0ed7e432b394be589369b366e 0	src/main/local-document-errors.ts
+100644 6a34ff5a6e9fa8636c2209aa439f0545c5d799b0 0	src/main/local-document-ipc.ts
+100644 819b5fc538f807198d2b3a191645c1599a456ab6 0	src/main/local-document-reader.ts
+100644 8ecdfc55c8646fddbd1391a82a6be7a29d77c0f7 0	src/main/logging.ts
+100644 313bd4d4618ea89fd8162cdeaa07eb84617669f9 0	src/main/memory/auto-learning.ts
+100644 a891e56cc5d1ac3ed65caa93fb9f372e20042440 0	src/main/memory/extraction.ts
+100644 e78bc6e6bc54c1b2687249d7170a133f79c12be2 0	src/main/memory/learning-target.ts
+100644 4cbd8b00a4211d1f72a7d14e67b81bdf3d939623 0	src/main/memory/service.ts
+100644 85ed5421e7433023994a57fc504e6a6f759b4a42 0	src/main/menu.ts
+100644 6f6b73c6098ce6bee71d226ded4bd0aa97f3b81d 0	src/main/native-log-filter.ts
+100644 954eeafc83c036248ceb9aa74da78ad57bb71bb9 0	src/main/open-external-url.ts
+100644 bf65b84ec83f24a08961f213de8545fc5aec7e1d 0	src/main/private-files.ts
+100644 1204ee8a84d86408685344f87d6d7a6ed9945c0a 0	src/main/projects.ts
+100644 a31b43d2f4c8f5fae3d3eefe458fe9db3c5d9d7d 0	src/main/renderer-permissions.ts
+100644 f4673cffe6d1420f0b4afd91aa731b3f04fe643e 0	src/main/renderer-recovery.ts
+100644 614eda3df08ba05e99b71276a215a4ca157be8fc 0	src/main/renderer-secrets.ts
+100644 4c7e4fd00ca1036761e92b06cf7ef1caac8d7021 0	src/main/retired-data-migration.ts
+100644 4e8f3c571ab770ccb9bca11af023808abf373556 0	src/main/safe-ipc-send.ts
+100644 2a92322b2fcac5d2fef74eae5978bc1515cef2a9 0	src/main/security/agent-capability-policy.ts
+100644 a6901060797dd4a5179a955a258ae4d13026b566 0	src/main/security/capability-enforcement.ts
+100644 bc821956618059f26e647992713ef0082e83f9d9 0	src/main/security/file-change-approval.ts
+100644 ab2fbf7af06c45b46cbdd9661ab73160777fac37 0	src/main/security/security-audit.ts
+100644 3769dd6b69acbdff576a44e6f36ea7eea682b124 0	src/main/sqlite/conversations.ts
+100644 cdc1206a53a59bb232640c113bae29716525ee05 0	src/main/sqlite/guided-ops-repository.ts
+100644 562560ffd7ff83335e09385c19395833b23dccdf 0	src/main/sqlite/rows.ts
+100644 3919813577512630a6c90b947e6ab822f54dbffb 0	src/main/startup-trace.ts
+100644 de77ac88cacf7b5e98334c2bfd7231a88562b834 0	src/main/storage/ipc.ts
+100644 07724aee6a21a6222a16636bc77f646b6c5881da 0	src/main/terminal/command-interrupt.ts
+100644 0a0997915a3ea8f16af73386186a303bb5cbc96a 0	src/main/terminal/exclusive-lock.ts
+100644 52124cb6218baa025288ed1676c6ccf68f3ae5ed 0	src/main/terminal/execution-state.ts
+100644 23bcb97a1102c4a0e9fa8e8fa04629ba9a39b186 0	src/main/terminal/external/iterm.ts
+100644 738b8bbf1b4d8189024a2a9cd308ca4f7b118968 0	src/main/terminal/external/observed-session.ts
+100644 f2d7ec33a35123d6529e056e761a7a16201e9017 0	src/main/terminal/external/screen.ts
+100644 5a6387b9c5b08fd9aae7f0913a516618221bb0fb 0	src/main/terminal/external/shared-session.ts
+100644 87115bfcd006e814d6ac7cd9b84ff0791f51b533 0	src/main/terminal/graceful-teardown.ts
+100644 754db245de2b9249b7290c76acdb32a111d733fc 0	src/main/terminal/input-lock.ts
+100644 01b7ec36173ee46bc5e08b402491ef9269f5c84b 0	src/main/terminal/ipc.ts
+100644 6906ae752fdc54dee97881359f00b33fc9157225 0	src/main/terminal/observer/conversation-evidence.ts
+100644 8f5d172c535edc6e512d663dad652d277e786b29 0	src/main/terminal/observer/evidence-notifications.ts
+100644 af750e1d61714e2d188aa534d92d3caec7c0303b 0	src/main/terminal/observer/observation-grants.ts
+100644 c0dbbb0712e8ebcb59662b40df1fbc513e4714cf 0	src/main/terminal/observer/registry.ts
+100644 81a21307092d4ece5c5122ff7fbb583c1d91d610 0	src/main/terminal/observer/terminal-observer.ts
+100644 658575cb80f03affe7dea2a3f22d6517c83eddb1 0	src/main/terminal/output-format.ts
+100644 20d6f90b08fde27eb4e953125ad9eb46ddc1ab39 0	src/main/terminal/pending-command.ts
+100644 4c3f56e365f808b7f9ec9f0b8f7099821ac2da5f 0	src/main/terminal/script-runner.ts
+100644 7a7795147b7d9af680a90a5f908fc0f290184389 0	src/main/terminal/session-health.ts
+100644 b949d8f2fa2b34688ca07121cb1d50115565d0c1 0	src/main/terminal/session/manager.ts
+100644 1366516cf44d1126d1b5ec67dad726562d708685 0	src/main/terminal/session/pipe-session.ts
+100644 83fb0ccd6c9cb016e3882bb22ec9972dc5a7b11e 0	src/main/terminal/session/pty-lifetime.ts
+100644 dae08151bcc0bbf1ea0e16692c932392c515718c 0	src/main/terminal/session/pty-session.ts
+100644 e545c1ce8e08949a9596300eafcf9c1bb70d0e8e 0	src/main/terminal/session/renderer-events.ts
+100644 0a7a51cf42258169cf23521ed3e39ca7289803e2 0	src/main/terminal/session/types.ts
+100644 3ab0f9ddc257ee4921f74201538af9125f41d669 0	src/main/terminal/shell.ts
+100644 850e72ee8e4af6b67ae29fd136959914931bb1f3 0	src/main/terminal/ssh-hops.ts
+100644 c4dcd3a91f78907503a05ef6e54ed8788f71ecb3 0	src/main/terminal/terminal-text-stream.ts
+100644 4e41f9905c0a1152b31b7cbdc0ee0af880f1933f 0	src/main/terminal/timeout-recovery.ts
+100644 4e5a02e08d43d3ae3ce04d7c2ed9ddcf648ec463 0	src/main/update/download-installer.ts
+100644 0148bcfa0f7fe8aa1b57b4b233328a731796650b 0	src/main/update/ipc.ts
+100644 605215a2dbd13b54388333e928b8563d31324edd 0	src/main/update/update-policy.ts
+100644 db0d86a4e4b2b07e66215dd1aaec314c970e3625 0	src/main/update/updater.ts
+100644 daa2ad2df4b3bf340050816a46a1b29ee383e41d 0	src/main/whale-monitor.ts
+100644 f50a62f0ce3b01d7f196ccba4c04aa761157fe93 0	src/preload/api.ts
+100644 2542f62f52fba6e69a1c38913978664cbc560437 0	src/preload/index.d.ts
+100644 5c63119bf6d09b48e1f8b25d9b463e4ed13321c9 0	src/preload/index.ts
+100644 2af5a8c1f5fae06c0eba51b245c3a5bf8d7ddb62 0	src/preload/modules/agent.ts
+100644 f1e0ff8205ac7afe95f0760ec8548f3207b6f083 0	src/preload/modules/app.ts
+100644 86a08292618784b64c29037447a3f703d5495186 0	src/preload/modules/connections.ts
+100644 4c5608571b58f91ad48af237574addaafb27f82d 0	src/preload/modules/documents.ts
+100644 d0f165e4a3370db94ed27713af1eb32e0cbbc5b3 0	src/preload/modules/knowledge.ts
+100644 de832dcd2a92b6405e6b966b0224451ec238b2bb 0	src/preload/modules/projects.ts
+100644 68d4f82fb28813c5e5022505ab358da426131012 0	src/preload/modules/storage.ts
+100644 196a3ed746934387d07f7ed7d63417932bccea76 0	src/preload/modules/terminal.ts
+100644 924cb33d8b767556747a6a2321562a769d9780f9 0	src/preload/modules/update.ts
+100644 459024b8fd22915b55632d915fe1517e9871740f 0	src/preload/modules/whaleMonitor.ts
+100644 e0d1edda37b173506ebabaebf91ed09f53502b48 0	src/renderer/index.html
+100644 3c68e8280db1b858e91a83a6d88072cd2ca908e3 0	src/renderer/src/App.tsx
+100644 5ed6406a34f094d09ac91c30a52f36a042c05a5c 0	src/renderer/src/assets/base.css
+100644 147a2f58986bc3afcaf7f1539a704ec1bf94a2aa 0	src/renderer/src/assets/chat-workspace.css
+100644 45ef09cf4f49bad4ee721b62cd7afa16c8fe7f17 0	src/renderer/src/assets/electron.svg
+100644 14fac913ccf80234b1848540089a3bbcb6e5283d 0	src/renderer/src/assets/licenses/dafeiyu-pet-MIT.txt
+100644 3329ed814e8cdc6306182d41aca3662d4a23edc2 0	src/renderer/src/assets/licenses/dsh-pet-animation-assets.txt
+100644 a6e14fa79ee68b7028be0f49b8412763b3eadd66 0	src/renderer/src/assets/licenses/lucide-github.txt
+100644 8e60823d447b48429150dd978fc4f57478bbce0c 0	src/renderer/src/assets/licenses/whale-purse-MIT.txt
+100644 f3d3dc53f04f902b6fe5489ef0e44435d81efe0e 0	src/renderer/src/assets/main.css
+100644 ab1a57148c0dfcd43b7734aa24f83cc40b43f9fe 0	src/renderer/src/assets/moxun-logo.png
+100644 58a25b2fc8a1a0cfc4c93d46fbac425375c0b093 0	src/renderer/src/assets/moxun-mark.png
+100644 13fbcafd6b54b5e8abc4f67c5df197e936865dce 0	src/renderer/src/assets/theme.css
+100644 d08c6119920ca9e1dedacb1bfc6f8cc8a67e0d58 0	src/renderer/src/assets/wavy-lines.svg
+100644 22b626f6f05c5dedcf0648066eaf2faa4bba0017 0	src/renderer/src/assets/whale-idle-poster.png
+100644 8b4feae23304d88198ce188246279ff0803272d0 0	src/renderer/src/assets/whale-motions/clicks/arrival_wave.webm
+100644 f60556f06c386cfb569f76b0cfa2e34e34fdc362 0	src/renderer/src/assets/whale-motions/clicks/cheerful_wave.webm
+100644 fb614abf8d19c650fb5bd4727b2585282733a996 0	src/renderer/src/assets/whale-motions/clicks/happy_hop.webm
+100644 499b73c42844bd0268bff9044e0523fcae1c1b27 0	src/renderer/src/assets/whale-motions/clicks/shy_surprise.webm
+100644 d896eb9a91ca8eafa7f0af35a3073dc04a397742 0	src/renderer/src/assets/whale-motions/clicks/ticklish_giggle.webm
+100644 77c6461a1f8ced2dc7272f44192f37dd682becf8 0	src/renderer/src/assets/whale-motions/clicks/tsundere_pout.webm
+100644 faabe7324271b98d1760b6faeaa8289827d32500 0	src/renderer/src/assets/whale-motions/daily/attentive_listening.webm
+100644 689e04f120f9f678a9424dac6cadf4b6a0bd6e6b 0	src/renderer/src/assets/whale-motions/daily/big_stretch.webm
+100644 915feb453f11f0267693109b3e847a850cdb1ec7 0	src/renderer/src/assets/whale-motions/daily/gentle_spin.webm
+100644 0bcac6ada85e78527fcce020db73bf0b6eff41d3 0	src/renderer/src/assets/whale-motions/daily/maid_curtsy.webm
+100644 f9ead4a5e1ab6cb702bd349794264f398f470867 0	src/renderer/src/assets/whale-motions/daily/mirror_check.webm
+100644 66581dbd88c72bcba960d551b9cdcb0239da7d2f 0	src/renderer/src/assets/whale-motions/daily/morning_brushing.webm
+100644 abd198a8d1e4e67f09d86e4a5bdc99859e61098e 0	src/renderer/src/assets/whale-motions/daily/outfit_color_try_on.webm
+100644 9b258545a841647a11ffdc5882ad8b2bb808a343 0	src/renderer/src/assets/whale-motions/daily/quick_nap.webm
+100644 63da356fa373ecf6256bc8f4deb9709577e2f18e 0	src/renderer/src/assets/whale-motions/daily/sleepy_yawn.webm
+100644 e5c5759895274e1f7c4017dce9c9c51beec44e51 0	src/renderer/src/assets/whale-motions/daily/startled_awake.webm
+100644 728f04b2997aa9ec4bdb87d1b9b14d7910bc7fd6 0	src/renderer/src/assets/whale-motions/drag/dragged_in_midair.webm
+100644 60d2645e41cdb882ba802e8c3e03619ff4566bd1 0	src/renderer/src/assets/whale-motions/drag/turn_into_ball.webm
+100644 7e2976e00317dfd681279890ab48f3a68ceb03f9 0	src/renderer/src/assets/whale-motions/festivals/chongyang_chrysanthemums.webm
+100644 cae5ebbca8634591a49daf5f7a4bc56fa369a7bf 0	src/renderer/src/assets/whale-motions/festivals/cute_little_ghost.webm
+100644 1217c9625c3a682732bc4398108ce7c4ae2a07f6 0	src/renderer/src/assets/whale-motions/festivals/decorating_a_christmas_tree.webm
+100644 cc54c1f82bb5c4b8e366fba6433b6534bedcf4fc 0	src/renderer/src/assets/whale-motions/festivals/eating_chongyang_cake.webm
+100644 2dee24954bae172a20ef1e0d44b34d7105872851 0	src/renderer/src/assets/whale-motions/festivals/eating_dumplings.webm
+100644 c20156c0de0863832d7bc10fb65153559de388be 0	src/renderer/src/assets/whale-motions/festivals/eating_laba_congee.webm
+100644 00031236d476501f71b3f03f978a4b79952e5097 0	src/renderer/src/assets/whale-motions/festivals/eating_qingtuan.webm
+100644 7b4473435dfa219428f5bb2e1dbf34fe83b59190 0	src/renderer/src/assets/whale-motions/festivals/eating_rice_cake.webm
+100644 eac65950006cf0814e6e4f1ebe1c73b9e36a8791 0	src/renderer/src/assets/whale-motions/festivals/eating_tangyuan.webm
+100644 6ad057c473cbaf209de8d4ec91781d9bc759cda9 0	src/renderer/src/assets/whale-motions/festivals/eating_zongzi.webm
+100644 3a17ac14fba449e8d7bb0e0d38085825b068a9e1 0	src/renderer/src/assets/whale-motions/festivals/halloween_trick_or_treat.webm
+100644 b16d549ec2572f5d693bdc7691e3247544ccb88e 0	src/renderer/src/assets/whale-motions/festivals/lion_dance.webm
+100644 48beff57ddc5b3c7e1c0387348e33ce8e3a5b819 0	src/renderer/src/assets/whale-motions/festivals/moon_festival.webm
+100644 01445f708db3e19b707e6d1609902dd4da9c0ade 0	src/renderer/src/assets/whale-motions/festivals/opening_a_gift.webm
+100644 f78881f4e996d5160ce4910ed06646b5b9d5bd60 0	src/renderer/src/assets/whale-motions/festivals/qixi_needlework.webm
+100644 ca07f8792572e3b182b2077b768fbcf9ece4ee91 0	src/renderer/src/assets/whale-motions/festivals/receiving_a_red_envelope.webm
+100644 2827fd308393a036201bc85dca0a9b2cc9f3ee13 0	src/renderer/src/assets/whale-motions/festivals/releasing_a_river_lantern.webm
+100644 ca554c0df5fb9cd2f35ad9eb54957b9e1dfcd2cf 0	src/renderer/src/assets/whale-motions/festivals/releasing_a_sky_lantern.webm
+100644 3a1bcd38b00b170b619e42b76ab8c9ea9225903a 0	src/renderer/src/assets/whale-motions/festivals/setting_off_fireworks.webm
+100644 b7aa9ce458b6e8d1c9513b5e4b059a07ca143f88 0	src/renderer/src/assets/whale-motions/festivals/writing_the_fu_character.webm
+100644 9f50ed6c3ba1a3f96b614e34ecaaf067ef6ab9cd 0	src/renderer/src/assets/whale-motions/food/caught_snacking.webm
+100644 6691dc43900e3f906b6576cc6eb7e0f23b0e2702 0	src/renderer/src/assets/whale-motions/food/eating_breakfast.webm
+100644 def3fa70022f6b728f0d0b3ebbfcff601c406c57 0	src/renderer/src/assets/whale-motions/food/eating_candied_haw.webm
+100644 14f9eee2a361a592fd55c95979f5810b7b8dcd03 0	src/renderer/src/assets/whale-motions/food/eating_dinner.webm
+100644 f8e0774d6b4b38f27adfecdfc591dd40812f5e38 0	src/renderer/src/assets/whale-motions/food/eating_hairy_crab.webm
+100644 d3e99cf6d8694b5e83a3957793f8fc7a0fc2cc2a 0	src/renderer/src/assets/whale-motions/food/eating_hotpot.webm
+100644 ac71008a07686f858627e7f7f69e77448941bb97 0	src/renderer/src/assets/whale-motions/food/eating_longevity_noodles.webm
+100644 83618038d3d4fe98b9f42d0fd7ae1b7a24f686b3 0	src/renderer/src/assets/whale-motions/food/eating_lunch.webm
+100644 0f400023c2f036e6edc28033083d49f68686d347 0	src/renderer/src/assets/whale-motions/food/eating_rice.webm
+100644 ab57e48e28d0e0fb832549e1b546bed28f2eb3df 0	src/renderer/src/assets/whale-motions/food/eating_snacks.webm
+100644 ffa2c36e86e9056a7e965c73364a50c1fd8bb192 0	src/renderer/src/assets/whale-motions/food/eating_watermelon.webm
+100644 c696cf2f61366cd9ba973aae1526dbf920c3d85d 0	src/renderer/src/assets/whale-motions/food/melting_ice_cream.webm
+100644 44722e0afb7ef4c1cd85c5c98eadd9b4ade2fea9 0	src/renderer/src/assets/whale-motions/fun/animal_parade.webm
+100644 6f39bb90fd8349d5f23d0912a4bc01c2c06470f2 0	src/renderer/src/assets/whale-motions/fun/butterflies_and_blossoms.webm
+100644 c7e55e6f83c1847a45d81d60c04de2a167680c92 0	src/renderer/src/assets/whale-motions/fun/desk_tap.webm
+100644 67acb52f7e7c49e77b000730b3bff9a65fb21a10 0	src/renderer/src/assets/whale-motions/fun/gravity_squash.webm
+100644 3a632cd91c409ed1b889f0313ae1394113c0d7c0 0	src/renderer/src/assets/whale-motions/fun/inflating_a_balloon.webm
+100644 b45cdcb57340f12fff1b40ea9391bdd1d3c2845a 0	src/renderer/src/assets/whale-motions/fun/jump_and_smash.webm
+100644 a7afe71ed72990bbace7026abb1ef69ae7e3706c 0	src/renderer/src/assets/whale-motions/fun/jump_scare.webm
+100644 466044675ea20b863db850373aab8a6c2b7c11a8 0	src/renderer/src/assets/whale-motions/fun/petting_a_cat.webm
+100644 a76228cb5f42fa159e3ec565b8ef969a7d289dca 0	src/renderer/src/assets/whale-motions/fun/three_ball_juggling.webm
+100644 a3375c2980634529e84ba2ee61a57776ea8205e9 0	src/renderer/src/assets/whale-motions/games/gaming_rage.webm
+100644 1a0586564e58e6a60e4f151d2bf161e975673e30 0	src/renderer/src/assets/whale-motions/games/kicking_a_shuttlecock.webm
+100644 41c61429405139344b13875135468edb25b6f28e 0	src/renderer/src/assets/whale-motions/games/playground_swing.webm
+100644 63295b32e6a0522dac3840abb74a5af7b1431a08 0	src/renderer/src/assets/whale-motions/games/playing_gomoku.webm
+100644 9a4ba01b33e6fba841a99ebf55631433651cdcd3 0	src/renderer/src/assets/whale-motions/games/playing_with_a_toy_car.webm
+100644 b578f4c951a11c3fe97bdbd609315d3e72fe6827 0	src/renderer/src/assets/whale-motions/games/rocking_horse.webm
+100644 d2730f4c17e8ccb793973929c237b4fb32d8e3fc 0	src/renderer/src/assets/whale-motions/games/solving_a_rubiks_cube.webm
+100644 1a0cd6a9447c3a36b068fb9db46fd56447520a73 0	src/renderer/src/assets/whale-motions/games/spinning_a_top.webm
+100644 70cabac39a03ab1738540fdb9a9581ae523de463 0	src/renderer/src/assets/whale-motions/games/water_gun_play.webm
+100644 fd64a428a2be1d3b4ff6cd7f9867dfe978ba0bbb 0	src/renderer/src/assets/whale-motions/idle/breathing.webm
+100644 2e33efead726dff587fa0ca46adef5ecb5d0b7c9 0	src/renderer/src/assets/whale-motions/magic/card_magic.webm
+100644 150abd9011b3c9fec7229fa2b30418958040a7ad 0	src/renderer/src/assets/whale-motions/magic/dove_magic.webm
+100644 085fe6d74ddfc268670be32b7c3f78c6806b68f1 0	src/renderer/src/assets/whale-motions/magic/flower_conjuring.webm
+100644 619722b50ea75fcb3c18b3de5d996ce4e87a7893 0	src/renderer/src/assets/whale-motions/memes/eating_tokens.webm
+100644 e347b7574b4dca0d65bdd34bf9af0a176fbb15a1 0	src/renderer/src/assets/whale-motions/memes/yeah_what_should_we_eat.webm
+100644 6ff80136295718a2e866e70d90fa8a0bada333dd 0	src/renderer/src/assets/whale-motions/moves/crab_walk.webm
+100644 d700e4fdd38e8795b88f6d81418e8fc196fe80ed 0	src/renderer/src/assets/whale-motions/moves/floating_steps.webm
+100644 d9b6611b32065a7937878a5467cd84d47a1be543 0	src/renderer/src/assets/whale-motions/moves/running_trip.webm
+100644 cb376f7f257d38f00095989ae17246a17da331b2 0	src/renderer/src/assets/whale-motions/moves/target_point_run.webm
+100644 01bd5c202583ef634de424904e76f2906f7289d3 0	src/renderer/src/assets/whale-motions/music/carefree_humming.webm
+100644 0b96ac0de6fa7afe72f256148dd719698769043c 0	src/renderer/src/assets/whale-motions/music/cute_otaku_dance.webm
+100644 390c504dfb0b56bb647f0253782a91ee705f8933 0	src/renderer/src/assets/whale-motions/music/elegant_maid_dance.webm
+100644 596558b14cacee0d96f5e9d3942fd5731be49718 0	src/renderer/src/assets/whale-motions/music/light_sway_dance.webm
+100644 fd57f820116b72c35e7b50ee3cdb5c20e775062b 0	src/renderer/src/assets/whale-motions/music/playing_the_flute.webm
+100644 2de1533cd0f2d7a72e0099f9ac6f816353f3912f 0	src/renderer/src/assets/whale-motions/music/playing_the_violin.webm
+100644 ce8e8be3b7e5c0dfbdebf15f5a8fd70e2836ee0f 0	src/renderer/src/assets/whale-motions/seasonal/building_a_snowman.webm
+100644 1e35fff171fb8856bd89de91329ef357c7d33e65 0	src/renderer/src/assets/whale-motions/seasonal/buried_in_autumn_leaves.webm
+100644 bbb9b8344e6c30579c967a27831ad85f19db1002 0	src/renderer/src/assets/whale-motions/seasonal/cooling_with_a_hand_fan.webm
+100644 000eba2f49a11beb21aa63ddc64c4d1522afa27e 0	src/renderer/src/assets/whale-motions/seasonal/flying_a_kite.webm
+100644 eb62a155d056d35a16b1d4e961d5ff10c109f684 0	src/renderer/src/assets/whale-motions/special/blue_whale_appears.webm
+100644 4848e28f2c4fde323025a03a7980b75f1c56f98e 0	src/renderer/src/assets/whale-motions/special/whale_bubbles.webm
+100644 822a7c41f795906ca46e2f1757c63e6633d39214 0	src/renderer/src/assets/whale-motions/special/whale_tail_slap.webm
+100644 3ba4edb2cc647c51edd41b5a6c71eeee8c418ed0 0	src/renderer/src/assets/whale-motions/turn/looking_around.webm
+100644 47902f235c11fadd22134dd71d2fbcc3a36a13fc 0	src/renderer/src/assets/whale-motions/work/coding.webm
+100644 a4082cf30b60e02b4928c501c5416cbe14519724 0	src/renderer/src/assets/whale-motions/work/deep_thought.webm
+100644 d0c1bc670b74450e53019b36366edbe54056a363 0	src/renderer/src/assets/whale-motions/work/taking_notes.webm
+100644 da72db39d6bdc30bef17ded881dcc2b227241a99 0	src/renderer/src/assets/whale-pet-avatar.png
+100644 009b99912fed3302fd535d25462b9e1394f66c2c 0	src/renderer/src/assets/whale-sprite.png
+100644 2526ba67d3a511f2f629ec10fcff6e3db35f9462 0	src/renderer/src/clients/index.ts
+100644 a7e55c8bcb337d5d5c60673f2566d6ad31f51d67 0	src/renderer/src/components/AgentLogContent.tsx
+100644 c1ac56272f42630993a0d438929a42807e788a23 0	src/renderer/src/components/AgentLogList.tsx
+100644 b5b040145aa913df779c1fc0693531b4a808a172 0	src/renderer/src/components/AgentLogMessage.tsx
+100644 90ba77ef01ede332c93abb2cd7b6d5e1164d3b68 0	src/renderer/src/components/AgentReferenceBadges.tsx
+100644 cf49545c28affdf3b327f103f8e8652278a2a6fe 0	src/renderer/src/components/AgentRunTimeline.tsx
+100644 8cefb940e05599c9293dd804e1c6167b928cf396 0	src/renderer/src/components/AppErrorBoundary.tsx
+100644 110c6cbdcb86c671d742d8eb29c30a54c2777718 0	src/renderer/src/components/AppModals.tsx
+100644 b59f193a535e929db70db6e0b8bcac022606b3fc 0	src/renderer/src/components/AppSidebar.tsx
+100644 49bcd10159f0ea12f1ac9b0ecab3dd2bb91ad285 0	src/renderer/src/components/AppUtilityToolbar.tsx
+100644 cc34a066a1f5d98b80c7ed4f743d7a2d46d4eafd 0	src/renderer/src/components/ArchitectureBlock.tsx
+100644 0c9d3d7ccc1834552ad54a283524dc8a06bc6777 0	src/renderer/src/components/CaptureDraftDialog.tsx
+100644 0974104e49b4235635a89718c829da9ae73c3de9 0	src/renderer/src/components/CaptureDraftPin.tsx
+100644 f8196cf194429009912313ddc7694083b5ba91b2 0	src/renderer/src/components/ChartBlock.tsx
+100644 69294c11688c6ab19a29e95758fafab78c526c60 0	src/renderer/src/components/ChatWorkspace.tsx
+100644 9f66939462fbd47a5434e6399f0eb3f9c3d7008b 0	src/renderer/src/components/CodeIntelligenceSettings.tsx
+100644 34d678ba8b992eeb64b0b08f40bbed73867ae641 0	src/renderer/src/components/ComposerAttachments.tsx
+100644 55dd25bcc6356bcbff97894ac1131e1f05c78d67 0	src/renderer/src/components/ComposerEditor.tsx
+100644 2eaef3a6a390a8f20316d421b3ac5723de82df87 0	src/renderer/src/components/ConnectionClarifyCard.tsx
+100644 23878e3553a4fd2a50b6955a632083ed5090154b 0	src/renderer/src/components/ConnectionList.tsx
+100644 7f188c65463e8bb52e8008101c7266d3f4588a65 0	src/renderer/src/components/ConnectionManagerModal.tsx
+100644 c776ec2a2184900bde81d4464d114b12c8ad0d10 0	src/renderer/src/components/ConnectionOpsFeedbackPanel.tsx
+100644 18ed44fe2a26b46a0e5566ceca471ba1afc1c3cb 0	src/renderer/src/components/ConnectionTerminalDialog.tsx
+100644 aa316cc078d6c3217f62761489b61683df6faa05 0	src/renderer/src/components/ConversationNavigator.tsx
+100644 c4a9d5e6707d681e82c85d416bd6b28cc6da00a8 0	src/renderer/src/components/ConversationTerminalSelector.tsx
+100644 f2b9cb6fbda93b8ebcfbfe87d3afd54b95b051ef 0	src/renderer/src/components/ExternalTerminalControls.tsx
+100644 c3fe942060bc722495e9d57c9272ee71e49c3a79 0	src/renderer/src/components/ExternalTerminalDialog.tsx
+100644 3675e7200ab0551cfd9cc45e19448dcd35cf254f 0	src/renderer/src/components/FileChangeReview.tsx
+100644 c821fa07ca1e42262912f5ff0472335f553f2ad4 0	src/renderer/src/components/FullAgentRunOverlay.tsx
+100644 164d6eb536c4a18ed4553fea8096f872450dc1d6 0	src/renderer/src/components/GuidedOpsHistory.tsx
+100644 f4d6075dfdd0a04c56c939fea2a5884b23be57f5 0	src/renderer/src/components/GuidedOpsPanel.tsx
+100644 02c3523da68627f0095fc25c8f71768b919c742e 0	src/renderer/src/components/HistoryPanel.tsx
+100644 445a12fcd2db1c4ee1b1610244c179e97c40cb4a 0	src/renderer/src/components/ImeSafeFields.tsx
+100644 e70dec8d719cab952373781d20688df05dfe4be7 0	src/renderer/src/components/LocalDocumentsSheet.tsx
+100644 cb661b7a93d2e8e2a063f02cde9157dd9dc41ec1 0	src/renderer/src/components/LocalPdfPreview.tsx
+100644 011aeb61426a830828fcba74153b9efb1ff6f446 0	src/renderer/src/components/ManagedSharedTerminals.tsx
+100644 bb4885912d9c1e2577aea440abc9d80cc66eb1e3 0	src/renderer/src/components/MarkdownContent.tsx
+100644 b4dcb3003fe9861a356d086c0a64a7a649c7f913 0	src/renderer/src/components/McpServersSheet.tsx
+100644 c880321bd3ff3370921a25689850a5623a6871c1 0	src/renderer/src/components/MemoryCenter.tsx
+100644 89acda32fcfeb5c4cba465d4e3b6dd1c1f7b7a27 0	src/renderer/src/components/OnboardingModal.tsx
+100644 2fd019845623f8ef4d8eb80ea87e6c8ac16838e7 0	src/renderer/src/components/OpenApiSettingsFields.tsx
+100644 5cc57064d03e802af962e2529d76494b23d38ab4 0	src/renderer/src/components/ProductLogo.tsx
+100644 f9b2ed68d6a11dd8b65e0809f02c85d701335ab8 0	src/renderer/src/components/ProjectSidebar.tsx
+100644 75b338205d5857897fe8ae5069c432512e8ac6ce 0	src/renderer/src/components/ProviderSettingsEditor.tsx
+100644 c8ac9bfe224ee737ef0a3a6633d0c7cdf8e4004a 0	src/renderer/src/components/RendererCrashLoopPanel.tsx
+100644 a120d999380e16db8f0859b5ad541d97d68cc4ad 0	src/renderer/src/components/SessionUsageBar.tsx
+100644 882f784996a0a9871dcf3677759d15dc69c0dbb9 0	src/renderer/src/components/SettingsSheet.tsx
+100644 b232682dd3dc5136fe5eb64c696b24d8335de7b5 0	src/renderer/src/components/SharedTerminalActions.tsx
+100644 bf3b0448e193f14089430acf553e1c4577ef7a3a 0	src/renderer/src/components/SkillManager.tsx
+100644 2dd6a98b5806a767d2ce77fe3f4146342efa7778 0	src/renderer/src/components/SkillMarkdownPreview.tsx
+100644 c1ed686947c41880ed63b2734a63083afcb4dc70 0	src/renderer/src/components/SlashCommandMenu.tsx
+100644 202e8b9ea9b83bf1aba99a23b2259141eca82eaf 0	src/renderer/src/components/StatusIndicators.tsx
+100644 b0f8648c54a41eedd658b8aa65e3879cf3305dfd 0	src/renderer/src/components/TerminalObservationChoice.tsx
+100644 d58503f09678495abee878399167569bed56e5a6 0	src/renderer/src/components/ThemeSwitcher.tsx
+100644 43faba513f46e91966cac60955a86ab40e48c4a0 0	src/renderer/src/components/WhaleMonitor.tsx
+100644 81f48920ae984a03ba54638af039e9b8b03ed26e 0	src/renderer/src/components/WhalePetPortrait.tsx
+100644 87929b622f044faf0e35fa77241086169fdf165d 0	src/renderer/src/components/WikiSheet.tsx
+100644 278d107fd9b2313be3de157478369cf32fe49db0 0	src/renderer/src/components/architecture/ArchEdge.tsx
+100644 f541ec0afa9a12c87c0cd7193442824bfe6bcd86 0	src/renderer/src/components/architecture/ArchGroupNode.tsx
+100644 f56267e2dc1c8e12a872bca47f0b5b1ab593f316 0	src/renderer/src/components/architecture/ArchNode.tsx
+100644 0bb2c2d7ea22faf54877466ee38725bd8764e28e 0	src/renderer/src/components/architecture/export-svg.ts
+100644 71f6d850ebc778fc598b7195967bf14b819a8e81 0	src/renderer/src/components/architecture/kinds.ts
+100644 fa0a028689889d84e35b07adc91087d36cb3d370 0	src/renderer/src/components/architecture/layout.ts
+100644 de7ad20dc8c1c28d282160f5d504fdefde2ebeaa 0	src/renderer/src/components/markdown/MarkdownCodeBlock.tsx
+100644 ad561fa1e4e26c7bed6d13ad6463ca942d4559ec 0	src/renderer/src/components/markdown/MermaidBlock.tsx
+100644 c5d61cd84ac52448df10b5692e7bb786efb287ac 0	src/renderer/src/components/markdown/markdown-parser.tsx
+100644 ace8e4a1ec98f0ce055d1fefacb1e5540c06b410 0	src/renderer/src/components/markdown/svg-export.ts
+100644 617bf1f2b25d349cccf350d626296de7732ac838 0	src/renderer/src/components/timeline/ApprovalStepCard.tsx
+100644 346eb60542337ba4327e6d2b7ead50036e5035bf 0	src/renderer/src/components/timeline/CommandBlock.tsx
+100644 8af012ba502f572c3477e4eb12414b79319cdee4 0	src/renderer/src/components/timeline/ConnectionRows.tsx
+100644 f6e4adc964e8e6795d3f4a3f46d4fc154e212bfb 0	src/renderer/src/components/timeline/MessageRows.tsx
+100644 d6892d3394102c6f0fdfa15b1a1cb0de515b1bdd 0	src/renderer/src/components/timeline/ResultActions.tsx
+100644 ef2d286774c06a53681da1505796525925a0e7ba 0	src/renderer/src/components/timeline/RunDiagnostics.tsx
+100644 3e2344f500fde380ec3ab77130bd88b2d8e6355f 0	src/renderer/src/components/timeline/ToolRows.tsx
+100644 ea21aa9f692c7565a7115544027d13afa6515095 0	src/renderer/src/components/timeline/helpers.ts
+100644 7b4075901d0182dc88716df8b2671e995a8c9298 0	src/renderer/src/components/ui/badge.tsx
+100644 62cb3c955d0967cab6dcc5a9dd917525c092b2de 0	src/renderer/src/components/ui/button.tsx
+100644 462a007fb0ff0e222eaaa31fcf5af32bb0bad126 0	src/renderer/src/components/ui/chart.tsx
+100644 2d9a9bd025a3fc145ea4d12c8d8d822be594f72f 0	src/renderer/src/components/ui/dialog.tsx
+100644 da44b60799e83e352da6131e89ecc0f55cb98f24 0	src/renderer/src/components/ui/dropdown-menu.tsx
+100644 ff1576d4b04d9b9255a31e29fa9f8a40301ac26f 0	src/renderer/src/components/ui/field.tsx
+100644 688288b0f225bcbe4a81d9cce7ba9673b88f160a 0	src/renderer/src/components/ui/input.tsx
+100644 7a92a1ad1b93a4248edc97a2ef66deb1d87b1f5e 0	src/renderer/src/components/ui/label.tsx
+100644 543f572cb53ddc6b468c02695bc2a31b61c56762 0	src/renderer/src/components/ui/select.tsx
+100644 d835a3e9e9ad6af91545537d02b8c57feaaa5423 0	src/renderer/src/components/ui/separator.tsx
+100644 1da1381da39a2a3f25f151ab7b92b43b6a05a33a 0	src/renderer/src/components/ui/sheet.tsx
+100644 62866e395636421e638f6ccf57e8f8e7141a71cb 0	src/renderer/src/components/ui/textarea.tsx
+100644 17139f68bcab6975de31e5939471d056dd956d86 0	src/renderer/src/components/ui/toggle.tsx
+100644 ca515a8ebe8726e8fa5bb865b08558c54e9fcd49 0	src/renderer/src/components/ui/tooltip.tsx
+100644 a1893d80dd4b32d4a554d3684de735bde24b3124 0	src/renderer/src/components/whale/WhaleMotionMenu.tsx
+100644 4775ce3471cee69f42814813a4eb806f7a159f61 0	src/renderer/src/components/whale/motion-labels.ts
+100644 acc27bf61c17c90e3d41ce776bcfe2850fc4857a 0	src/renderer/src/components/whale/registry.ts
+100644 11f02fe2a0061d6e6e1f271b21da95423b448b32 0	src/renderer/src/env.d.ts
+100644 e7b3d9569df6076802c0081b5fac4b1c9cb65907 0	src/renderer/src/hooks/useAgentController.ts
+100644 8ab78e353774ce07bf0b3e4992494b456da834cb 0	src/renderer/src/hooks/useAgentRuns.ts
+100644 19f5285b5f2fc9b4bb4c226a27f3fea18e9006be 0	src/renderer/src/hooks/useAppModalA11y.ts
+100644 eb15e79e5e3b966c545b9b505a253638c838af7a 0	src/renderer/src/hooks/useAppTheme.ts
+100644 9b502f5c4e9f815b66622c0098bd289c6236f325 0	src/renderer/src/hooks/useCaptureController.ts
+100644 b973e670e7c3d0dc72b0f23a06665efd52ec44ec 0	src/renderer/src/hooks/useConnectionTerminalChoice.ts
+100644 4294ff8ab9e317a59b05c42d3457ba490aba7ebf 0	src/renderer/src/hooks/useConnections.ts
+100644 a801f09188baa5825c6d0974da2d7ab03ca385a7 0	src/renderer/src/hooks/useElementVisible.ts
+100644 be0f6fa5d4c7ba13a812004bd1401f993c14f979 0	src/renderer/src/hooks/useExternalTerminals.ts
+100644 a37eae7f399052bbaa558078c19b90a4bfb74726 0	src/renderer/src/hooks/useHistoryController.ts
+100644 0a5f37624f2606bef35f7f2e5c909f77c1ba7827 0	src/renderer/src/hooks/useMemoryCenter.ts
+100644 5f06d362dd3d1ca9d485dc8494092d9383e51cbf 0	src/renderer/src/hooks/useOpsFeedback.ts
+100644 df029d066cd7fea6579f58adba03e20e18bfdab1 0	src/renderer/src/hooks/usePasswordPrompt.ts
+100644 33f90fdbf3cd493045bb13f40a8dfe2b6d25590c 0	src/renderer/src/hooks/usePetVisibility.ts
+100644 29095b01fe2b3ad0852b2ff76feb1987682b3f1d 0	src/renderer/src/hooks/useProactiveTerminalSuggestions.ts
+100644 00af6745bb3c490f601ec144188170afcd648a6a 0	src/renderer/src/hooks/useProviderController.ts
+100644 4680901b15e9c53708e1c0c291e1f842ce24581f 0	src/renderer/src/hooks/useScrollFollow.ts
+100644 397ce764bb4ab2e740088aac10017ecec77de47d 0	src/renderer/src/hooks/useSessionPersistence.ts
+100644 9442dad434e799d41499377b0861cd2be4ed925b 0	src/renderer/src/hooks/useSettings.ts
+100644 fc3cb3de37b6889430989272f0e3fc678508d977 0	src/renderer/src/hooks/useSkillsController.ts
+100644 f1c6b2bca1dd473826c176a7fbca6e5cf7bc5548 0	src/renderer/src/hooks/useStableCallback.ts
+100644 90c31103ea74805f8471bceaf04abbcdbeb20d96 0	src/renderer/src/hooks/useTerminalCollaborationLifecycle.ts
+100644 6de14b6b31983caae04c4e1fec5bada967fa79de 0	src/renderer/src/hooks/useTerminalObservation.ts
+100644 42eafb5b7b1c3bb49b0ec4600a68e233e47e6d9e 0	src/renderer/src/hooks/useTerminalTabs.ts
+100644 2b146eed53744db098b9b02c75345b8e584e2382 0	src/renderer/src/hooks/useWikiController.ts
+100644 46da5ab503b06e1817fe38f90b74fe153fc824e5 0	src/renderer/src/i18n/en.ts
+100644 5826d5ab9b1b20ca1cbbaf3e77b30dfc0a1e51e1 0	src/renderer/src/i18n/index.ts
+100644 bebc710481ea5dc80bbf0867ffd918aa441f2ef3 0	src/renderer/src/i18n/zh-CN.ts
+100644 084402adf586a633884f825748e58d99f67dfe2b 0	src/renderer/src/lib/agent-config.ts
+100644 9e78c488933e3e9f3f1bfd30925ada135dbd340c 0	src/renderer/src/lib/agent-event-formatters.ts
+100644 12f971aff78bee563d18104ee01728656ec049e6 0	src/renderer/src/lib/agent-input.ts
+100644 343fe00b65f67735eba0ede2038d260bda3fc63f 0	src/renderer/src/lib/agent-log.ts
+100644 ed53ed1b8eefc88449d5b2c24def55214878d6a7 0	src/renderer/src/lib/agent-message-refs.ts
+100644 2905e3c85e03da090ce5304a61f746f6f0e059f4 0	src/renderer/src/lib/agent-run-document.ts
+100644 3eda9651ce39d0373bc70c45862c3ed75f74686c 0	src/renderer/src/lib/agent-run-finalize.ts
+100644 3a7e7a562d5aa5b33fe2a8a6bd7033c85da3252f 0	src/renderer/src/lib/agent-run-markdown.ts
+100644 c48a43d8a95d11689b6b0da9dd34effe2f62ab81 0	src/renderer/src/lib/agent-run-paging.ts
+100644 b116d1c6585147bb33ff1fdd4b0a28f341876dde 0	src/renderer/src/lib/agent-run-trace-export.ts
+100644 2b22a31c982497fe5ace248cb1321840c944a201 0	src/renderer/src/lib/agent-stream-steps.ts
+100644 e431beca56b530241c21bd8e00b6f998d0571f4f 0	src/renderer/src/lib/agent-style-ui.ts
+100644 418244c18c5868d95d67e0ce34f7989dfd5b62ea 0	src/renderer/src/lib/agent-text-limits.ts
+100644 45f5131793eef71af20f4ec2c365cf7f87d04d0c 0	src/renderer/src/lib/app-controller-support.ts
+100644 3b69553475e7633fccd3c596e894e32b7edbc355 0	src/renderer/src/lib/app-runtime.ts
+100644 5de1fdef1097caa7233c97622ee7d1e14b83072c 0	src/renderer/src/lib/app-shell.ts
+100644 97f5ea04ff69cdea785a0926dec32df7545ae44c 0	src/renderer/src/lib/app-theme.ts
+100644 1c0580cd4e7f1220b33419f8f5e5a0dc22497321 0	src/renderer/src/lib/busy-supplement.ts
+100644 896fc2bc3a01488d28eecb921a229a6b27d44673 0	src/renderer/src/lib/capture-draft-ui.ts
+100644 8c61abaea48b0423667b4ed7843ac9910d406dda 0	src/renderer/src/lib/chart-export.ts
+100644 81878423a7b7c752c65846d1f4ac776fe4a0d31c 0	src/renderer/src/lib/composer-newline.ts
+100644 b12e49b0c96676c86b0b2772a2ce736cb2ebd800 0	src/renderer/src/lib/composer-rebuild-policy.ts
+100644 814bc2e1a71a3d5bafd6a83054a98e47b7c121f8 0	src/renderer/src/lib/composer-ref-tokens.ts
+100644 260b3581af61b2d1bb1311d18f1f8d33141e961e 0	src/renderer/src/lib/composer-surface.ts
+100644 d00aed4b5139614ee6fd5c029d1e9480fa8d8d04 0	src/renderer/src/lib/connection-attempt.ts
+100644 a8bbe436de2a2f02d670813028df2d0cd4d3976f 0	src/renderer/src/lib/connection-automation-policy.ts
+100644 646d049dd4a11c698b22a7bb1dce5254e800fce1 0	src/renderer/src/lib/connection-commands.ts
+100644 1fca9be19a2f6afaeea4ca9c9d1bb230c4019e8a 0	src/renderer/src/lib/connection-login-queue.ts
+100644 cf791a105a15218ddc865bd193bf36bf9a80218c 0	src/renderer/src/lib/connection-login-runtime.ts
+100644 bda5c08d5b6557a24f83bf55248f0bc07b27d550 0	src/renderer/src/lib/connection-name-conflict.ts
+100644 43d590966a5f2f2175831468314b00b5f5180a41 0	src/renderer/src/lib/connection-route.ts
+100644 8c7b2d642bf5463fc89cdae5a9cb07f518284dab 0	src/renderer/src/lib/connections.ts
+100644 e4e46e60890afb58cc9f447ff885983e146ea38f 0	src/renderer/src/lib/defer-after-paint.ts
+100644 b36259c7461b78ef367c70b408065266b883fd30 0	src/renderer/src/lib/handoff-target.ts
+100644 41f480ecd832edf902fcabde3f05b9f2d037aa56 0	src/renderer/src/lib/ime-safe-value.ts
+100644 8789e410f67ecc90d4b32a91fe9254094f688373 0	src/renderer/src/lib/legacy-actions-to-steps.ts
+100644 0fde0d5e706badf07620f2fa05ffb67d187a7e04 0	src/renderer/src/lib/login-action-wait.ts
+100644 280e93ff443f95b684657de77b7397d9a701741d 0	src/renderer/src/lib/markdown-fence.ts
+100644 b4c5a5934aacfc72889a4c86b9caccd13fd2da0e 0	src/renderer/src/lib/markdown-heading.ts
+100644 5645b865fbf05c09032d95fb36bcfcef886c5209 0	src/renderer/src/lib/markdown-truncate.ts
+100644 fd49163b116d14d57f635a4073080be8687b0623 0	src/renderer/src/lib/mcp-status.ts
+100644 44f7d885e0e79fe9ac0ab693e433b5c75abf4a97 0	src/renderer/src/lib/mermaid-language.ts
+100644 dae31deca903d20896d244c5fe6ab1769b66af47 0	src/renderer/src/lib/mermaid-runtime.ts
+100644 c29bb796309b7f2a8324d19a484cc8ea8be71d72 0	src/renderer/src/lib/onboarding.ts
+100644 806379cecf54c3ea64cb7fd6eb8f7086927a2491 0	src/renderer/src/lib/openapi-settings.ts
+100644 a5651ccf03b2c955e4f5827c443d63578a71df77 0	src/renderer/src/lib/operation-feedback.ts
+100644 3d36e26042160c5883d4d727136117364e52953c 0	src/renderer/src/lib/pending-attention-notify.ts
+100644 36bc1a9e599ec06942768c8c9ccfae61908cce43 0	src/renderer/src/lib/prompt-host-wait.ts
+100644 5d245f73ac2bcebd3e2e41a981bfcb489b856eff 0	src/renderer/src/lib/result-suggestions.ts
+100644 1c82ae65ba94d71b34ce2e80fd67c277f17e314e 0	src/renderer/src/lib/root-password-autofill.ts
+100644 3bd29769417f93e2d902ca35568db71d94d5a723 0	src/renderer/src/lib/sanitize-svg.ts
+100644 27a9749941633517f7a07ec474715ddfc1ae29f5 0	src/renderer/src/lib/scroll-follow.ts
+100644 aa64a6274c39a9a2e5a2d3026cec63919a40ba65 0	src/renderer/src/lib/settle-interrupted-tool-steps.ts
+100644 6c7c38f2de1e57d78ffb5ae4f7030aa66a03959e 0	src/renderer/src/lib/skill-management.ts
+100644 fa90f8598ff841072faf0884124ceb2c2390aee7 0	src/renderer/src/lib/skill-markdown.ts
+100644 df6ed09eb967b02628729d298455abceb8c2836b 0	src/renderer/src/lib/slash-commands.ts
+100644 503c3d445d716caafd22ca156ed4b5d0111308ca 0	src/renderer/src/lib/sop-summary.ts
+100644 35a48e68846846ae5702beff06d9036af6ec8076 0	src/renderer/src/lib/terminal-ready-gate.ts
+100644 5d053a005c03a71611b38a285a481874184bfe39 0	src/renderer/src/lib/terminal-tabs.ts
+100644 80355e8fa58ce321dfad3251e047e2227bc1d127 0	src/renderer/src/lib/terminal-text.ts
+100644 e57e0c19a168f278a75a33b10c5f6e40ccc1d07f 0	src/renderer/src/lib/theme-definitions.ts
+100644 3a33afc74511bf835228ace8844a9dd099cd60c5 0	src/renderer/src/lib/toast-policy.ts
+100644 b057456de7ac0907f5f4bb742f1baa3520e9c11f 0	src/renderer/src/lib/utils.ts
+100644 19be132433078448e5ce2cc612f295ac9ce4386d 0	src/renderer/src/lib/wiki.ts
+100644 e7aebf8d6b2cb7ab5ecc3f0ac2b3f03f6d07e15e 0	src/renderer/src/lib/with-timeout.ts
+100644 8bbc3196652b2a458541df82265d59ec7eb716e4 0	src/renderer/src/main.tsx
+100644 3a2e49fbf0502b3c246202b1993d98d65bdf42b0 0	src/shared/agent-errors.ts
+100644 72d3e0b05e27b12c1468954ad85569abe5fa6e9f 0	src/shared/agent-local-intent.ts
+100644 c938a92ff64db4861a0b326ce66c8bca4ba12910 0	src/shared/agent-prompt-discipline.ts
+100644 dd736d0bc639dbd1eafa58a1244cc7e2cb7aafe8 0	src/shared/agent-providers.ts
+100644 90c9065e246341d2e5e178d5cc4d788bb3a9a132 0	src/shared/agent-run-prompt.ts
+100644 ca12fc820e8c518f88824be0036af32f39264f1f 0	src/shared/agent-run-trace.ts
+100644 4e47ead25caf12f19c6e7112a7370563eefcb905 0	src/shared/agent-session-trace.ts
+100644 c272b9e6ab16306a5dc57f1bb0ed9bd1b17ee6a7 0	src/shared/agent-style.ts
+100644 31001d3192fc882144a51d736d08605e1f736f51 0	src/shared/agent-thinking.ts
+100644 ea17b907b1bd26e096152f318a359ab37d0ef10d 0	src/shared/agent-tool-catalog.ts
+100644 9e11a5a9da5cb132d2e19719017e71a90774f512 0	src/shared/agent-types.ts
+100644 12ff0f2b58e08bf7498fea804050ff96a772e4bf 0	src/shared/app-links.ts
+100644 9d0509172e53af9aa5ab1eb6c7fb96150e81ad70 0	src/shared/approval-policy.ts
+100644 6f4d156abb21832328dff29a35846e21c064ae0c 0	src/shared/architecture-geometry.ts
+100644 6cb285c70a1a659d5c95d3457083ce588b08c0a6 0	src/shared/architecture-layout.ts
+100644 4cee0f191638e820a1d9cfc539655cb9d51bfbe1 0	src/shared/architecture-spec.ts
+100644 52951121936236aff4a200b4cad6457e1060fe7a 0	src/shared/architecture-svg.ts
+100644 44ddeb0596f9aae49bff91a8a82c4cc25f132e50 0	src/shared/architecture-theme.ts
+100644 868a86350f838c89b31f5d7ae072237efc1ca083 0	src/shared/attention-notify.ts
+100644 4836f2c96079df3be64391995db46ebd75e06e66 0	src/shared/capture-intent.ts
+100644 46f46410935e629f13a00a9fffe6000421608c66 0	src/shared/capture-transcript.ts
+100644 6d1921df2f78afd95fec14d05a83d284c7f45197 0	src/shared/chart-spec.ts
+100644 5cb5589224967921cab5110c9f0692fe306f0543 0	src/shared/command-guard.ts
+100644 624550d074c1a459152aff0ac92dcec0f529ac6f 0	src/shared/command-outcome.ts
+100644 f5514df6f2aaac5a846431dde0158e485884b1af 0	src/shared/command-policy/argv.ts
+100644 ac4115cd8c93586e7a4864538366fb7fe504b4e7 0	src/shared/command-policy/docker.ts
+100644 aa359f5bdd74ef19cad3dce896d7c914e395876e 0	src/shared/command-policy/inspection.ts
+100644 05fc2e1c791a9b84b9b5071abda9e021ce85d151 0	src/shared/command-policy/kubectl.ts
+100644 a9ceb5ebba2af7dd358abc64d4e09bc3f321b700 0	src/shared/command-policy/shell-wrappers.ts
+100644 75835175f8f386c1e3466863e78e915b5019f804 0	src/shared/command-policy/ssh.ts
+100644 947dbc2dbdd167fc2948a07ab709fbc89f3fe4f3 0	src/shared/command-policy/sudo.ts
+100644 1512b6d86f6b8ad4019b1c0854d044b351f48513 0	src/shared/command-policy/systemctl.ts
+100644 3537b46cf20a59fd969186a2abf2020d7bf432f8 0	src/shared/command-policy/types.ts
+100644 65ea5acaebe6f07abe653062d3d567e5c8205b5e 0	src/shared/command-timeouts.ts
+100644 bf727894358ad3ccd6c769ef28704f770f70e2c5 0	src/shared/connection-list.ts
+100644 9116bbd8d23759aee8d051dc07727c1af626517f 0	src/shared/connection-state.ts
+100644 ed9beebbfb97f782cf0e48c2af06d978a92c33e9 0	src/shared/conversation-title.ts
+100644 4269b0895fbd17071f54271d7f166928e0ad603f 0	src/shared/execution-plan.ts
+100644 6c951547409798063ea8b1a04d1481089efe2bd3 0	src/shared/external-terminal.ts
+100644 b220142db99694d22f5d6991ded310c4ec07b39f 0	src/shared/file-approval-types.ts
+100644 1ec0cfa03d6a7c845bd11ce6576a2ff7b333c9a4 0	src/shared/guided-ops-types.ts
+100644 bb39b606f63c7f4bbb8d8bd86522c5eb4c726ee5 0	src/shared/handoff.ts
+100644 9bd8e7301f708b3f344c61017394c35d8addf3e8 0	src/shared/installer-file.ts
+100644 26bbf4921593fc7b968281acbe2cf853af7ae22e 0	src/shared/json-parse.ts
+100644 0a237553e1f7424a68a8914a9af5fe20a806533b 0	src/shared/knowledge.ts
+100644 3fed54c5023c9a335736b7516eca6531c864488d 0	src/shared/local-connection.ts
+100644 1207c4627973d7a6f42260b7ab56a9ca028bcfb1 0	src/shared/local-documents.ts
+100644 3fd9bfe0983bab9c98930fde713cf5d3c9383461 0	src/shared/log-levels.ts
+100644 091b2209a4f334e95cc308b84fd52080fb5c5841 0	src/shared/login-actions.ts
+100644 481e7daf0533c32e5fe86af626bd31bb78a141f9 0	src/shared/mcp-servers.ts
+100644 843ac76156070fbbb21f93c8e75f5b5a51465fc5 0	src/shared/menu-labels.ts
+100644 c11dbb16084c5edee08d88bc6d6036637f6d509a 0	src/shared/mermaid-theme.ts
+100644 0eb2f84183e3a9a03f85a6ecc43990282f04e9cb 0	src/shared/model-capabilities.ts
+100644 dbd5839ba1948c8fa0ad3bf7d175a9db4da97467 0	src/shared/openapi-profiles.ts
+100644 bd18b700e02c944c840d06b9ab1cb1d0a8b4a9fb 0	src/shared/projects.ts
+100644 d43993947ef6644f35906d01e37b455567b9a874 0	src/shared/provider-error.ts
+100644 fc67820b053bdbd1e79483343a58aa26942bb3ed 0	src/shared/readonly-batch.ts
+100644 eab24af971dde17313914dc85bc07e6e9767eb63 0	src/shared/runtime-supplement.ts
+100644 8bef12a697c5305a49f42e3113736712eebad75b 0	src/shared/secret-redaction.ts
+100644 849473660bf5502dbc01bcdbfcfa3b8708041790 0	src/shared/session-token-usage.ts
+100644 f4f8e894a563d9d432270bb4800b700421e3a2ba 0	src/shared/shell-command.ts
+100644 cae5cf75760df676cebda120f79aef43dc931299 0	src/shared/ssh-destination.ts
+100644 791bb97ed5b68976b9ffd29e931de4c250964823 0	src/shared/ssh-options.ts
+100644 dfed6d229070e91dd4ceae2905758abc4dd132d7 0	src/shared/suggestion-safety.ts
+100644 507a81f06ff05a204cee038b4113ac02094f207b 0	src/shared/terminal-observation-types.ts
+100644 8aebf4fe770c16f2d57853643ca6d8f64d7f4005 0	src/shared/terminal-password-prompt.ts
+100644 6642931453f570f742a44bd513e1ca59d7825a3a 0	src/shared/terminal-prompt-host.ts
+100644 77ff4993b89c6e93c30317c65c305f057cfd90e0 0	src/shared/theme-definitions.ts
+100644 fedcae3a898e885c0db13f42153514d5289f8036 0	src/shared/tool-policy.ts
+100644 fec0dffcb2338b87b0594631e3daadd916b49e40 0	src/shared/update-types.ts
+100644 3e1687fe495460876d3e114cf4099e890aed9425 0	src/shared/whale-monitor.ts
+100644 4ac33236d7cd831babb637a1a0f047394b84570d 0	tsconfig.json
+100644 cadcecfb4b83e62e26316354965710a89255d06a 0	tsconfig.node.json
+100644 037a0bdd71d9bd50e5ca2cad1594f5e7b5ae3a86 0	tsconfig.web.json
+100644 973756805f62f455784680b25b07c69adc196881 0	vitest.config.ts
+100644 c4cb31184c01d641d66fa59e5c8a2e738b7b9636 0	website/docs/.vitepress/config.ts
+100644 092582fc204dfae4bce0fe4271890cb38ce81de7 0	website/docs/.vitepress/theme/Layout.vue
+100644 27da6524365df64932137ac9116cfaefd0f38685 0	website/docs/.vitepress/theme/architecture-specs.ts
+100644 5f31e005f39f83d8064674f15b50318686ced5bd 0	website/docs/.vitepress/theme/components/ArchitectureDiagram.vue
+100644 e8c63b678dc0dfb93c5863b8a393ef36d39bb4e2 0	website/docs/.vitepress/theme/components/DiagramFrame.vue
+100644 4ee5486128e66139655ec99bafaccba32caaf941 0	website/docs/.vitepress/theme/components/LatestDownloads.vue
+100644 d79cd54ded68183258f31de03d5b3e2825b2680a 0	website/docs/.vitepress/theme/components/Mermaid.vue
+100644 a1dd7d2b5067a84676dadc0cdb58caa8a600d732 0	website/docs/.vitepress/theme/components/RepoStar.vue
+100644 013c010feae92e4d999065216338d08f1281ab0f 0	website/docs/.vitepress/theme/custom.css
+100644 d88609156933880730647b06744a97dc23856301 0	website/docs/.vitepress/theme/index.ts
+100644 e37d887760aaade06e475de93e38c5c9227f2b12 0	website/docs/architecture/index.md
+100644 564caf77bf0ea633f46a05f43b31ca40f6ded908 0	website/docs/develop/index.md
+100644 62697a82756fc6dd3a088076a5240db0fb3dd290 0	website/docs/en/architecture/index.md
+100644 18f68865afb3daf1891c108ee33d75f396e35e30 0	website/docs/en/develop/index.md
+100644 18585c2d9a23c7d28654bb58ada6fe5eae0a015e 0	website/docs/en/guide/command-review.md
+100644 1f83c82c0b8b9fbdc924e246f9bcbb08802ab6a3 0	website/docs/en/guide/history.md
+100644 dc5577bca36748a7d95b8cec4b9b8bcfa88e4dcb 0	website/docs/en/guide/install.md
+100644 c4429f493c17234dae6ce75a08cb51047612f614 0	website/docs/en/guide/quick-start.md
+100644 af230ea36d9f38a1be39195e69603667216bdeed 0	website/docs/en/guide/skills.md
+100644 d704ec85cb2a18b93c441d269c1d3032e3f9c56a 0	website/docs/en/guide/ssh.md
+100644 2f15c5c56c3d6a95d30a8bb0fa49dc8ccf15cdcf 0	website/docs/en/guide/subagents.md
+100644 9793f4f0113d7ad966cf844d2360ff226cb1eb6b 0	website/docs/en/guide/terminal.md
+100644 2224e952c40875ed30346c126cd4df0ddda97011 0	website/docs/en/guide/tools.md
+100644 48b3466f56a82a158d92db6a6bcfeb510313e3fd 0	website/docs/en/guide/why.md
+100644 dc1681c91b666c7da211dee6bac757cdfae5fad9 0	website/docs/en/guide/workbench.md
+100644 0a5d8fba6c7d9ba9fced69c598660959f830dd00 0	website/docs/en/index.md
+100644 89cab76ddc84092993b74a92e78277e5d3dc3778 0	website/docs/guide/command-review.md
+100644 13240e0814254f063a3e9fc07e4391af009e677e 0	website/docs/guide/history.md
+100644 09a51325261321ff5caf062e56949e55646228d9 0	website/docs/guide/install.md
+100644 91723a2004b6201bb43f89f3a72528fc301143e9 0	website/docs/guide/quick-start.md
+100644 9f5ca742441c40f31e18fd53e468507c9767bef3 0	website/docs/guide/skills.md
+100644 1f95e9f8e3b3778d0793e35a08a03ceb4c4d25b1 0	website/docs/guide/ssh.md
+100644 9e96197d6bcbe05ef80ee5061bc62080c2519c48 0	website/docs/guide/subagents.md
+100644 39f9a9097bbc86fa71f57c6edd746bdf02506e3a 0	website/docs/guide/terminal.md
+100644 a69f49ecf147588db22669b426b2dde558ef45c5 0	website/docs/guide/tools.md
+100644 6e08b20d473afbe737161d427089dbdaea41a9a1 0	website/docs/guide/why.md
+100644 6fba8bf79fbf54a5d315d0ceecb7aa54d553ec14 0	website/docs/guide/workbench.md
+100644 0457cb0576fb738fc65e2173c46e078b4b6f65fc 0	website/docs/index.md
+100644 c068e309f464bd17df8e8279a5f61183296ad3a7 0	website/docs/public/favicon.ico
+100644 cc4864f9cdf474ee779c6f9f637414324906f72f 0	website/package-lock.json
+100644 c1921348f03269716277b63611133053aa1a4bbf 0	website/package.json
+100644 1e7fe3cc83cabeed8c72b658ea24a55629b51c14 0	website/tsconfig.json
+exit=0
+
+$ git ls-files --others --exclude-standard
+Document/new10/CODEX_EXECUTION_PROMPT.md
+Document/new10/CODEX_EXECUTION_PROMPT_V2.md
+Document/new10/MOXUN_FOUR_PHASE_REVIEW_REPAIR_PLAN_20261107.md
+Document/new10/MOXUN_POST_REVIEW_REMEDIATION_PLAN_20261107.md
+Document/new10/README.md
+Document/new10/evidence-20261107/git-baseline.txt
+Document/new4/MOXUN_BRAND_AND_TERMINAL_ACTIONS_FIX_REPORT_20261104.md
+Document/new4/issue-actions-validation-20261104/menu-en-false.png
+Document/new4/issue-actions-validation-20261104/menu-en-true.png
+Document/new4/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new4/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-GP4UvJ/launch.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-GP4UvJ/running.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-j7c1yo/launch.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-j7c1yo/running.png
+Document/new4/issue-actions-validation-20261104/removed-legacy-assets.json
+Document/new4/issue-actions-validation-20261104/results.json
+Document/new4/issue-actions-validation-20261104/source-icons-audit.json
+Document/new5/CODEX_UI_UX_OPTIMIZATION_PROMPT.md
+Document/new5/MOXUN_LAYOUT_HIERARCHY_REPORT_20261104.md
+Document/new5/MOXUN_UI_UX_OPTIMIZATION_REPORT_20261104.md
+Document/new5/layout-hierarchy-validation-20261104/acceptance-summary.json
+Document/new5/layout-hierarchy-validation-20261104/after-audit.json
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/baseline-status.txt
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/failure.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/results.json
+Document/new5/layout-hierarchy-validation-20261104/electron-audit-runner.cjs.txt
+Document/new5/layout-hierarchy-validation-20261104/electron-extra-runner.cjs.txt
+Document/new5/layout-hierarchy-validation-20261104/extra-collapsed-dark.png
+Document/new5/layout-hierarchy-validation-20261104/extra-collapsed-light.png
+Document/new5/layout-hierarchy-validation-20261104/extra-failure.png
+Document/new5/layout-hierarchy-validation-20261104/extra-fallback-dark.png
+Document/new5/layout-hierarchy-validation-20261104/extra-fallback-light.png
+Document/new5/layout-hierarchy-validation-20261104/extra-results.json
+Document/new5/layout-hierarchy-validation-20261104/final-status.txt
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/compact-conversation.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/failure.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-1440.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-560.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-800.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/results.json
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/failure.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-en-false.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-en-true.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/results.json
+Document/new5/layout-hierarchy-validation-20261104/review-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/review-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/review-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/skill-search.txt
+Document/new5/ui-ux-validation-20261104/README.md
+Document/new5/ui-ux-validation-20261104/acceptance-summary.json
+Document/new5/ui-ux-validation-20261104/after-audit.json
+Document/new5/ui-ux-validation-20261104/after-chat-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-chat-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-chat-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-560.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-800.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-details-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-details-light-560.png
+Document/new5/ui-ux-validation-20261104/after-details-light-800.png
+Document/new5/ui-ux-validation-20261104/after-failure.png
+Document/new5/ui-ux-validation-20261104/after-first-batch-audit.json
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-560.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-800.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-560.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-800.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-560.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-800.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-560.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-800.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-560.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-800.png
+Document/new5/ui-ux-validation-20261104/baseline-status.txt
+Document/new5/ui-ux-validation-20261104/before-audit.json
+Document/new5/ui-ux-validation-20261104/before-chat-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-chat-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-chat-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-560.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-800.png
+Document/new5/ui-ux-validation-20261104/before-contact-dark.json
+Document/new5/ui-ux-validation-20261104/before-contact-dark.png
+Document/new5/ui-ux-validation-20261104/before-contact-light.json
+Document/new5/ui-ux-validation-20261104/before-contact-light.png
+Document/new5/ui-ux-validation-20261104/before-failure.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-560.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-800.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-560.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-800.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-560.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-800.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-560.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-800.png
+Document/new5/ui-ux-validation-20261104/electron-audit-runner.cjs.txt
+Document/new5/ui-ux-validation-20261104/electron-extra-runner.cjs.txt
+Document/new5/ui-ux-validation-20261104/extra-en-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-en-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-en-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-results.json
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-skills.png
+Document/new5/ui-ux-validation-20261104/final-status.txt
+Document/new5/ui-ux-validation-20261104/implementation.diff
+Document/new5/ui-ux-validation-20261104/overflow-before-fix.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/compact-conversation.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-1440.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-560.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-800.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/results.json
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-en-false.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-en-true.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/results.json
+Document/new5/ui-ux-validation-20261104/review-dark-1440.json
+Document/new5/ui-ux-validation-20261104/review-dark-1440.png
+Document/new5/ui-ux-validation-20261104/review-dark-560.json
+Document/new5/ui-ux-validation-20261104/review-dark-560.png
+Document/new5/ui-ux-validation-20261104/review-dark-800.json
+Document/new5/ui-ux-validation-20261104/review-dark-800.png
+Document/new5/ui-ux-validation-20261104/review-light-1440.json
+Document/new5/ui-ux-validation-20261104/review-light-1440.png
+Document/new5/ui-ux-validation-20261104/review-light-560.json
+Document/new5/ui-ux-validation-20261104/review-light-560.png
+Document/new5/ui-ux-validation-20261104/review-light-800.json
+Document/new5/ui-ux-validation-20261104/review-light-800.png
+Document/new5/ui-ux-validation-20261104/skill-searches.txt
+Document/new5/ui-ux-validation-20261104/token-contrast.json
+Document/new6/MOXUN_CONTEXT_COMPACTION_AND_MEMORY_ENHANCEMENT_PLAN_20261105.md
+Document/new6/MOXUN_CONTEXT_COMPACTION_AND_MEMORY_IMPLEMENTATION_REPORT_20261106.md
+Document/new6/MOXUN_CONTEXT_P0_AUDIT_20261105.md
+Document/new7/CODEX_HANDOFF_PROMPT.md
+Document/new7/MOXUN_NEW7_IMPLEMENTATION_REPORT_20261107.md
+Document/new7/MOXUN_NEW7_P0_AUDIT_20261107.md
+Document/new7/MOXUN_TERMINAL_TURN_QUEUE_PROJECT_LINK_AND_LARGE_FILE_READING_PLAN_20261106.md
+Document/new8/MOXUN_PROJECT_REVIEW_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_AGENT_EXECUTION_AND_PERFORMANCE_PLAN_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE1_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE2_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE3_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE4_REPORT_20261107.md
+resources/licenses/xterm/addon-fit-and-unicode11.txt
+resources/licenses/xterm/addon-search.txt
+resources/licenses/xterm/xterm.txt
+scripts/smoke-macos-app.cjs
+scripts/verify-managed-terminal.cjs
+src/main/agent/compaction-checkpoint.ts
+src/main/agent/context-assembly.ts
+src/main/agent/pi-managed-terminal-tool.ts
+src/main/agent/turn-queue-ipc.ts
+src/main/agent/turn-queue.ts
+src/main/code-intelligence/language.ts
+src/main/code-intelligence/parser-protocol.ts
+src/main/code-intelligence/utility-parser.ts
+src/main/code-intelligence/worker.ts
+src/main/document-cursor.ts
+src/main/local-docx-reader.ts
+src/main/local-pdf-reader.ts
+src/main/local-text-reader.ts
+src/main/macos-application-icon.ts
+src/main/memory/context-jobs.ts
+src/main/memory/evidence.ts
+src/main/memory/schema.ts
+src/main/moxun-data-migration.ts
+src/main/sqlite/context-checkpoints.ts
+src/main/sqlite/history-search.ts
+src/main/sqlite/project-association.ts
+src/main/terminal/managed/command-executor.ts
+src/main/terminal/managed/ipc.ts
+src/main/terminal/managed/output-buffer.ts
+src/main/terminal/managed/session-manager.ts
+src/main/terminal/managed/window.ts
+src/main/terminal/observer/command-observation.ts
+src/preload/terminal.ts
+src/renderer/src/components/AgentTurnQueuePanel.tsx
+src/renderer/src/components/ConversationRecords.tsx
+src/renderer/src/components/MemoryEvidenceList.tsx
+src/renderer/src/components/TerminalSessionMenu.tsx
+src/renderer/src/lib/guided-ops-labels.ts
+src/renderer/src/terminal/main.ts
+src/renderer/src/terminal/terminal.css
+src/renderer/terminal.html
+src/shared/agent-turn-queue.ts
+src/shared/managed-terminal.ts
+exit=0

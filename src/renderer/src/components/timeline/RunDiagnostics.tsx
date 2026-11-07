@@ -7,9 +7,31 @@ import { formatDuration } from './helpers'
 import { ChevronRightIcon } from 'lucide-react'
 
 /** Unknown/internal statuses stay inspectable, but never become conversation prose. */
-export function visibleStatus(step: AgentRunStep, t: Dictionary): string | undefined {
+export function visibleStatus(
+  step: AgentRunStep,
+  t: Dictionary,
+  runFinished = false
+): string | undefined {
   if (step.kind !== 'status') return undefined
   const raw = step.detail || step.title
+  if (
+    /^(?:正在压缩上下文（(?:手动|阈值|溢出)）|Compacting context \((?:manual|threshold|overflow)\))/.test(
+      raw
+    )
+  )
+    return runFinished ? undefined : raw
+  if (
+    /^(?:上下文已压缩（(?:手动|阈值|溢出)）|Context compacted \((?:manual|threshold|overflow)\))/.test(
+      raw
+    )
+  )
+    return raw
+  // Keep provider error details in the diagnostics drawer.
+  const compactionOutcome =
+    /^(?:上下文压缩(?:失败|已中止)（(?:手动|阈值|溢出)）|Context compaction (?:failed|aborted) \((?:manual|threshold|overflow)\))/.exec(
+      raw
+    )
+  if (compactionOutcome) return compactionOutcome[0]
   if (/^Using |^Loaded \d+ MCP|^Selected \d+ active tools:|Guided Ops/i.test(raw)) return undefined
   const localized = localizeAgentEventMessage(raw, t)
   if (localized !== raw) return localized
@@ -125,17 +147,32 @@ export function RunDiagnostics({
         )}
         <div className="flex flex-wrap gap-1">
           {onView && (
-            <Button size="xs" variant="ghost" onClick={onView}>
+            <Button
+              size="xs"
+              variant="ghost"
+              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
+              onClick={onView}
+            >
               {t.input.fullRunViewSteps}
             </Button>
           )}
           {onExportFull && (
-            <Button size="xs" variant="ghost" onClick={onExportFull}>
+            <Button
+              size="xs"
+              variant="ghost"
+              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
+              onClick={onExportFull}
+            >
               {t.common.exportFullMarkdownTooltip}
             </Button>
           )}
           {onExportTrace && (
-            <Button size="xs" variant="ghost" onClick={onExportTrace}>
+            <Button
+              size="xs"
+              variant="ghost"
+              className="h-auto min-h-6 max-w-full justify-start whitespace-normal text-left"
+              onClick={onExportTrace}
+            >
               {t.common.exportTraceJsonTooltip}
             </Button>
           )}

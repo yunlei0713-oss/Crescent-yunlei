@@ -15,12 +15,14 @@ import type { CaptureKind } from '../../../shared/agent-types'
 /** A settled message keeps its Markdown, timeline and chrome across streaming updates. */
 export const AgentLogMessage = memo(function AgentLogMessage({
   spacing,
+  deferLayout,
   readyKind,
   onCopyEntry,
   onOpenCaptureDraft,
   ...content
 }: ComponentProps<typeof AgentLogContent> & {
   spacing: string
+  deferLayout?: boolean
   readyKind?: CaptureKind
   onCopyEntry: (entry: AgentLogEntry) => void
   onOpenCaptureDraft?: (kind: CaptureKind) => void
@@ -39,7 +41,7 @@ export const AgentLogMessage = memo(function AgentLogMessage({
     >
       {conversation ? (
         <>
-          <div className="app-agent-message-content">
+          <div className="app-agent-message-content" data-defer-layout={deferLayout || undefined}>
             <AgentLogContent {...content} />
           </div>
           <div className="app-agent-message-meta mt-1 flex items-center justify-start gap-3 text-[11px] text-muted-foreground">

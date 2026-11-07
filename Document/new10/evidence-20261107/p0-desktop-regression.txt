@@ -1,0 +1,15 @@
+Explicit desktop selection: 25 of 27 files.
+
+> moxun@1.0.12 test:local
+> CRESCENT_LOCAL_TESTS=1 vitest run --project desktop src/main/app-icons.browser.test.ts src/main/new4-app.browser.test.ts src/main/pdf-preview.browser.test.ts src/main/code-intelligence/worker.browser.test.ts src/main/agent/vision-live.test.ts src/renderer/src/hooks/conversation-refinement.browser.test.ts src/renderer/src/hooks/polish.browser.test.ts src/renderer/src/hooks/scroll-follow.browser.test.ts src/renderer/src/components/ProviderSettingsEditor.browser.test.ts src/renderer/src/components/WhaleMonitor.browser.test.ts src/renderer/src/components/full-app-quality.browser.test.ts src/renderer/src/components/hierarchy.browser.test.ts src/renderer/src/components/new4.browser.test.ts src/renderer/src/components/quality-cleanup.browser.test.ts src/renderer/src/components/terminal-actions.browser.test.ts src/renderer/src/lib/ui-feedback.browser.test.ts src/main/terminal/external/electron-iterm.test.ts src/main/terminal/external/electron-proactive.test.ts src/main/terminal/external/full-app-lifecycle.browser.test.ts src/main/terminal/external/lifecycle.browser.test.ts src/main/terminal/external/live-iterm.test.ts src/main/terminal/external/zhangke-continuity.browser.test.ts src/main/terminal/managed/agent-collaboration.browser.test.ts src/main/terminal/managed/lifecycle.browser.test.ts src/main/terminal/managed/product.browser.test.ts
+
+
+ RUN  v4.1.11 /Users/xusong.yu/Desktop/moxun-test
+
+PDF_RANGE_OK {"ranges":[65536,65536,677],"elapsedMs":969.9482710000002}
+
+ Test Files  16 passed | 9 skipped (25)
+      Tests  18 passed | 12 skipped (30)
+   Start at  20:00:47
+   Duration  164.24s (transform 540ms, setup 0ms, import 4.10s, tests 153.55s, environment 4ms)
+

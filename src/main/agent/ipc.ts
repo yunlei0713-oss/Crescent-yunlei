@@ -1,4 +1,12 @@
-import { resolveConversationId } from '../crescent-sqlite'
+import {
+  agentTurnQueue,
+  queueFailure,
+  queueOwner,
+  registerAgentTurnQueueIpc,
+  verifyTurnSnapshot
+} from './turn-queue-ipc'
+import { withDocumentOwner } from '../local-document-ipc'
+import { getDatabase, resolveConversationId } from '../crescent-sqlite'
 import { guidedOpsRepository } from '../sqlite/guided-ops-repository'
 import type { GuidedOpsHistoryQuery } from '../../shared/guided-ops-types'
 import { grantLocalDocumentPath } from '../local-document-ipc'
@@ -8,7 +16,11 @@ import type { FileChangeDecision } from '../../shared/file-approval-types'
 import { guidedOps } from './guided-ops'
 import type { GuidedOpsAction } from '../../shared/guided-ops-types'
 import { getPtyBashExecContext, returnToMainTerminal } from './pi-terminal-bash'
-import { readTerminalExecutionTarget, readTerminalEvidence } from '../terminal/ipc'
+import {
+  readTerminalExecutionTarget,
+  readTerminalEvidence,
+  recordTerminalOperatorConfirmation
+} from '../terminal/ipc'
 import { normalizeApprovalPolicy, normalizeMutationPolicy } from '../../shared/approval-policy'
 import { promises as fs } from 'fs'
 import {
@@ -45,6 +57,7 @@ import {
   installAgentSkill,
   listAgentSkills,
   readAgentSkillContent,
+  readAgentSkillDocuments,
   searchAgentSkills,
   startAgentSkillInstall,
   readCatalogSkillContent
@@ -57,6 +70,7 @@ import {
 } from './generate-capture'
 import {
   cancelPiAgentRun,
+  discardHostedHistory,
   generateHandoffForHostedSession,
   getHostedHandoffStatus,
   cancelHostedHandoff,
@@ -122,7 +136,22 @@ import type {
 const activeSkillInstalls = new Map<string, { cancel: () => void }>()
 const MAX_COMPACT_INSTRUCTIONS = 2_000
 
+const ipcRuns = new Map<string, { owner: number; runId: string; controller: AbortController }>()
+let acceptingAgentRuns = true
+
+export function stopAgentDispatch(): void {
+  acceptingAgentRuns = false
+  for (const { controller } of ipcRuns.values()) controller.abort()
+}
+
+
+export function isConversationTurnBusy(id: string): boolean {
+  return ipcRuns.has(id) || agentTurnQueue().running(id)
+}
+export { discardHostedHistory }
+
 export function registerAgentIpc(): void {
+  registerAgentTurnQueueIpc((id) => ipcRuns.has(id) || projectAssociationChanging(id))
   rendererIpc.handle('agent:guided-history', (_, query: GuidedOpsHistoryQuery) =>
     guidedOpsRepository.list(query)
   )
@@ -371,19 +400,31 @@ export function registerAgentIpc(): void {
     const locale = typeof payload?.locale === 'string' ? payload.locale : undefined
     const tabId = typeof payload?.tabId === 'string' ? payload.tabId.trim() : sessionKey
 
-    return compactHostedSession({
-      ownerId: event.sender.id,
-      sessionKey: resolveConversationId(sessionKey),
-      tabId,
-      instructions,
-      locale,
-      emit: (agentEvent) => {
-        safeWebContentsSend(event.sender, 'agent:event', {
-          ...agentEvent,
-          tabId: agentEvent.tabId ?? tabId
-        })
-      }
-    })
+    const job = new AbortController()
+    const abort = (): void => job.abort()
+    event.sender.once('destroyed', abort)
+    event.sender.once('did-start-navigation', abort)
+    event.sender.once('render-process-gone', abort)
+    try {
+      return await compactHostedSession({
+        signal: job.signal,
+        ownerId: event.sender.id,
+        sessionKey: resolveConversationId(sessionKey),
+        tabId,
+        instructions,
+        locale,
+        emit: (agentEvent) => {
+          safeWebContentsSend(event.sender, 'agent:event', {
+            ...agentEvent,
+            tabId: agentEvent.tabId ?? tabId
+          })
+        }
+      })
+    } finally {
+      event.sender.removeListener('destroyed', abort)
+      event.sender.removeListener('did-start-navigation', abort)
+      event.sender.removeListener('render-process-gone', abort)
+    }
   })
 
   rendererIpc.handle(
@@ -489,7 +530,7 @@ export function registerAgentIpc(): void {
     async (event, payload: { kind?: AgentPathReference['kind'] }) => {
       const kind = payload?.kind === 'directory' ? 'directory' : 'file'
       const selection = await pickAgentPathReference(event.sender, kind)
-      if (selection) await grantLocalDocumentPath(event.sender, selection.path)
+      if (selection) await grantLocalDocumentPath(event.sender, selection.path, kind === 'file')
       return selection
     }
   )
@@ -502,7 +543,7 @@ export function registerAgentIpc(): void {
     'agent:save-pasted-attachment',
     async (event, payload: PastedAttachmentInput) => {
       const attachment = await savePastedAttachment(payload)
-      await grantLocalDocumentPath(event.sender, attachment.path)
+      await grantLocalDocumentPath(event.sender, attachment.path, true)
       return attachment
     }
   )
@@ -621,8 +662,12 @@ export function registerAgentIpc(): void {
   rendererIpc.handle('agent:cancel', async (event, runId: string) => {
     const normalizedRunId = typeof runId === 'string' ? runId.trim() : ''
     if (!normalizedRunId) return { ok: false }
+    const pending = [...ipcRuns.values()].find(
+      (run) => run.runId === normalizedRunId && run.owner === event.sender.id
+    )
+    pending?.controller.abort()
     const ok = await cancelPiAgentRun(normalizedRunId, event.sender.id)
-    return { ok }
+    return { ok: ok || Boolean(pending) }
   })
 
   rendererIpc.handle('agent:reject-approvals-for-tab', (event, tabId: string) => {
@@ -720,109 +765,178 @@ export function registerAgentIpc(): void {
   )
 
   rendererIpc.handle('agent:run', async (event, payload: AgentRunInput) => {
-    const input = payload?.input?.trim()
+    if (!acceptingAgentRuns) return { ok: false, error: 'MoXun is shutting down.' }
+    const tabId = typeof payload?.tabId === 'string' ? payload.tabId.trim() : undefined
+    const sessionKey = resolveConversationId(tabId || 'default')
+    assertProjectIdle(sessionKey)
+    const queued = typeof payload?.queueTurnId === 'string' ? payload.queueTurnId : undefined
+    if (ipcRuns.has(sessionKey) || (!queued && agentTurnQueue().running(sessionKey)))
+      return { ok: false, error: 'This conversation already has an active turn.' }
+    const owner = event.sender
+    const token = queueOwner(owner)
+    const snapshot = queued ? agentTurnQueue().start(queued, sessionKey, token) : undefined
+    if (queued && !snapshot) return { ok: false, error: 'Queued turn is no longer available.' }
     const runId =
-      payload?.runId?.trim() || `run-${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-    if (!input) {
-      return { ok: false, error: 'Input is empty.' }
+      typeof payload?.runId === 'string' && payload.runId.trim()
+        ? payload.runId.trim()
+        : `run-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const controller = new AbortController()
+    ipcRuns.set(sessionKey, { owner: owner.id, runId, controller })
+    const cancel = (): void => {
+      controller.abort()
+      void cancelPiAgentRun(runId, owner.id)
     }
-
-    if (input.startsWith('/remember ')) {
-      const memory = createMemory()
-      memory.addLongTermNote(input.slice('/remember '.length))
-      safeWebContentsSend(event.sender, 'agent:event', {
-        type: 'done',
-        message: 'Saved to long-term memory.',
-        runId,
-        tabId: payload?.tabId
-      })
-      return { ok: true, text: 'Saved to long-term memory.' }
-    }
-
-    const agentConfig = normalizeAgentConfig({
-      ...readAgentConfig(),
-      providerId: payload?.providerId,
-      model: payload?.model
-    })
-    const sessionKey = resolveConversationId(payload?.tabId?.trim() || 'default')
-    if (payload?.projectId !== undefined) {
-      agentConfig.workspaceCwd = (
-        await resolveProjectForOwner(event.sender, payload.projectId)
-      ).root
-    }
-    const executionTabId = payload?.executionTabId?.trim() || payload?.tabId?.trim() || ''
-    const wikiIds = [
-      ...new Set((payload?.activeWikiIds ?? []).map((id) => id.trim()).filter(Boolean))
-    ]
-    const activeWikiDocs = (await Promise.all(wikiIds.map((id) => getWikiDocument(id))))
-      .filter((doc): doc is NonNullable<typeof doc> => Boolean(doc))
-      .map((doc) => ({ title: doc.title, content: doc.content }))
-
-    const skillRoot = agentConfig.skillRoot
-    const skillListOptions = {
-      loadGlobalAgentSkills: Boolean(agentConfig.loadGlobalAgentSkills)
-    }
-    const skillPaths = [
-      ...new Set((payload?.activeSkillPaths ?? []).map((path) => path.trim()).filter(Boolean))
-    ]
-    const skillCatalog = skillPaths.length ? listAgentSkills(skillRoot, skillListOptions) : []
-    const activeSkillDocs = skillPaths.flatMap((skillPath) => {
-      try {
-        const content = readAgentSkillContent(skillPath, skillRoot, skillListOptions)
-        const resolved = resolve(skillPath)
-        const matched = skillCatalog.find((skill) => resolve(skill.path) === resolved)
-        return [
-          {
-            name: matched?.name ?? skillPath.split('/').filter(Boolean).slice(-2, -1)[0] ?? 'Skill',
-            path: matched?.path ?? skillPath,
-            content
+    owner.once('destroyed', cancel)
+    owner.once('did-start-navigation', cancel)
+    try {
+      const request = snapshot
+        ? {
+            ...snapshot.request,
+            tabId,
+            conversationContext: payload.conversationContext
           }
-        ]
-      } catch {
-        return []
-      }
-    })
-
-    const result = await runPiAgent({
-      proactiveToken:
-        typeof payload?.proactiveToken === 'string' ? payload.proactiveToken : undefined,
-      attachments: payload?.attachments,
-      runId,
-      sessionKey,
-      input,
-      config: agentConfig,
-      tabId: payload?.tabId,
-      conversationContext: payload?.conversationContext,
-      webContents: event.sender,
-      executionTabId,
-      observationTabIds: payload?.observationTabIds,
-      executionConnectionId: payload?.executionConnectionId?.trim() || undefined,
-      terminalContext: JSON.stringify(readTerminalEvidence(event.sender.id, executionTabId)),
-      locale: payload?.locale,
-      agentStyle: normalizeAgentStyle(payload?.agentStyle ?? agentConfig.agentStyle),
-      executionMode: normalizeExecutionMode(payload?.executionMode),
-      approvalPolicy: normalizeApprovalPolicy(payload?.approvalPolicy),
-      mutationPolicy: normalizeMutationPolicy(payload?.mutationPolicy),
-      activeWikiDocs,
-      activeSkillDocs,
-      emit: (agentEvent) => {
-        safeWebContentsSend(event.sender, 'agent:event', {
-          ...agentEvent,
+        : payload
+      const result = await withDocumentOwner(owner, async (assertCurrent) => {
+        if (snapshot) await verifyTurnSnapshot(owner, sessionKey, snapshot, token)
+        assertCurrent()
+        return runAgentRequest(
+          owner,
+          request,
+          sessionKey,
           runId,
-          tabId: agentEvent.tabId ?? payload?.tabId
-        })
-      }
-    })
-
-    appendOperationRecord({
-      status: result.ok ? 'success' : 'error',
-      summary: redactSensitiveText(input).slice(0, 2000),
-      output: redactSensitiveText(result.text || result.error || '').slice(0, 8000)
-    })
-
-    return result
+          controller.signal,
+          Boolean(snapshot),
+          snapshot?.terminalConfirmation
+        )
+      })
+      if (queued)
+        agentTurnQueue().finish(
+          queued,
+          controller.signal.aborted ? 'canceled' : result.ok ? 'completed' : 'failed',
+          result.error ? queueFailure(result.error) : undefined
+        )
+      return result
+    } catch (error) {
+      const message = queueFailure(error)
+      if (queued)
+        agentTurnQueue().finish(queued, controller.signal.aborted ? 'canceled' : 'failed', message)
+      return { ok: false, error: message }
+    } finally {
+      owner.removeListener('destroyed', cancel)
+      owner.removeListener('did-start-navigation', cancel)
+      ipcRuns.delete(sessionKey)
+    }
   })
+}
+
+async function runAgentRequest(
+  owner: WebContents,
+  payload: AgentRunInput,
+  sessionKey: string,
+  runId: string,
+  signal: AbortSignal,
+  queued: boolean,
+  terminalConfirmation?: string
+): Promise<{ ok: boolean; text?: string; error?: string }> {
+  signal.throwIfAborted()
+  const linked = readProjectAssociation(getDatabase(), sessionKey)
+  const input = (
+    !linked.projectId && !linked.since && payload?.resumeInput
+      ? payload.resumeInput
+      : payload?.input
+  )?.trim()
+  if (!input) {
+    return { ok: false, error: 'Input is empty.' }
+  }
+
+  if (input.startsWith('/remember ')) {
+    const memory = createMemory()
+    memory.addLongTermNote(input.slice('/remember '.length))
+    safeWebContentsSend(owner, 'agent:event', {
+      type: 'done',
+      message: 'Saved to long-term memory.',
+      runId,
+      tabId: payload?.tabId
+    })
+    return { ok: true, text: 'Saved to long-term memory.' }
+  }
+
+  const agentConfig = normalizeAgentConfig({
+    ...readAgentConfig(),
+    providerId: payload?.providerId,
+    model: payload?.model
+  })
+  if (
+    queued &&
+    ((payload.providerId && payload.providerId !== agentConfig.providerId) ||
+      (payload.model && payload.model !== agentConfig.model))
+  )
+    throw new Error('Queued provider or model is no longer available')
+  if (payload?.projectId !== linked.projectId)
+    throw new Error('Conversation project changed. Refresh the project association.')
+  const project = linked.projectId
+    ? await resolveProjectForOwner(owner, linked.projectId)
+    : undefined
+  if (project) agentConfig.workspaceCwd = project.root
+  const executionTabId = payload?.executionTabId?.trim() || payload?.tabId?.trim() || ''
+  const wikiIds = [
+    ...new Set((payload?.activeWikiIds ?? []).map((id) => id.trim()).filter(Boolean))
+  ]
+  const activeWikiDocs = (await Promise.all(wikiIds.map((id) => getWikiDocument(id))))
+    .filter((doc): doc is NonNullable<typeof doc> => Boolean(doc))
+    .map((doc) => ({ title: doc.title, content: doc.content }))
+
+  const skillPaths = [
+    ...new Set((payload?.activeSkillPaths ?? []).map((path) => path.trim()).filter(Boolean))
+  ]
+  const activeSkillDocs = readAgentSkillDocuments(skillPaths, agentConfig.skillRoot, {
+    loadGlobalAgentSkills: Boolean(agentConfig.loadGlobalAgentSkills)
+  })
+
+  signal.throwIfAborted()
+  if (payload.terminalOperatorFinished === true)
+    recordTerminalOperatorConfirmation(owner.id, sessionKey, executionTabId, terminalConfirmation)
+  const result = await runPiAgent({
+    proactiveToken:
+      typeof payload?.proactiveToken === 'string' ? payload.proactiveToken : undefined,
+    attachments: payload?.attachments,
+    runId,
+    sessionKey,
+    input,
+    config: agentConfig,
+    tabId: payload?.tabId,
+    conversationContext: linked.since ? undefined : payload?.conversationContext,
+    projectRoot: project?.root,
+    projectRootIdentity: project?.rootIdentity,
+    requireExactModel: queued && Boolean(payload.providerId && payload.model),
+    webContents: owner,
+    executionTabId,
+    observationTabIds: payload?.observationTabIds,
+    executionConnectionId: payload?.executionConnectionId?.trim() || undefined,
+    terminalContext: JSON.stringify(readTerminalEvidence(owner.id, executionTabId)),
+    locale: payload?.locale,
+    agentStyle: normalizeAgentStyle(payload?.agentStyle ?? agentConfig.agentStyle),
+    executionMode: normalizeExecutionMode(payload?.executionMode),
+    approvalPolicy: normalizeApprovalPolicy(payload?.approvalPolicy),
+    mutationPolicy: normalizeMutationPolicy(payload?.mutationPolicy),
+    activeWikiDocs,
+    activeSkillDocs,
+    emit: (agentEvent) => {
+      safeWebContentsSend(owner, 'agent:event', {
+        ...agentEvent,
+        runId,
+        tabId: agentEvent.tabId ?? payload?.tabId
+      })
+    }
+  })
+
+  appendOperationRecord({
+    status: result.ok ? 'success' : 'error',
+    summary: redactSensitiveText(input).slice(0, 2000),
+    output: redactSensitiveText(result.text || result.error || '').slice(0, 8000)
+  })
+
+  return result
 }
 
 async function pickAgentPathReference(
@@ -901,4 +1015,5 @@ async function validateModel(config: AgentConfig): Promise<void> {
     throw new Error('Model is required.')
   }
 }
-import { resolveProjectForOwner } from '../projects'
+import { assertProjectIdle, projectAssociationChanging, resolveProjectForOwner } from '../projects'
+import { readProjectAssociation } from '../sqlite/project-association'

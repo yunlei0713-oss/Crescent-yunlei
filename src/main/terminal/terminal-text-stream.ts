@@ -81,6 +81,7 @@ export class TerminalTextStream {
         continue
       }
       const overwriting = this.cursor < this.cells.length
+      const wasOverflow = this.overflow
       if (char === '\x1b') this.escape = char
       else if (char === '\n') this.flushLine()
       else if (char === '\r') this.cursor = 0
@@ -91,10 +92,16 @@ export class TerminalTextStream {
         this.put(char)
       } else if (char === '\t') this.put(char)
       else if (char !== '\x07') this.uncertain = true
-      // A new secret-prompt suffix needs a colon/space; a PEM boundary ends in
-      // hyphens. Other appended characters cannot complete either pattern.
-      // Edits/overflow are always checked, including overwrites of existing text.
-      if (overwriting || this.overflow || /[:：\s-]/.test(char)) this.notifyChange()
+      // The colon already matches a secret prompt before any trailing spaces.
+      // PEM boundaries end in hyphens. Scan edits and newly overflowing lines too.
+      if (
+        overwriting ||
+        (!wasOverflow && this.overflow) ||
+        char === ':' ||
+        char === '：' ||
+        char === '-'
+      )
+        this.notifyChange()
     }
   }
 
@@ -134,6 +141,11 @@ export class TerminalTextStream {
     const body = sequence.slice(2, -1)
     const final = sequence.at(-1)
     if (final === 'm' || /^[?\d;]*[hl]$/.test(sequence.slice(2))) return
+    if (final === 'J' && (body === '' || body === '0') && this.cursor === 0) {
+      // Erasing to the end of the screen at column zero also clears this line.
+      this.clearLine()
+      return
+    }
     if (!/^\d*$/.test(body)) {
       this.uncertain = true
       return

@@ -87,6 +87,7 @@ export function ComposerEditor({
   const previousValueRef = useRef(value)
   const pendingCaretRef = useRef<number | null>(null)
   const composingRef = useRef(false)
+  const pastingTextRef = useRef(false)
   const compositionEndedAtRef = useRef(0)
   const newlineImeWarmupAtRef = useRef(0)
   const mountedRef = useRef(false)
@@ -157,7 +158,7 @@ export function ComposerEditor({
         valueLength: value.length,
         composerFocused: document.activeElement === surface,
         newlineWarmup,
-        canonicalEmpty: isCanonicalComposerEmptyDom(surface)
+        canonicalEmpty: value.length === 0 && isCanonicalComposerEmptyDom(surface)
       })
     ) {
       previousValueRef.current = value
@@ -294,7 +295,7 @@ export function ComposerEditor({
       data-placeholder={placeholder}
       data-empty={value.length === 0 ? 'true' : undefined}
       onInput={(event) => {
-        if (isComposerInputComposing(event)) return
+        if (pastingTextRef.current || isComposerInputComposing(event)) return
         if (
           shouldIgnoreComposerInputAfterNewline(
             newlineImeWarmupAtRef.current,
@@ -318,16 +319,31 @@ export function ComposerEditor({
       }}
       onSelect={() => {
         const surface = surfaceRef.current
-        if (!surface) return
+        if (!surface || pastingTextRef.current) return
         lookupsRef.current.onCaretChange?.(getComposerDomCaret(surface))
       }}
       onPaste={(event) => {
         onPaste(event)
         if (event.defaultPrevented) return
         event.preventDefault()
-        const text = event.clipboardData.getData('text/plain')
+        const text = event.clipboardData.getData('text/plain').replace(/\r\n?/g, '\n')
         if (!text) return
-        document.execCommand('insertText', false, text)
+        pastingTextRef.current = true
+        try {
+          // insertText emits an input event for each paragraph break in Chromium.
+          // Insert escaped text as one fragment, keeping native undo and the selection.
+          const multiline = text.includes('\n') && !text.includes('\0')
+          const inserted =
+            multiline &&
+            document.execCommand(
+              'insertHTML',
+              false,
+              text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+            )
+          if (!inserted) document.execCommand('insertText', false, text)
+        } finally {
+          pastingTextRef.current = false
+        }
         emitFromDom()
       }}
       onKeyDown={(event) => {

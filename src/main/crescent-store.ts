@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import { dirname, isAbsolute, resolve } from 'path'
 import { randomUUID } from 'crypto'
 import { safeStorage } from 'electron'
+import { remapMovedDataPath } from './moxun-data-migration'
 
 import {
   appendOperationRecordToDb,
@@ -461,7 +462,7 @@ export function normalizeAgentConfig(config: Partial<AgentConfig>): AgentConfig 
     model: selection.model,
     commandTimeouts: normalizeCommandTimeoutPolicy(config.commandTimeouts),
     terminalContextChars: normalizeTerminalContextChars(config.terminalContextChars),
-    workspaceCwd: String(config.workspaceCwd ?? '').trim() || undefined,
+    workspaceCwd: remapMovedDataPath(String(config.workspaceCwd ?? '').trim()) || undefined,
     agentStyle: normalizeAgentStyle(config.agentStyle),
     thinkingLevel: normalizeThinkingLevel(config.thinkingLevel),
     showAgentThinking:
@@ -491,7 +492,7 @@ function normalizeSkillRoot(value: unknown): string {
   if (!skillRoot || skillRoot === GLOBAL_AGENT_SKILLS_TILDE) {
     return CRESCENT_USER_SKILLS_TILDE
   }
-  return skillRoot
+  return remapMovedDataPath(skillRoot)
 }
 
 function normalizeLoadGlobalAgentSkills(config: Partial<AgentConfig>): boolean {
@@ -599,7 +600,7 @@ function normalizeConfigFile(value: unknown): CrescentConfigFile {
 
 function normalizeWikiDirectory(value: unknown): string | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined
-  const directory = resolve(value.trim())
+  const directory = resolve(remapMovedDataPath(value.trim()))
   return isAbsolute(directory) ? directory : undefined
 }
 

@@ -20,6 +20,7 @@ import {
   type ConnectionConfig
 } from '../../../shared/agent-types'
 import { type RunStopReason } from '../../../shared/connection-state'
+import { ATTACHMENT_LIMITS } from '../../../shared/model-capabilities'
 
 export const emptyConfig: AgentConfig = {
   providers: [],
@@ -36,7 +37,7 @@ export const emptyConfig: AgentConfig = {
   openApiTimeoutMs: 30_000,
   openApiMaxRetries: 2,
   openApiRetryBackoffMs: 300,
-  skillRoot: '~/.crescent/skills',
+  skillRoot: '~/.moxun/skills',
   loadGlobalAgentSkills: false,
   mcpServers: []
 }
@@ -155,10 +156,15 @@ export function isComposingInput(event: KeyboardEvent<HTMLElement>): boolean {
   return isImeKeyEvent(event)
 }
 
+export function largeComposerPasteFile(text: string): File | undefined {
+  if (text.length < 12_000 && text.split(/\r\n?|\n/, 200).length < 200) return undefined
+  return new File([text], 'pasted-text.txt', { type: 'text/plain' })
+}
+
 export async function resolvePastedFileReference(
   file: File
 ): Promise<AgentPathReference | undefined> {
-  if (file.size > 5 * 1024 * 1024) throw new Error('Attachment limit is 5 MiB')
+  if (file.size > ATTACHMENT_LIMITS.fileBytes) throw new Error('Attachment limit is 5 MiB')
   const base64 = await fileToBase64(file)
   return window.api.agent.savePastedAttachment({
     name: file.name || defaultPastedFileName(file.type),
@@ -168,11 +174,15 @@ export async function resolvePastedFileReference(
 }
 
 export async function fileToBase64(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return window.btoa(binary)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = String(reader.result)
+      resolve(dataUrl.slice(dataUrl.lastIndexOf(',') + 1))
+    }
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
 }
 
 export function defaultPastedFileName(mimeType: string): string {

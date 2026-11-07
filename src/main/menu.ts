@@ -1,4 +1,4 @@
-import { rendererIpc } from './ipc-security'
+import { isManagedTerminalRenderer, rendererIpc } from './ipc-security'
 import { app, BrowserWindow, Menu } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { is } from '@electron-toolkit/utils'
@@ -42,7 +42,13 @@ function setCheckForUpdatesMenuEnabled(enabled: boolean): void {
 }
 
 export function openSettingsFromMenu(): void {
-  const target = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
+  const focused = BrowserWindow.getFocusedWindow()
+  const target =
+    focused && !isManagedTerminalRenderer(focused.webContents)
+      ? focused
+      : BrowserWindow.getAllWindows().find(
+          (window) => !isManagedTerminalRenderer(window.webContents)
+        )
   if (!target) return
   if (target.isMinimized()) target.restore()
   target.show()
@@ -63,7 +69,7 @@ export function configureAboutPanel(iconPath: string): void {
     applicationName: '墨巡 · MoXun',
     applicationVersion: app.getVersion(),
     version: app.getVersion(),
-    copyright: 'MoXun · 智能运维协作台\nBased on Crescent · Copyright © 2026 Crescent',
+    copyright: 'MoXun · 智能运维协作台',
     iconPath
   })
 }

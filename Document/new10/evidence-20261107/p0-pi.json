@@ -1,0 +1,28 @@
+{
+  "requests": 12,
+  "approvals": 4,
+  "results": [
+    {
+      "state": "rejected",
+      "taskVerified": false
+    },
+    {
+      "state": "completed-success",
+      "exitCode": 0,
+      "durationMs": 3,
+      "taskVerified": false
+    },
+    {
+      "state": "completed-failure",
+      "exitCode": 1,
+      "durationMs": 2,
+      "taskVerified": false
+    },
+    {
+      "state": "rejected",
+      "taskVerified": false
+    }
+  ],
+  "hiddenTerminalBlocked": true,
+  "manualTakeoverBlocked": true
+}

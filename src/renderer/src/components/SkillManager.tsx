@@ -223,10 +223,18 @@ export function SkillManager({
   }
 
   function handlePaneKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-      event.preventDefault()
-      setPane((current) => (current === 'installed' ? 'discover' : 'installed'))
-    }
+    const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+    const index = tabs.indexOf(event.target as HTMLButtonElement)
+    if (index < 0) return
+    let nextIndex: number
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length
+    else if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = tabs.length - 1
+    else return
+    event.preventDefault()
+    tabs[nextIndex].focus()
+    tabs[nextIndex].click()
   }
 
   return (
@@ -241,7 +249,7 @@ export function SkillManager({
         </SheetHeader>
         <div className="app-sheet-split flex min-h-0 flex-1 flex-row gap-3 overflow-hidden px-4">
           <div className="app-sheet-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="flex shrink-0 items-center justify-between gap-2 pb-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 pb-2">
               <div
                 role="tablist"
                 aria-label={t.settings.skillsManagement}
@@ -323,7 +331,7 @@ export function SkillManager({
                     id="skill-root"
                     value={skillRoot}
                     onChange={(event) => onSkillRootChange(event.target.value)}
-                    placeholder="~/.crescent/skills"
+                    placeholder="~/.moxun/skills"
                     spellCheck={false}
                     autoComplete="off"
                   />
@@ -814,6 +822,7 @@ function PaneTab({
       type="button"
       role="tab"
       aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
       className={`inline-flex h-6 items-center gap-1 rounded px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
         selected
           ? 'bg-background text-foreground shadow-sm'

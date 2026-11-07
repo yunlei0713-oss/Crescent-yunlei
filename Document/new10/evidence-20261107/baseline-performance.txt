@@ -1,0 +1,13 @@
+
+> moxun@1.0.12 test:local
+> CRESCENT_LOCAL_TESTS=1 vitest run --project desktop src/main/terminal/managed/product.browser.test.ts src/main/code-intelligence/worker.browser.test.ts
+
+
+ RUN  v4.1.11 /Users/xusong.yu/Desktop/moxun-test
+
+
+ Test Files  2 passed (2)
+      Tests  2 passed (2)
+   Start at  19:40:50
+   Duration  14.68s (transform 119ms, setup 0ms, import 280ms, tests 13.67s, environment 0ms)
+

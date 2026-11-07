@@ -1,4 +1,10 @@
-import { BrowserWindow, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
+import {
+  BrowserWindow,
+  ipcMain,
+  type IpcMainEvent,
+  type IpcMainInvokeEvent,
+  type WebContents
+} from 'electron'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -46,11 +52,38 @@ export function decodeAttachmentBase64(value: unknown): Buffer {
   return data
 }
 
+const terminalRenderers = new WeakSet<WebContents>()
+
+/** The independent terminal window receives only its dedicated IPC surface. */
+export function reserveManagedTerminalRenderer(contents: WebContents): void {
+  terminalRenderers.add(contents)
+}
+
+export function isManagedTerminalRenderer(contents: WebContents): boolean {
+  return terminalRenderers.has(contents)
+}
+
+export function managedTerminalIpc<T>(authorize: (event: IpcMainInvokeEvent) => T) {
+  return {
+    handle<Args extends unknown[]>(
+      channel: `managed-terminal:${string}`,
+      listener: (binding: T, ...args: Args) => unknown
+    ): void {
+      ipcMain.handle(channel, (event, ...args) => {
+        const binding = authorize(event)
+        assertPayloadSize(args, 128 * 1024)
+        return listener(binding, ...(args as Args))
+      })
+    }
+  }
+}
+
 export function assertTrustedRenderer(event: IpcMainEvent | IpcMainInvokeEvent): void {
   const sender = event.sender
   const frame = event.senderFrame
   if (
     sender.isDestroyed() ||
+    terminalRenderers.has(sender) ||
     !BrowserWindow.fromWebContents(sender) ||
     !frame ||
     frame !== sender.mainFrame

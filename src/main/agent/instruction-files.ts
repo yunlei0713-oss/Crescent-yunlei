@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
 import { dirname, join, resolve } from 'path'
+import { getCrescentDir } from '../crescent-paths'
 
 const INSTRUCTION_FILE_NAMES = [
   'IDENTITY.md',
@@ -17,16 +18,16 @@ const MAX_INSTRUCTION_CONTEXT_CHARS = 48_000
 const DEFAULT_INSTRUCTION_TEMPLATES: Record<InstructionFileName, string> = {
   'IDENTITY.md': `# IDENTITY.md
 
-# Crescent local identity
+# MoXun local identity
 
-- Name: Crescent
+- Name: MoXun
 - Role: AI operations assistant embedded beside an interactive terminal
 - Focus: Linux, SSH, shell, debugging, and day-to-day ops work
 - Voice: terminal-friendly; match the operator's preferred UI language for all replies and reasoning (do not mix languages in prose; keep commands/paths/tool names original)
 - Talk density follows the active Working Style; do not override it here
 
 
-Edit this file to customize how Crescent introduces itself.
+Edit this file to customize how MoXun introduces itself.
 `,
   'SOUL.md': `# SOUL.md
 
@@ -40,7 +41,7 @@ Edit this file to customize how Crescent introduces itself.
 - Use one language consistently for thinking and replies (follow the UI locale / Language directive in the prompt).
 - Never invent hosts, credentials, or tool results.
 
-Edit this file to shape Crescent's judgment and tone.
+Edit this file to shape MoXun's judgment and tone.
 `,
   'USER.md': `# USER.md
 
@@ -50,9 +51,9 @@ Edit this file to shape Crescent's judgment and tone.
 - Timezone / working hours:
 - Common environments (local / bastion / prod):
 - Risk tolerance for destructive commands:
-- Things Crescent should always confirm first:
+- Things MoXun should always confirm first:
 
-Fill this in so Crescent can adapt to your workflow.
+Fill this in so MoXun can adapt to your workflow.
 `,
   'AGENTS.md': `# AGENTS.md
 
@@ -71,7 +72,7 @@ Edit this file to encode team or personal agent conventions.
 # Tool usage preferences
 
 - Prefer built-in terminal tools for shell work.
-- Use only tools actually exposed by Crescent. Configured MCP tools require operator approval; OpenAPI tools are deprecated.
+- Use only tools actually exposed by MoXun. Configured MCP tools require operator approval; OpenAPI tools are deprecated.
 - Keep command allow/deny and approval rules in Settings; do not bypass them here.
 - Prefer read-only discovery before write/update/delete operations.
 - When writing local files or Wiki docs, use clear paths and confirm destinations when unsure.
@@ -124,9 +125,7 @@ export function loadLocalInstructionFiles(startDir = process.cwd()): LocalInstru
   return files
 }
 
-export function listEditableInstructionFiles(
-  root = join(homedir(), '.crescent')
-): EditableInstructionFile[] {
+export function listEditableInstructionFiles(root = getCrescentDir()): EditableInstructionFile[] {
   return INSTRUCTION_FILE_NAMES.map((name) => {
     const path = join(root, name)
     const exists = existsSync(path)
@@ -141,11 +140,11 @@ export function listEditableInstructionFiles(
 }
 
 /**
- * Create missing default instruction files under ~/.crescent (or the given root).
+ * Create missing default instruction files under ~/.moxun (or the given root).
  * Existing files are never overwritten.
  */
 export function ensureDefaultInstructionFiles(
-  root = join(homedir(), '.crescent')
+  root = getCrescentDir()
 ): EnsureDefaultInstructionFilesResult {
   mkdirSync(root, { recursive: true })
 
@@ -172,7 +171,7 @@ export function saveEditableInstructionFile(input: {
   root?: string
 }): EditableInstructionFile {
   const name = normalizeInstructionFileName(input.name)
-  const root = input.root ?? join(homedir(), '.crescent')
+  const root = input.root ?? getCrescentDir()
   const path = join(root, name)
 
   mkdirSync(root, { recursive: true })
@@ -190,7 +189,7 @@ export function formatLocalInstructionContext(files: LocalInstructionFile[]): st
   if (files.length === 0) return ''
 
   const sections = [
-    'Crescent local instruction files have already been read by the app process and are included below.',
+    'MoXun local instruction files have already been read by the app process and are included below.',
     'Do not use terminal commands to read TOOLS.md, USER.md, SOUL.md, IDENTITY.md, AGENTS.md, or other local instruction files unless the user explicitly asks to inspect those files.',
     'Follow these instructions when they do not conflict with higher-priority system, developer, or user instructions.',
     '',
@@ -208,7 +207,7 @@ export function formatLocalInstructionContext(files: LocalInstructionFile[]): st
 }
 
 function getInstructionRoots(startDir: string): string[] {
-  const roots: string[] = [join(homedir(), '.crescent')]
+  const roots: string[] = [getCrescentDir()]
   const home = resolve(homedir())
   let current = resolve(startDir || process.cwd())
 

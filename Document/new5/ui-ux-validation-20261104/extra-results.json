@@ -1,0 +1,134 @@
+[
+  {
+    "name": "zh-CN-light-memory",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 531,
+        "scrollWidth": 531
+      }
+    ]
+  },
+  {
+    "name": "zh-CN-light-documents",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "zh-CN-light-skills",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "zh-CN-dark-memory",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 531,
+        "scrollWidth": 531
+      }
+    ]
+  },
+  {
+    "name": "zh-CN-dark-documents",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "zh-CN-dark-skills",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "en-light-memory",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 531,
+        "scrollWidth": 531
+      }
+    ]
+  },
+  {
+    "name": "en-light-documents",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "en-light-skills",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "en-dark-memory",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 531,
+        "scrollWidth": 531
+      }
+    ]
+  },
+  {
+    "name": "en-dark-documents",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "en-dark-skills",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  }
+]

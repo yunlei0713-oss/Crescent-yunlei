@@ -1,0 +1,34 @@
+✖ Electron Pi requests, waits for, and queries one reviewed command in the visible SSH PTY (127968.187723ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 128190.901515
+
+✖ failing tests:
+
+test at scripts/verify-managed-ssh-electron.cjs:23:3
+✖ Electron Pi requests, waits for, and queries one reviewed command in the visible SSH PTY (127968.187723ms)
+  AssertionError [ERR_ASSERTION]: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 0
+  
+      at runElectronFixture (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-ssh-electron.cjs:271:12)
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-ssh-electron.cjs:62:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

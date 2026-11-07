@@ -43,6 +43,7 @@ export class TerminalExecutionState {
   alternateScreen = false
   promptText = ''
   private line = ''
+  private atLineStart = true
   private escape = ''
   private cursorContent = false
 
@@ -50,6 +51,7 @@ export class TerminalExecutionState {
     this.phase = phase
     this.promptText = ''
     this.line = ''
+    this.atLineStart = true
     this.cursorContent = false
   }
 
@@ -76,6 +78,9 @@ export class TerminalExecutionState {
         } else if (/^\x1b\[[\d;]*[HfABCD]$/.test(sequence)) {
           this.cursorContent = true
           this.promptText = ''
+        } else if (this.atLineStart && /^\x1b\[0?J$/.test(sequence)) {
+          // zsh clears the previous end-of-line marker before drawing PS1.
+          this.line = ''
         }
         continue
       }
@@ -87,13 +92,20 @@ export class TerminalExecutionState {
       plain += char
       if (char === '\n') {
         this.line = ''
+        this.atLineStart = true
         this.cursorContent = false
-      } else if (char !== '\r' && char >= ' ') this.line = (this.line + char).slice(-4096)
+      } else if (char === '\r') this.atLineStart = true
+      else if (char >= ' ') {
+        this.line = (this.line + char).slice(-4096)
+        this.atLineStart = false
+      }
     }
     const line = this.line.trimEnd()
     // Never scan back through command output looking for an old prompt.
     const prompt =
-      !this.alternateScreen && !this.cursorContent ? findNewestPromptSignal(line, 1) : undefined
+      !this.alternateScreen && !this.cursorContent && !this.atLineStart
+        ? findNewestPromptSignal(line, 1)
+        : undefined
     const shellReady = Boolean(prompt && prompt.kind !== 'waiting' && hasLikelyShellPrompt(line))
     if (shellReady) {
       this.promptText = line

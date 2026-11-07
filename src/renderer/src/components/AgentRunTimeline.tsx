@@ -74,7 +74,7 @@ export function AgentRunTimeline({
             (step) =>
               !isNoiseStatusStep(step, t, hasApprovalStep) &&
               (step.kind !== 'status' ||
-                (Boolean(visibleStatus(step, t)) &&
+                (Boolean(visibleStatus(step, t, runFinished)) &&
                   (!document.errorMarkdown ||
                     ![step.title, step.detail].some((text) =>
                       text?.includes(document.errorMarkdown)
@@ -138,7 +138,7 @@ export function AgentRunTimeline({
             if (step.kind === 'status')
               return (
                 <div key={step.id} className="text-[11px] leading-relaxed text-muted-foreground/80">
-                  {visibleStatus(step, t)}
+                  {visibleStatus(step, t, runFinished)}
                 </div>
               )
             if (step.kind === 'user-supplement')

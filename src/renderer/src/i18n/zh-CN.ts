@@ -256,9 +256,9 @@ const zhCN = {
   confirm: {
     closeAllTabs: '关闭所有 Tab？这些终端会话都会被停止。',
     closeTab:
-      '结束此对话？运行中的 Agent 和待处理审批将结束，聊天记录保留。shared 终端继续运行，可从“独立运行的终端会话”管理；已有 iTerm 仅解除关联。',
+      '归档此对话？将停止 AI 回复、取消待处理审批并撤销所有终端观察。聊天记录保留，可从会话历史查看；终端及其任务继续运行，由墨巡创建的终端可从“独立运行的终端会话”管理。',
     closeOtherTabs: '关闭其他所有 Tab？这些 Tab 的终端会话会被停止。',
-    closeTabsTitle: '结束对话',
+    closeTabsTitle: '归档对话',
     deleteConnection: '删除这个自定义连接？此操作不可恢复。',
     deleteHistory: '删除这条历史会话记录？这不会关闭当前已打开的终端，但会移除保存的对话记录。',
     deleteMcpServer: '删除这个自定义 MCP 服务？对应工具将不再可用。',
@@ -388,7 +388,7 @@ const zhCN = {
     renameName: '改名',
     overwriteExisting: '覆盖已有连接',
     searchPlaceholder: '搜索连接名、主机、用户或描述…',
-    storedIn: '自定义连接存储在 ~/.crescent/config.json。',
+    storedIn: '自定义连接存储在 ~/.moxun/config.json。',
     sshConnections: 'SSH 连接',
     sshConnectionsDescription: '选择已有连接，或创建自定义命令序列。',
     sshOptions: 'SSH 参数',
@@ -412,7 +412,7 @@ const zhCN = {
     opsFeedbackDeleteFailed: '删除赞/踩数据失败'
   },
   terminal: {
-    externalConnect: '连接外置终端',
+    externalConnect: '连接终端',
     externalShared: '新建本地 iTerm',
     externalExisting: '已有会话 · 只读快照',
     externalDescription:
@@ -779,6 +779,9 @@ const zhCN = {
     slashCompactDescription: '把模型上下文里的旧对话压成摘要；界面历史保留',
     compactContext: '压缩上下文',
     compactSucceeded: '上下文已压缩',
+    compactVerified: '检查点已保存，验证通过',
+    compactPartial: '检查点已保存，部分内容需查历史',
+    compactVerificationFailed: '检查点验证失败',
     compactBusy: '请等当前 Agent 运行结束',
     compactNoSession: '没有可压缩的会话',
     compactFailed: '上下文压缩失败',
@@ -937,7 +940,7 @@ const zhCN = {
     showAgentThinking: '显示思考过程',
     showAgentThinkingHint: '覆盖风格默认。极速/简洁/协作默认隐藏思考；详解默认展开。',
     logLevel: '系统日志等级',
-    logLevelHint: '写入 ~/.crescent/logs 的最低级别；按天分割、保留 3 天。默认 info。',
+    logLevelHint: '写入 ~/.moxun/logs 的最低级别；按天分割、保留 3 天。默认 info。',
     logLevelOff: '关闭',
     logLevelDebug: 'Debug',
     logLevelInfo: 'Info',
@@ -953,9 +956,9 @@ const zhCN = {
     workbenchLayoutHint: '立即生效，下次打开沿用。',
     commandWhitelist: '命令白名单',
     commandWhitelistHint: '仅保留历史配置兼容性。任何规则都不能授予 Agent 终端输入或执行权限。',
-    workspaceCwd: 'Agent 工作区',
+    workspaceCwd: '无项目对话的默认目录',
     workspaceCwdHint:
-      'Agent 在此目录读取和搜索本地文件；修改须完整 Diff 审批。留空则使用 ~/.crescent/workspace。',
+      '未关联项目时读取和搜索此本地目录；关联项目后使用项目目录。它不是远程终端目录。修改仍须 Diff 审批；留空使用 ~/.moxun/workspace。',
     piToolsTitle: 'Pi 工具',
     piToolsHint:
       'Agent 仅使用审核过的 host 工具：只读文件、终端证据、单步建议和文件修改申请。主 / 子 Agent 均无终端执行权；未经实现审计的 MCP 默认禁用。',
@@ -1010,7 +1013,7 @@ const zhCN = {
     instructionFileExists: '已创建',
     instructionFileNew: '未创建，保存后会创建',
     instructionFilePlaceholder:
-      '在这里编写本地指令。保存后会写入 ~/.crescent，并在后续 Agent 会话中自动注入上下文。',
+      '在这里编写本地指令。保存后会写入 ~/.moxun，并在后续 Agent 会话中自动注入上下文。',
     instructionFileSaved: '已保存',
     instructionFileCharCount: '{n} 字符',
     instructionFiles: '高级：自定义人设与原则',
@@ -1099,7 +1102,7 @@ const zhCN = {
     cancelSkillInstall: '取消安装',
     saveSkillDirectory: '保存目录',
     skillDirectory: 'Skill 加载目录',
-    skillDirectoryHint: '生成和安装的 Skills 写入这个目录。默认 ~/.crescent/skills。',
+    skillDirectoryHint: '生成和安装的 Skills 写入这个目录。默认 ~/.moxun/skills。',
     skillDirectorySaved: 'Skill 加载目录已保存',
     loadGlobalAgentSkills: '同时加载全局 ~/.agents/skills',
     loadGlobalAgentSkillsHint: '勾选后只读加载 ~/.agents/skills。新 Skill 仍保存到上面设置的目录。',

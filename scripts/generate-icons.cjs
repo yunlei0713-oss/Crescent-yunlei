@@ -71,13 +71,9 @@ async function generateIcons() {
       .toBuffer()
   const write = (name, bytes) => {
     const target = path.join(root, name)
-    // Back up only the first replacement; subsequent builds are reproducible.
-    const backup = path.join(root, 'Document/new/brand/archive/crescent-legacy', name)
+    // Generated assets always come from the approved master. Do not archive
+    // replaced icons: retired Crescent artwork must not return on regeneration.
     if (fs.existsSync(target) && fs.readFileSync(target).equals(bytes)) return
-    if (fs.existsSync(target) && !fs.existsSync(backup)) {
-      fs.mkdirSync(path.dirname(backup), { recursive: true })
-      fs.copyFileSync(target, backup)
-    }
     fs.mkdirSync(path.dirname(target), { recursive: true })
     fs.writeFileSync(target, bytes)
   }

@@ -1,5 +1,5 @@
 import type { TerminalEvidence, TerminalIdentity } from '../../../shared/terminal-observation-types'
-import { TerminalObserver, terminalIdentityKey } from './terminal-observer'
+import { TerminalObserver } from './terminal-observer'
 import { TerminalObservationGrants } from './observation-grants'
 import { evidenceNotifications } from './evidence-notifications'
 
@@ -20,9 +20,7 @@ function observer(key: string, identity: TerminalIdentity): TerminalObserver {
     value = new TerminalObserver()
     observers.set(key, value)
   }
-  if (terminalIdentityKey(value.evidence().identity) !== terminalIdentityKey(identity))
-    evidenceNotifications.invalidate(key)
-  value.bind(identity)
+  if (value.bind(identity)) evidenceNotifications.invalidate(key)
   return value
 }
 /** Refresh host metadata without revoking a same-terminal grant or its history. */
@@ -34,23 +32,29 @@ export function observeTerminal(
   identity: TerminalIdentity,
   kind: 'input' | 'output' | 'snapshot',
   data: string,
-  completeLinesOnly = false
+  options?: { completeLinesOnly?: boolean; previousPrompt?: string }
 ): void {
   if (!observationGrants.active(key, identity)) return
   try {
     const value = observer(key, identity)
-    if (kind === 'input') value.inputData(data)
-    else if (kind === 'snapshot') value.snapshotData(data, completeLinesOnly)
-    else value.outputData(data)
-    evidenceNotifications.update(
-      key,
-      value.evidence(),
-      kind === 'input',
-      kind === 'input' && /[\r\n]/.test(data)
-    )
+    if (kind === 'input') {
+      value.inputData(data, options?.previousPrompt)
+      evidenceNotifications.consume(key)
+    } else {
+      if (kind === 'snapshot') value.snapshotData(data, options?.completeLinesOnly)
+      else value.outputData(data)
+      evidenceNotifications.update(key, identity, value.notificationObservation())
+    }
   } catch {
     observers.get(key)?.fail()
+    evidenceNotifications.invalidate(key)
   }
+}
+export function confirmTerminalFinished(key: string, identity: TerminalIdentity): boolean {
+  if (!observationGrants.active(key, identity)) return false
+  const confirmed = observers.get(key)?.confirmOperatorFinished() ?? false
+  if (confirmed) evidenceNotifications.consume(key)
+  return confirmed
 }
 export function terminalEvidence(
   key: string,

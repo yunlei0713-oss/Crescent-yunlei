@@ -91,7 +91,7 @@ export function buildGenerateSopSystemPrompt(locale?: string): string {
     : 'Write the SOP entirely in English.'
 
   return [
-    'You turn a Crescent ops session summary into a reusable SOP markdown document.',
+    'You turn a MoXun ops session summary into a reusable SOP markdown document.',
     'This is a single text completion: do not call tools, do not browse disk, do not write files.',
     'Do not invent filesystem paths or secret credentials.',
     'Use only the session transcript provided by the user message.',

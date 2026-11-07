@@ -1,8 +1,9 @@
 import { constants } from 'node:fs'
-import { open } from 'node:fs/promises'
-import { dirname, extname, join, sep } from 'node:path'
+import { lstat, open } from 'node:fs/promises'
+import { extname } from 'node:path'
 import { nativeImage, BrowserWindow, dialog, webContents } from 'electron'
 import { localDocumentReaderForOwner } from '../local-document-ipc'
+import { documentIdentity } from '../document-cursor'
 import { redactSensitiveText } from '../../shared/secret-redaction'
 import { ATTACHMENT_LIMITS } from '../../shared/model-capabilities'
 import { AttachmentError } from '../../shared/agent-errors'
@@ -110,14 +111,20 @@ export async function prepareModelAttachments(
   cwd: string,
   attachments: Array<{ path: string }> | undefined,
   imageInput: boolean,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  projectRootIdentity?: string
 ): Promise<{ text: string; images: ModelImage[] }> {
   signal?.throwIfAborted()
   if (attachments === undefined) return { text: '', images: [] }
   if (!Array.isArray(attachments) || attachments.length > ATTACHMENT_LIMITS.files)
     throw new Error('Maximum 8 attachments per turn')
   if (!attachments.length) return { text: '', images: [] }
-  const reader = await localDocumentReaderForOwner(ownerId, cwd)
+  const reader = await localDocumentReaderForOwner(
+    ownerId,
+    cwd,
+    attachments.flatMap((item) => (item && typeof item.path === 'string' ? [item.path] : [])),
+    projectRootIdentity
+  )
   const images: ModelImage[] = []
   const texts: string[] = []
   let totalBytes = 0
@@ -127,23 +134,50 @@ export async function prepareModelAttachments(
       throw new Error('Invalid attachment path')
     const path = await reader.authorize(attachment.path)
     const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
-    let data: Buffer
+    let imageData: Buffer | undefined
+    let size: number
+    let identity: string
     try {
-      const stat = await file.stat()
-      if (!stat.isFile() || stat.size > MAX_BYTES)
-        throw new Error('Attachment must be a regular file of at most 5 MiB')
-      const buffer = Buffer.alloc(MAX_BYTES + 1)
-      const { bytesRead } = await file.read(buffer, 0, buffer.length, 0)
-      data = buffer.subarray(0, bytesRead)
-      totalBytes += bytesRead
-      if (totalBytes > ATTACHMENT_LIMITS.totalBytes)
-        throw new Error('Combined attachment limit is 20 MiB')
+      const stat = await file.stat({ bigint: true })
+      size = Number(stat.size)
+      identity = documentIdentity(path, stat)
+      if (
+        !stat.isFile() ||
+        documentIdentity(path, await lstat(path, { bigint: true })) !== identity ||
+        (await reader.authorize(path)) !== path
+      )
+        throw new Error('Attachment changed during authorization')
+      const header = Buffer.alloc(12)
+      await file.read(header, 0, header.length, 0)
+      const image =
+        /\.(?:png|jpe?g|webp)$/i.test(path) ||
+        (header[0] === 0xff && header[1] === 0xd8) ||
+        header.subarray(0, 4).toString('hex') === '89504e47' ||
+        header.toString('ascii', 8, 12) === 'WEBP'
+      if (image) {
+        if (size > MAX_BYTES) throw new Error('Image attachment limit is 5 MiB')
+        totalBytes += size
+        if (totalBytes > ATTACHMENT_LIMITS.totalBytes)
+          throw new Error('Combined image attachment limit is 20 MiB')
+        imageData = Buffer.alloc(size)
+        let offset = 0
+        while (offset < size) {
+          signal?.throwIfAborted()
+          const { bytesRead } = await file.read(imageData, offset, size - offset, offset)
+          if (!bytesRead) throw new Error('Image attachment changed during reading')
+          offset += bytesRead
+        }
+        if (documentIdentity(path, await file.stat({ bigint: true })) !== identity)
+          throw new Error('Image attachment changed during reading')
+      }
     } finally {
       await file.close()
     }
     signal?.throwIfAborted()
-    const { mimeType } = validateAttachment(data, path)
-    if (mimeType.startsWith('image/')) {
+    if (imageData) {
+      const data = imageData
+      const { mimeType } = validateAttachment(data, path)
+      if (!mimeType.startsWith('image/')) throw new Error('Unsupported image attachment')
       if (!imageInput)
         throw new AttachmentError(
           'Selected model is text-only. Choose a provider-declared vision model before sending images.',
@@ -158,52 +192,22 @@ export async function prepareModelAttachments(
       images.push({ type: 'image', mimeType: 'image/png', data: scaled.toPNG().toString('base64') })
       continue
     }
-    let text: string
-    if (mimeType === 'application/pdf') {
-      if (data.length > ATTACHMENT_LIMITS.pdfBytes)
-        throw new Error('PDF text extraction limit is 2 MiB')
-      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-      const pdfRoot = dirname(require.resolve('pdfjs-dist/package.json'))
-      // PDF.js 6 removed isEvalSupported; text extraction never runs document actions.
-      const task = pdfjs.getDocument({
-        data: new Uint8Array(data),
-        standardFontDataUrl: join(pdfRoot, 'standard_fonts') + sep,
-        cMapUrl: join(pdfRoot, 'cmaps') + sep,
-        cMapPacked: true,
-        useSystemFonts: false,
-        stopAtErrors: true
-      })
-      const abort = (): void => {
-        void task.destroy()
-      }
-      signal?.addEventListener('abort', abort, { once: true })
-      try {
-        signal?.throwIfAborted()
-        const pdf = await task.promise
-        if (pdf.numPages > ATTACHMENT_LIMITS.pdfPages)
-          throw new Error('PDF limit is 30 pages; split the document')
-        const pages: string[] = []
-        for (let page = 1; page <= pdf.numPages; page++) {
-          signal?.throwIfAborted()
-          const content = await (await pdf.getPage(page)).getTextContent()
-          pages.push(
-            `[Page ${page}]\n` +
-              content.items.map((item) => ('str' in item ? item.str : '')).join(' ')
-          )
-          if (pages.join('\n').length > 64000) break
-        }
-        text = pages.join('\n')
-        if (text.replace(/\[Page \d+\]/g, '').trim().length < 5)
-          throw new Error('PDF has no extractable text. Attach page images with a vision model.')
-      } finally {
-        signal?.removeEventListener('abort', abort)
-        await task.destroy()
-      }
-    } else text = new TextDecoder('utf-8', { fatal: true }).decode(data)
-    text = redactSensitiveText(text)
-    texts.push(
-      `Attachment: ${path}\n${text.slice(0, 64000)}${text.length > 64000 ? '\n[Truncated; request a narrower range]' : ''}`
+    const small = size <= 32768
+    const document = await reader.read(
+      small ? { path, limit: /\.pdf$/i.test(path) ? 1 : 12 } : { path, operation: 'inspect' },
+      signal
     )
+    if (document.identity !== identity)
+      throw new Error('Document attachment changed during reading')
+    const reference = `Document Reference: ${redactSensitiveText(path)} (${size} bytes, ${document.encoding}${document.totalPages ? `, ${document.totalPages} pages` : ''}). Use read with a range or query for more.`
+    const excerpt =
+      document.textLayer === 'absent'
+        ? 'No text layer in the selected pages. Inspect page images if needed.'
+        : document.lines
+            .map((line) => line.text)
+            .join('\n')
+            .slice(0, 2400)
+    texts.push([reference, excerpt].filter(Boolean).join('\n'))
   }
   signal?.throwIfAborted()
   if (images.length) {
@@ -225,5 +229,5 @@ export async function prepareModelAttachments(
     if (decision.response !== 1)
       throw new Error('Image disclosure canceled; remove or redact the images before sending')
   }
-  return { text: texts.join('\n\n').slice(0, 128000), images }
+  return { text: texts.join('\n\n').slice(0, 32000), images }
 }

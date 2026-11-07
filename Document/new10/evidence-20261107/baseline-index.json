@@ -1,0 +1,14 @@
+{
+  "files": 150,
+  "symbols": 1800,
+  "indexMs": 1162,
+  "wallMs": 1210.0315209999999,
+  "incrementalMs": 111,
+  "baselineRss": 131.0546875,
+  "mainPeak": 145.42578125,
+  "workerPeak": 173.80859375,
+  "combinedPeak": 305.9453125,
+  "eventLoopP95Ms": 6.602751,
+  "eventLoopMaxMs": 29.884415,
+  "crashAndCancelChecked": true
+}

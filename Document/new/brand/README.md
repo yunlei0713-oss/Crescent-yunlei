@@ -43,4 +43,4 @@ node new/brand/source/generate-brand-assets.cjs
 
 当前批准的山水工作主图为 512×512 PNG。1024 图标由其高质量插值放大；若后续取得更高分辨率原图，替换 `source/moxun-mountain-river-master.png` 后重新运行生成脚本。
 
-批准的主图已接入 `scripts/generate-icons.cjs`，执行 `npm run icons` 生成 build、resources、renderer 和网站 favicon；旧正式图标保存在 `archive/crescent-legacy/`。主题已接入现有主题系统。安全权限改造不随视觉资源回滚。
+批准的主图已接入 `scripts/generate-icons.cjs`，执行 `npm run icons` 生成 build、resources、renderer 和网站 favicon。旧 Crescent 图标、旧兼容文件名和旧生成脚本已于 2026-11-04 从项目移除，资源生成不再保存旧图标备份。主题已接入现有主题系统。安全权限改造不随视觉资源回滚。

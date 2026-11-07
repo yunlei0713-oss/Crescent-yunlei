@@ -266,9 +266,9 @@ const en = {
   confirm: {
     closeAllTabs: 'Close all tabs? All terminal sessions will be stopped.',
     closeTab:
-      'End this conversation? Agent runs and pending approvals will end; history is retained. Shared terminals remain available under Independently running terminals. Existing iTerm sessions are only detached.',
+      'Archive this conversation? Stop AI replies, cancel pending approvals and revoke all terminal observation. Chat history is retained. Terminals and their tasks keep running; terminals created by MoXun remain under Independently running terminals.',
     closeOtherTabs: 'Close all other tabs? Their terminal sessions will be stopped.',
-    closeTabsTitle: 'End conversation',
+    closeTabsTitle: 'Archive conversation',
     deleteConnection: 'Delete this custom connection? This action cannot be undone.',
     deleteHistory:
       'Delete this history session? This will not close any currently open terminal, but saved chat records will be removed.',
@@ -409,7 +409,7 @@ const en = {
     renameName: 'Rename',
     overwriteExisting: 'Overwrite existing',
     searchPlaceholder: 'Search by name, host, user, or description…',
-    storedIn: 'Custom connections are stored in ~/.crescent/config.json.',
+    storedIn: 'Custom connections are stored in ~/.moxun/config.json.',
     sshConnections: 'SSH connections',
     sshConnectionsDescription: 'Choose an existing connection or create a custom command sequence.',
     sshOptions: 'SSH options',
@@ -434,7 +434,7 @@ const en = {
     opsFeedbackDeleteFailed: 'Failed to delete like/dislike feedback'
   },
   terminal: {
-    externalConnect: 'Connect external terminal',
+    externalConnect: 'Connect terminal',
     externalShared: 'New local iTerm',
     externalExisting: 'Existing session · read-only snapshots',
     externalDescription:
@@ -835,6 +835,9 @@ const en = {
     slashCompactDescription: 'Summarize older model context; the chat timeline is kept',
     compactContext: 'Compact context',
     compactSucceeded: 'Context compacted',
+    compactVerified: 'Checkpoint saved and verified',
+    compactPartial: 'Checkpoint saved with omissions',
+    compactVerificationFailed: 'Checkpoint verification failed',
     compactBusy: 'Wait for the current agent run to finish',
     compactNoSession: 'No live session to compact',
     compactFailed: 'Context compaction failed',
@@ -1006,7 +1009,7 @@ const en = {
       'Overrides the style default. Swift/Concise/Guided hide thinking; Teach shows it.',
     logLevel: 'System log level',
     logLevelHint:
-      'Minimum level written to ~/.crescent/logs, split daily and kept 3 days. Default: info.',
+      'Minimum level written to ~/.moxun/logs, split daily and kept 3 days. Default: info.',
     logLevelOff: 'Off',
     logLevelDebug: 'Debug',
     logLevelInfo: 'Info',
@@ -1024,9 +1027,9 @@ const en = {
     commandWhitelist: 'Command whitelist',
     commandWhitelistHint:
       'Retained for historical compatibility only. No rule can grant the agent terminal input or execution permissions.',
-    workspaceCwd: 'Agent workspace',
+    workspaceCwd: 'Default directory for chats without a project',
     workspaceCwdHint:
-      'The agent reads and searches local files here; changes require complete Diff approval. Leave empty to use ~/.crescent/workspace.',
+      'Used for local file reads when no project is attached. Project chats use their project directory. This is not the remote terminal directory. Changes require Diff approval. Leave empty to use ~/.moxun/workspace.',
     piToolsTitle: 'Pi tools',
     piToolsHint:
       'Reviewed host tools provide file reads, terminal evidence, single-step suggestions and file change requests. Main and child agents cannot execute commands. Unaudited MCP implementations are disabled.',
@@ -1085,7 +1088,7 @@ const en = {
     instructionFileExists: 'Created',
     instructionFileNew: 'Not created; saving will create it',
     instructionFilePlaceholder:
-      'Write local instructions here. Saving writes to ~/.crescent and injects the content into later Agent sessions.',
+      'Write local instructions here. Saving writes to ~/.moxun and injects the content into later Agent sessions.',
     instructionFileSaved: 'Saved',
     instructionFileCharCount: '{n} chars',
     instructionFiles: 'Advanced: identity and principles',
@@ -1177,7 +1180,7 @@ const en = {
     saveSkillDirectory: 'Save directory',
     skillDirectory: 'Skill load directory',
     skillDirectoryHint:
-      'Generated and installed skills are saved here. Default is ~/.crescent/skills.',
+      'Generated and installed skills are saved here. Default is ~/.moxun/skills.',
     skillDirectorySaved: 'Skill load directory saved',
     loadGlobalAgentSkills: 'Also load global ~/.agents/skills',
     loadGlobalAgentSkillsHint:

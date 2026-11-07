@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { TerminalIdentity } from '../../../shared/terminal-observation-types'
 import type {
   TerminalObservationMode,
@@ -10,7 +11,7 @@ import { terminalObservationBindingKey } from '../../../shared/terminal-observat
 export class TerminalObservationGrants {
   private grants = new Map<
     string,
-    { binding: string; waitForLogin: boolean; grant: TerminalObservationGrant }
+    { binding: string; id: string; grant: TerminalObservationGrant }
   >()
   constructor(private readonly invalidate: (key: string) => void) {}
 
@@ -38,7 +39,11 @@ export class TerminalObservationGrants {
       startedAt: Date.now(),
       capability
     }
-    this.grants.set(key, { binding: terminalObservationBindingKey(identity), waitForLogin, grant })
+    this.grants.set(key, {
+      binding: terminalObservationBindingKey(identity),
+      id: randomUUID(),
+      grant
+    })
     return { ...grant }
   }
 
@@ -61,6 +66,14 @@ export class TerminalObservationGrants {
     const grant = this.read(key, identity)
     if (grant?.status !== 'pending') return undefined
     return this.authorize(key, identity, grant.mode, grant.capability)
+  }
+
+  hasGrant(key: string): boolean {
+    return this.grants.has(key)
+  }
+
+  activeGrantId(key: string, identity: TerminalIdentity): string | undefined {
+    return this.active(key, identity) ? this.grants.get(key)?.id : undefined
   }
 
   active(key: string, identity: TerminalIdentity): boolean {

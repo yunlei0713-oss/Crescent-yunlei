@@ -1,39 +1,36 @@
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import type {
-  TerminalEvidence,
   TerminalEvidenceNotice,
-  TerminalIdentity
+  TerminalIdentity,
+  TerminalObservation
 } from '../../../shared/terminal-observation-types'
+import { canAnalyzeCommandGroup } from './command-observation'
 import { terminalIdentityKey } from './terminal-observer'
 
 interface Pending {
   identity: TerminalIdentity
-  fingerprint: string
+  eventId: string
   token: string
   ready: boolean
   claimed: boolean
   timer?: ReturnType<typeof setTimeout>
 }
 
-/** Metadata-only, quiet-period notifications; no per-chunk model calls or idle polling. */
+/** Metadata-only notifications after a structured command group boundary. */
 export class EvidenceNotifications {
   private pending = new Map<string, Pending>()
   private bindings = new Map<string, (notice: TerminalEvidenceNotice) => void>()
   private lastSent = new Map<string, number>()
-  private streamSent = new Map<string, string>()
+  private lastHandledEvent = new Map<string, string>()
 
   bind(key: string, send: (notice: TerminalEvidenceNotice) => void): void {
     this.bindings.set(key, send)
   }
-  /** A manual turn already reads this evidence; retain its fingerprint for snapshot deduplication. */
+  /** A manual turn already reads this evidence. */
   consume(key: string): void {
     const pending = this.pending.get(key)
-    if (!pending) return
-    clearTimeout(pending.timer)
-    pending.timer = undefined
-    pending.ready = false
-    pending.claimed = true
-    this.bindings.get(key)?.({ identity: pending.identity })
+    if (pending) this.lastHandledEvent.set(key, pending.eventId)
+    this.invalidate(key)
   }
   invalidate(key: string): void {
     const previous = this.pending.get(key)
@@ -45,51 +42,32 @@ export class EvidenceNotifications {
     this.invalidate(key)
     this.bindings.delete(key)
     this.lastSent.delete(key)
-    this.streamSent.delete(key)
+    this.lastHandledEvent.delete(key)
   }
-  update(key: string, evidence: TerminalEvidence, input = false, submitted = false): void {
-    if (submitted) this.streamSent.delete(key)
-    const latest = evidence.observations.at(-1)
-    const stableOutput =
-      latest?.confidence === 'snapshot'
-        ? latest.output.slice(0, latest.output.lastIndexOf('\n') + 1)
-        : (latest?.output ?? '')
+  update(key: string, identity: TerminalIdentity, latest?: TerminalObservation): void {
     if (
-      input ||
-      !evidence.available ||
       !latest ||
-      terminalIdentityKey(latest) !== terminalIdentityKey(evidence.identity) ||
-      latest.sensitive ||
-      !['unknown', 'completed', 'failed', 'running', 'interactive'].includes(latest.status) ||
-      !stableOutput.trim() ||
-      !stableOutput.replace(/\[(?:Sensitive[^\]]*|Long line withheld|REDACTED[^\]]*)\]/g, '').trim()
+      !canAnalyzeCommandGroup(latest) ||
+      terminalIdentityKey(latest) !== terminalIdentityKey(identity) ||
+      latest.sensitive
     ) {
       this.invalidate(key)
       return
     }
-    // Completion is new evidence even if a quiet in-progress screen was analyzed earlier.
-    const streamKey =
-      terminalIdentityKey(evidence.identity) + ':' + latest.eventId + ':' + latest.status
-    // An uncertain output stream may be tail/watch. Do not keep asking the
-    // model about the same stream; a new manual submission or OSC event resets it.
-    if (latest.confidence !== 'snapshot' && this.streamSent.get(key) === streamKey) return
-    const fingerprint = createHash('sha256')
-      .update(
-        JSON.stringify([
-          terminalIdentityKey(evidence.identity),
-          latest.command,
-          stableOutput,
-          latest.status,
-          // Snapshot event IDs change on each read; content is the stable identity.
-          latest.confidence === 'snapshot' ? undefined : latest.eventId
-        ])
-      )
-      .digest('hex')
-    if (this.pending.get(key)?.fingerprint === fingerprint) return
+    const groupId = latest.commandGroupId ?? latest.eventId
+    // Prompt redraws can leave the same completed event at the end of the evidence.
+    if (this.pending.get(key)?.eventId === groupId || this.lastHandledEvent.get(key) === groupId)
+      return
     this.invalidate(key)
+    if (
+      !latest.output
+        .replace(/\[(?:Sensitive[^\]]*|Long line withheld|REDACTED[^\]]*)\]/g, '')
+        .trim()
+    )
+      return
     const pending: Pending = {
-      identity: { ...evidence.identity },
-      fingerprint,
+      identity: { ...identity },
+      eventId: groupId,
       token: randomUUID(),
       ready: false,
       claimed: false
@@ -99,8 +77,8 @@ export class EvidenceNotifications {
     pending.timer = setTimeout(() => {
       if (this.pending.get(key) !== pending) return
       pending.ready = true
+      this.lastHandledEvent.set(key, pending.eventId)
       this.lastSent.set(key, Date.now())
-      if (latest.confidence !== 'snapshot') this.streamSent.set(key, streamKey)
       this.bindings.get(key)?.({ identity: pending.identity, token: pending.token })
     }, delay)
     pending.timer.unref?.()

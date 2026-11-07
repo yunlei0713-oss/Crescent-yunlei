@@ -17,10 +17,13 @@ import {
   XIcon
 } from 'lucide-react'
 import type { AgentTerminalTab } from '@renderer/lib/terminal-tabs'
+import { terminalClient } from '@renderer/clients'
+import { toast } from 'sonner'
 import { getSessionDisplayTitle } from '@renderer/lib/terminal-tabs'
 import type { StoredSessionHistoryItem } from '../../../shared/agent-types'
 import type { Dictionary } from '@renderer/i18n'
 import { Button } from './ui/button'
+import { ProductLogo } from './ProductLogo'
 import { AppUtilityToolbar } from './AppUtilityToolbar'
 import { ProjectSidebar } from './ProjectSidebar'
 import {
@@ -55,7 +58,8 @@ export function AppSidebar({
   onSkills,
   onMcp,
   onLanguage,
-  onAttachProject,
+  conversationId,
+  onProjectAssociation,
   onNewProjectChat,
   projectId,
   busy
@@ -84,7 +88,8 @@ export function AppSidebar({
   onLanguage: () => void
   projectId?: string
   busy: boolean
-  onAttachProject: (id: string) => void
+  conversationId: string
+  onProjectAssociation: (value: import('../../../shared/projects').ProjectAssociationState) => void
   onNewProjectChat: (id: string) => void
 }): React.JSX.Element {
   const [expanded, setExpanded] = useState(() => {
@@ -120,6 +125,9 @@ export function AppSidebar({
       className={`app-sidebar ${expanded ? 'is-expanded' : ''}`}
       aria-label={zh ? '工作区导航' : 'Workspace navigation'}
     >
+      <div className="app-titlebar-brand flex h-8 shrink-0 items-center">
+        <ProductLogo />
+      </div>
       <Button
         type="button"
         variant="ghost"
@@ -141,8 +149,26 @@ export function AppSidebar({
         {expanded && <span>{zh ? '收起侧栏' : 'Collapse'}</span>}
       </Button>
       {nav(PlusIcon, zh ? '新建对话' : 'New conversation', onNew)}
-      {nav(HistoryIcon, t.history.title, onHistory)}
       {nav(ServerIcon, t.connections.manageConnections, onConnections)}
+      {terminalClient?.openManaged &&
+        nav(
+          SquareTerminalIcon,
+          t.locale === 'zh-CN' ? '打开墨巡终端' : 'Open MoXun Terminal',
+          () => {
+            void terminalClient.openManaged(t.locale).catch((error) => toast.error(String(error)))
+          }
+        )}
+      {conversationId &&
+        terminalClient?.openCollaboration &&
+        nav(
+          SquareTerminalIcon,
+          zh ? '打开本地协作终端' : 'Open local collaboration terminal',
+          () => {
+            void terminalClient
+              .openCollaboration(locale, conversationId)
+              .catch((error) => toast.error(String(error)))
+          }
+        )}
       {nav(SquareTerminalIcon, t.terminal.externalConnect, onExternalTerminal)}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -182,12 +208,14 @@ export function AppSidebar({
           sessions={sessions}
           history={history}
           onExpand={() => setExpanded(true)}
-          onAttach={onAttachProject}
+          conversationId={conversationId}
+          onAssociation={onProjectAssociation}
           onNew={onNewProjectChat}
           onSelect={onSelect}
           onHistory={onOpenHistory}
           onClose={onCloseSession}
         />
+        {nav(HistoryIcon, t.history.title, onHistory)}
         {expanded && (
           <>
             <p className="px-3 pt-4 pb-1 text-[11px] text-muted-foreground">
@@ -218,7 +246,8 @@ export function AppSidebar({
                     variant="ghost"
                     size="icon-xs"
                     className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                    aria-label={`${t.common.close}: ${getSessionDisplayTitle(session, tabs)}`}
+                    aria-label={`${t.confirm.closeTabsTitle}: ${getSessionDisplayTitle(session, tabs)}`}
+                    title={t.confirm.closeTabsTitle}
                     onClick={() => onCloseSession(session.id)}
                   >
                     <XIcon />
@@ -265,11 +294,11 @@ export function AppSidebar({
             type="button"
             variant="ghost"
             className="app-sidebar-action"
-            aria-label={t.settings.title}
-            title={t.settings.title}
+            aria-label={t.common.settings}
+            title={t.common.settings}
           >
             <SettingsIcon className="size-4 shrink-0" />
-            {expanded && <span>{t.settings.title}</span>}
+            {expanded && <span>{t.common.settings}</span>}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="end">

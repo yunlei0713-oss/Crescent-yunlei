@@ -1,3 +1,4 @@
+import { contextJob } from './context-jobs'
 import { memoryService } from './service'
 import { extractHistory } from './extraction'
 import { learningTarget, assertLearningAuthorized } from './learning-target'
@@ -45,7 +46,7 @@ async function tick(): Promise<void> {
   const item = memoryService()
     .snapshot()
     .history.find((history) => {
-      if (!['pending', 'changed'].includes(history.state)) return false
+      if (!['pending', 'changed'].includes(history.state) || contextJob(history.tabId)) return false
       const latest = listAgentRunsForTab(history.tabId, 1)[0]
       return (
         latest &&

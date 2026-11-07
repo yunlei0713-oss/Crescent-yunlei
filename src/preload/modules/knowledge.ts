@@ -5,12 +5,18 @@ import type {
   MemoryInput,
   MemorySettings,
   MemoryItem,
+  MemoryEvidence,
   MemoryRelation,
   MemoryModelSelection,
   MemoryLearningTarget,
   MemoryLearnOptions
 } from '../../shared/knowledge'
 export const knowledgeApi = {
+  codeSkips: (
+    root: string,
+    after = ''
+  ): Promise<import('../../shared/knowledge').CodeIndexSkip[]> =>
+    ipcRenderer.invoke('knowledge:code-skips', { root, after }),
   codeStatus: (root?: string): Promise<CodeIndexStatus> =>
     ipcRenderer.invoke('knowledge:code-status', root),
   codeIndex: (root?: string): Promise<CodeIndexStatus> =>
@@ -37,5 +43,9 @@ export const knowledgeApi = {
   memoryRevokeConsent: (): Promise<void> => ipcRenderer.invoke('knowledge:memory-revoke-consent'),
   memoryLearn: (tabId: string, options?: MemoryLearnOptions): Promise<{ count: number }> =>
     ipcRenderer.invoke('knowledge:memory-learn', tabId, options),
+  memoryEvidence: (id: string): Promise<MemoryEvidence[]> =>
+    ipcRenderer.invoke('knowledge:memory-evidence', id),
+  memoryReflect: (ids: string[], options?: MemoryLearnOptions): Promise<{ count: number }> =>
+    ipcRenderer.invoke('knowledge:memory-reflect', ids, options),
   memoryCancel: (): Promise<void> => ipcRenderer.invoke('knowledge:memory-cancel')
 }

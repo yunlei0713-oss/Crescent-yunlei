@@ -25,7 +25,7 @@ export function localDocumentError(error: unknown): LocalDocumentError {
   const value = error as NodeJS.ErrnoException
   const message = value?.message ?? String(error)
   let kind: LocalDocumentErrorKind = 'invalid-document'
-  let recovery = '确认该文件是普通 UTF-8/UTF-16 文本，目录可使用目录列表。'
+  let recovery = '确认文件格式或重新发起读取；目录可使用目录列表。'
   if (value?.code === 'ENOENT') {
     kind = 'not-found'
     recovery = '路径不存在，请核对本机绝对路径；SSH 路径不能用于本地读取。'
@@ -46,7 +46,7 @@ export function localDocumentError(error: unknown): LocalDocumentError {
     recovery = '请将文本另存为 UTF-8 或 UTF-16 后重试。'
   } else if (/limit|at most|exceeds/i.test(message)) {
     kind = 'too-large'
-    recovery = '请分割文件或缩小读取范围；单行也不能超过预览限制。'
+    recovery = '请缩小读取范围，或核对该格式的解析预算。'
   }
   return new LocalDocumentError(kind, `[${kind}] ${message}\n${recovery}`, value?.code)
 }

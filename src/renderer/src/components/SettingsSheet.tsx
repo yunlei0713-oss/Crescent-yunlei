@@ -40,7 +40,7 @@ import {
   SelectValue
 } from '@renderer/components/ui/select'
 import type { Dictionary } from '@renderer/i18n'
-import { agentStyleSelectOptions } from '@renderer/lib/agent-style-ui'
+import { agentStyleSelectOptions, agentStyleTitle } from '@renderer/lib/agent-style-ui'
 import { buildModelSelectionValue, parseModelSelectionValue } from '@renderer/lib/app-runtime'
 import {
   formatPinnedWorkflowsText,
@@ -409,7 +409,9 @@ export function SettingsSheet({
                   onValueChange={(value) => onAgentStyleChange(normalizeAgentStyle(value))}
                 >
                   <SelectTrigger id="agent-style" className="w-full">
-                    <SelectValue />
+                    <SelectValue>
+                      {agentStyleTitle(normalizeAgentStyle(config.agentStyle), t)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -519,16 +521,26 @@ export function SettingsSheet({
                   />
                 </label>
               </Field>
-              <Field>
-                <FieldLabel htmlFor="workspace-cwd">{t.settings.workspaceCwd}</FieldLabel>
-                <Input
-                  id="workspace-cwd"
-                  value={config.workspaceCwd ?? ''}
-                  onChange={(event) => onWorkspaceCwdChange(event.target.value)}
-                  placeholder="~/.crescent/workspace…"
-                />
-                <FieldDescription>{t.settings.workspaceCwdHint}</FieldDescription>
-              </Field>
+              <details className="text-sm">
+                <summary className="cursor-pointer rounded-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
+                  {t.locale === 'zh-CN'
+                    ? '高级：默认本地目录'
+                    : 'Advanced: default local directory'}
+                </summary>
+                <div className="pt-3">
+                  {' '}
+                  <Field>
+                    <FieldLabel htmlFor="workspace-cwd">{t.settings.workspaceCwd}</FieldLabel>
+                    <Input
+                      id="workspace-cwd"
+                      value={config.workspaceCwd ?? ''}
+                      onChange={(event) => onWorkspaceCwdChange(event.target.value)}
+                      placeholder="~/.moxun/workspace…"
+                    />
+                    <FieldDescription>{t.settings.workspaceCwdHint}</FieldDescription>
+                  </Field>
+                </div>
+              </details>
               <Field>
                 <FieldLabel htmlFor="terminal-context-chars">
                   {t.locale === 'zh-CN'

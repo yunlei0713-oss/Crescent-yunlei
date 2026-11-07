@@ -219,6 +219,27 @@ function noteManualTerminalInput(key: string, data: string): void {
   }
   manualInputLines.set(key, line)
 }
+function recordOperatorTerminalInput(
+  senderId: number,
+  tabId: string,
+  data: string,
+  source: 'keyboard' | 'paste' = 'keyboard'
+): void {
+  const key = getSessionKey(senderId, tabId)
+  const activity = executionStates.get(key)
+  const previousPrompt =
+    activity?.phase === 'shell-ready' && !activity.alternateScreen ? activity.promptText : undefined
+  if (source === 'paste') {
+    if (data.endsWith('\r')) noteDispatchedManualCommand(key, data.slice(0, -1))
+  } else if (!isTerminalInterruptPayload(data)) {
+    noteManualTerminalInput(key, data)
+  }
+  if (observationGrants.hasGrant(key))
+    observeTerminal(key, observationIdentity(senderId, tabId), 'input', data, {
+      previousPrompt: activity?.phase === 'interactive-application' ? undefined : previousPrompt
+    })
+}
+
 function noteDispatchedManualCommand(key: string, command: string): void {
   const state = connectionStates.get(key)
   if (!state?.expectedHost || state.ready) noteManualTerminalInput(key, `${command}\r`)
@@ -317,11 +338,13 @@ function setConnectionState(key: string, next: ConnectionState): void {
   connectionStates.set(key, next)
   // Binding changes revoke access; SSH host changes only retire stale analysis
   // notices and segment evidence, without stopping observation of this terminal.
-  const separator = key.indexOf(':')
-  refreshTerminalObservation(
-    key,
-    observationIdentity(Number(key.slice(0, separator)), key.slice(separator + 1))
-  )
+  if (observationGrants.hasGrant(key)) {
+    const separator = key.indexOf(':')
+    refreshTerminalObservation(
+      key,
+      observationIdentity(Number(key.slice(0, separator)), key.slice(separator + 1))
+    )
+  }
 }
 
 function getConnectionState(key: string, mode: ConnectionState['mode'] = 'none'): ConnectionState {
@@ -908,6 +931,56 @@ function observationIdentity(
     // exposing it beside a remote host creates a false identity conflict.
     cwd: local ? target.cwd : undefined
   }
+}
+
+export function readTerminalQueueBinding(
+  ownerId: number,
+  conversationId: string,
+  tabId: string
+): string | undefined {
+  const identity = observationIdentity(ownerId, tabId)
+  if (!identity.sessionGeneration) return
+  if (identity.conversationId !== conversationId)
+    throw new Error('Terminal belongs to another conversation')
+  return JSON.stringify([
+    tabId,
+    identity.itermSessionId,
+    identity.sessionGeneration,
+    identity.connectionId,
+    identity.host,
+    observationGrants.activeGrantId(getSessionKey(ownerId, tabId), identity)
+  ])
+}
+
+export function terminalConfirmationFingerprint(
+  ownerId: number,
+  conversationId: string,
+  tabId: string
+): string {
+  const evidence = readTerminalEvidence(ownerId, tabId)
+  const latest = evidence.observations.at(-1)
+  if (
+    !evidence.available ||
+    evidence.identity.conversationId !== conversationId ||
+    !latest ||
+    latest.sensitive ||
+    !latest.output.trim()
+  )
+    throw new Error('No current authorized terminal output to confirm')
+  return createHash('sha256').update(JSON.stringify(latest)).digest('hex')
+}
+
+export function recordTerminalOperatorConfirmation(
+  ownerId: number,
+  conversationId: string,
+  tabId: string,
+  expected?: string
+): void {
+  if (terminalConfirmationFingerprint(ownerId, conversationId, tabId) !== expected)
+    throw new Error('Terminal output changed after confirmation. Confirm the latest output again.')
+  const identity = observationIdentity(ownerId, tabId)
+  if (!confirmTerminalFinished(getSessionKey(ownerId, tabId), identity))
+    throw new Error('No current authorized terminal output to confirm')
 }
 
 export function readTerminalEvidence(senderId: number, tabId: string): TerminalEvidence {
@@ -1800,10 +1873,10 @@ export function registerTerminalIpc(): void {
         throw new Error('Shared session changed or reopening')
       const options = {
         type: 'warning' as const,
-        buttons: ['取消 / Cancel', '结束终端会话 / End session'],
+        buttons: ['取消 / Cancel', '终止终端进程 / Terminate process'],
         defaultId: 0,
         cancelId: 0,
-        message: `结束终端会话 #${session.id} · ${tabId}？`,
+        message: `终止终端进程 #${session.id} · ${tabId}？`,
         detail:
           '将终止此 Shell 及其前台任务，并释放资源。结束后无法通过重新打开恢复。This ends the shell and its foreground tasks permanently.'
       }
@@ -2334,12 +2407,7 @@ export function registerTerminalIpc(): void {
       }
 
       if (isTerminalInterruptPayload(data)) {
-        observeTerminal(
-          getSessionKey(event.sender.id, tabId),
-          observationIdentity(event.sender.id, tabId),
-          'input',
-          data
-        )
+        recordOperatorTerminalInput(event.sender.id, tabId, data)
         interruptPendingTerminalCommands(event.sender.id, tabId)
         return
       }
@@ -2370,14 +2438,8 @@ export function registerTerminalIpc(): void {
         await session.write(data)
         return
       }
-      noteManualTerminalInput(getSessionKey(event.sender.id, tabId), data)
+      recordOperatorTerminalInput(event.sender.id, tabId, data)
       await session.write(data)
-      observeTerminal(
-        getSessionKey(event.sender.id, tabId),
-        observationIdentity(event.sender.id, tabId),
-        'input',
-        data
-      )
     }
   )
 
@@ -2450,16 +2512,17 @@ export function registerTerminalIpc(): void {
         return { ok: false as const, error: 'Interactive SSH login requires PTY mode.' }
       }
 
+      const data = `${command}${payload?.execute ? '\r' : ''}`
       if (payload?.execute) {
         // Raw echo of automation-pasted commands is suppressed by default so
         // the terminal never shows a repeated ssh/.zshrc noise wall; the command
         // is displayed exactly once. CRESCENT_DEBUG_CONN=1 shows the raw echo.
         automationEchoSuppressions.set(key, { echo: command, until: Date.now() + 15_000 })
         session.display(formatReadableCommandInput(command))
-        noteDispatchedManualCommand(key, command)
       }
 
-      await session.write(`${command}${payload?.execute ? '\r' : ''}`)
+      recordOperatorTerminalInput(event.sender.id, tabId, data, 'paste')
+      await session.write(data)
       connTrace('paste-command-written', `tab=${tabId}`, `mode=${session.mode}`)
       return { ok: true as const }
     }
@@ -2931,18 +2994,19 @@ function createTerminalSession(input: {
         observationIdentity(input.webContents.id, input.tabId, input.sessionId),
         'snapshot',
         text,
-        completeLinesOnly
+        { completeLinesOnly }
       )
     },
     onData: (data) => {
       if (current()) {
         observeTerminalTransport(input.key, data)
-        observeTerminal(
-          input.key,
-          observationIdentity(input.webContents.id, input.tabId, input.sessionId),
-          'output',
-          data
-        )
+        if (observationGrants.hasGrant(input.key))
+          observeTerminal(
+            input.key,
+            observationIdentity(input.webContents.id, input.tabId, input.sessionId),
+            'output',
+            data
+          )
         sendIfAlive(input.webContents, input.tabId, input.key, 'terminal:data', data)
       }
     },
@@ -2984,18 +3048,13 @@ function createTerminalSession(input: {
       return createSharedITermSession(input, events, (data) => {
         if (!current()) return
         if (isTerminalInterruptPayload(data)) {
+          recordOperatorTerminalInput(input.webContents.id, input.tabId, data)
           interruptPendingTerminalCommands(input.webContents.id, input.tabId)
           return
         }
         if (isUserInputLocked(input.webContents.id, input.tabId)) return
-        noteManualTerminalInput(input.key, data)
+        recordOperatorTerminalInput(input.webContents.id, input.tabId, data)
         void sessions.get(input.key)?.write(data)
-        observeTerminal(
-          input.key,
-          observationIdentity(input.webContents.id, input.tabId),
-          'input',
-          data
-        )
       })
     try {
       return createPtySession(input, events)
@@ -3267,7 +3326,8 @@ import {
   terminalEvidence,
   observationGrants,
   refreshTerminalObservation,
-  bindObservationSampling
+  bindObservationSampling,
+  confirmTerminalFinished
 } from './observer/registry'
 import type { TerminalObservationMode } from '../../shared/external-terminal'
 

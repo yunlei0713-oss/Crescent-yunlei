@@ -1,6 +1,6 @@
 # 墨巡（MoXun）Architecture
 
-当前产品是 **聊天优先 + 外部 iTerm 人工操作 + 可选只读观察** 的 Electron 工作台。Pi 是 Main 中的客座模型运行时，不持有终端输入权限。本文以 2026-11-03 工作区实现为准；旧架构资料见 [归档说明](archive/README.md)。
+当前产品以聊天为主，另提供墨巡自有的人工终端窗口，以及 iTerm 兼容和可选只读观察。Pi 作为 Main 中的客座模型运行时，当前只有宿主显式授权的工具。旧架构资料见 [归档说明](archive/README.md)。
 
 ## 进程与依赖方向
 
@@ -19,11 +19,19 @@ Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通�
 
 `createAgentSession({ tools })` 是替换默认工具集的 allowlist，custom tools 也必须列入。工具来源及实际注册见 `src/shared/agent-tool-catalog.ts` 和 `pi-host.ts`：授权本地读取、代码索引、memory、观察证据、建议、文件变更提议、只读子任务与知识草稿。生产会话不加载项目 Pi extensions。
 
-- `src/main/security/agent-capability-policy.ts` 与 `src/main/security/capability-enforcement.ts` 在 Main 拒绝 Agent-origin 终端执行、写入和中断。
+- `src/main/security/agent-capability-policy.ts` 允许受控的命令请求工具。`capability-enforcement.ts` 继续拦截 Agent 来源的原始输入、旧执行和中断。
 - `src/main/agent/pi-terminal-bash.ts` 暂保留共享 run/目标上下文与 fail-closed 旧入口；名字不代表 bash 能力。文件审批、捕获与子任务仍读取该上下文。
 - `src/main/agent/pi-subagent.ts` 的 child runtime 仅分析，不创建终端、不登录 SSH、不写文件，不再停靠子终端面板。
 - `src/main/agent/pi-mcp-tools.ts` 的已审计实现名单为空，Agent MCP 连接/调用禁用。设置侧显式目录发现不等于 Agent 工具授权。
 - OpenAPI 配置只作历史兼容，当前 Agent 不注册 OpenAPI 工具。
+
+## 墨巡独立终端
+
+`src/main/terminal/managed/` 管理独立 BrowserWindow、文档级 attachment、稳定 Session ID 和 PTY generation。窗口专用的 `src/preload/terminal.ts` 只提供终端交互。xterm.js 位于独立 Renderer 入口，Main 继续使用原有 node-pty 传输。关闭窗口保留 PTY，显式结束或退出应用回收 PTY。
+
+Main 保存有界输出尾部。窗口每次消费前只接收一条输出就绪通知，Renderer 按帧拉取并等待 xterm 完成上批解析。活动窗口积压超过 256 Ki 个代码单元后暂停 PTY 数据读取，消费或 detach 后恢复。回放时关闭终端输入和协议回写。
+
+普通入口创建可人工输入 SSH 的本地 PTY。协作入口为当前聊天绑定一个干净的本地 Bash PTY。Pi 的 `request_terminal_command` 通过 Main 的 `ManagedCommandExecutor` 请求一次原生审批，审核并向这一个 PTY 写入固定 Envelope。Main 跟踪开始、退出码和返回可信提示符。人工输入先撤销本会话的协作权限，再进入同一个 PTY。iTerm、已保存 SSH 目标和人工接管后的 Shell 由操作员使用。
 
 ## 人工连接、Session 与 iTerm
 
@@ -41,7 +49,7 @@ Renderer → typed Preload → Main；各层可以使用 Shared。Main IPC 通�
 
 ## 本地资料、项目和文件审批
 
-`src/main/projects.ts` 的原生目录选择创建项目授权，激活时再次验证真实路径、非 symlink 和可访问性；不能把侧栏 ready 当安全授权。`src/main/local-document-ipc.ts` / `src/main/local-document-reader.ts` 限制 owner/root、文件类型、大小、secret path 与 symlink。`src/main/code-intelligence/` 持有代码索引及 Worker/WASM 边界。
+`src/main/projects.ts` 的原生目录选择创建项目授权，激活时再次验证真实路径、非 symlink 和可访问性；不能把侧栏 ready 当安全授权。`src/main/local-document-ipc.ts` / `src/main/local-document-reader.ts` 限制 owner/root、文件类型、大小、secret path 与 symlink。`src/main/code-intelligence/` 通过 Utility Process 解析和遍历 WASM AST。Main 保留路径授权、增量决策、SQLite 暂存及原子提交。取消、解析进程退出或请求超时会放弃本次暂存，保留旧索引。PDF 预览 IPC 按 64 KiB 读取二进制范围，文件身份变化后需重新打开。
 
 `src/main/agent/pi-local-files.ts` 的 `read` 与 `request_file_change` 独立于 SSH 目标。后者 → `src/main/agent/file-approval-service.ts` → Renderer `src/renderer/src/components/FileChangeReview.tsx` 完整 Diff/一次批次确认 → Main 原生确认 → 一次性校验 owner/run、路径、内容 hash、时效 → mutation queue 和写后验证。拒绝/失效不改变文件字节，不注册 Pi 内建 write/edit。
 

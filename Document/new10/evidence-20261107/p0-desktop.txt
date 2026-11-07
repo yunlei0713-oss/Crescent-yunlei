@@ -1,0 +1,14 @@
+
+> moxun@1.0.12 test:local
+> CRESCENT_LOCAL_TESTS=1 vitest run --project desktop src/main/terminal/managed/product.browser.test.ts src/main/terminal/managed/agent-collaboration.browser.test.ts src/main/code-intelligence/worker.browser.test.ts src/main/pdf-preview.browser.test.ts
+
+
+ RUN  v4.1.11 /Users/xusong.yu/Desktop/moxun-test
+
+PDF_RANGE_OK {"ranges":[65536,65536,677],"elapsedMs":999.5557870000002}
+
+ Test Files  4 passed (4)
+      Tests  4 passed (4)
+   Start at  19:53:57
+   Duration  24.39s (transform 118ms, setup 0ms, import 309ms, tests 22.37s, environment 2ms)
+

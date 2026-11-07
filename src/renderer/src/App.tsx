@@ -32,6 +32,7 @@ import {
   getSelectedTextWithinLog,
   initialTerminalTab,
   isComposingInput,
+  largeComposerPasteFile,
   resolvePastedFileReference,
   resolveSubterminalTabState,
   settleAgentCancel,
@@ -77,7 +78,6 @@ import {
   type ConnectionTerminalMode
 } from '@renderer/hooks/useConnectionTerminalChoice'
 import { OnboardingModal } from '@renderer/components/OnboardingModal'
-import { ProductLogo } from '@renderer/components/ProductLogo'
 import { type SkillManageMessage } from '@renderer/components/StatusIndicators'
 import { ExternalTerminalDialog } from '@renderer/components/ExternalTerminalDialog'
 import { useExternalTerminals } from '@renderer/hooks/useExternalTerminals'
@@ -339,6 +339,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
   const nextLogIdRef = useRef(1)
   const agentLogRef = useRef<HTMLDivElement | null>(null)
   const agentInputRef = useRef<ComposerInputHandle | null>(null)
+  const pendingAgentFilesRef = useRef(new Set<string>())
 
   const slashCommandListRef = useRef<HTMLDivElement | null>(null)
   const activeTabIdRef = useRef(initialTerminalTab.id)
@@ -706,21 +707,21 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     liveSessionUsageByTabId[sessionChatTab.id] ?? EMPTY_SESSION_TOKEN_USAGE
   )
   const sessionContextUsage = liveContextUsageByTabId[sessionChatTab.id]
+  const feedbackConnectionId = resolveOpsConnectionId(
+    activeTab.connectionId ||
+      sessionChatTab.connectionId ||
+      sessionTerminals.find((tab) => tab.connectionId)?.connectionId
+  )
 
   useEffect(() => {
-    const connectionId = resolveOpsConnectionId(
-      activeTab.connectionId ||
-        sessionChatTab.connectionId ||
-        sessionTerminals.find((tab) => tab.connectionId)?.connectionId
-    )
     const assistantEntries = sessionChatTab.agentLog.filter((entry) => entry.kind === 'assistant')
     if (assistantEntries.length === 0) return
 
     let cancelled = false
     void (async () => {
       const [records, runs] = await Promise.all([
-        storageClient.listOpsFeedback({ connectionId, limit: 40 }),
-        storageClient.listAgentRuns({ tabId: sessionChatTab.id, limit: 40 })
+        storageClient.listOpsFeedback({ connectionId: feedbackConnectionId, limit: 40 }),
+        storageClient.listAgentRuns({ tabId: sessionChatTab.conversationId, limit: 40 })
       ])
       if (cancelled || records.length === 0) return
 
@@ -750,11 +751,9 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       cancelled = true
     }
   }, [
-    activeTab.connectionId,
+    feedbackConnectionId,
     sessionChatTab.agentLog,
-    sessionChatTab.connectionId,
-    sessionChatTab.id,
-    sessionTerminals,
+    sessionChatTab.conversationId,
     setOpsFeedbackByLogId,
     t
   ])
@@ -762,30 +761,31 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
   useEffect(() => {
     const tabId = sessionChatTab.id
     let cancelled = false
-    void storageClient.getSessionTokenUsage(tabId).then((usage) => {
+    void storageClient.getSessionTokenUsage(sessionChatTab.conversationId).then((usage) => {
       if (cancelled) return
       setSessionUsageBaselineByTabId((current) => ({ ...current, [tabId]: usage }))
     })
     return () => {
       cancelled = true
     }
-  }, [sessionChatTab.id])
+  }, [sessionChatTab.id, sessionChatTab.conversationId])
 
   useEffect(() => {
     let cancelled = false
-    const chatTabId = sessionChatTab.id
-    void storageClient.countAgentLogs(chatTabId).then((count) => {
+    void storageClient.countAgentLogs(sessionChatTab.conversationId).then((count) => {
       if (cancelled) return
       setHasEarlierLogs(count > sessionChatTab.agentLog.length)
     })
     return () => {
       cancelled = true
     }
-  }, [sessionChatTab.agentLog.length, sessionChatTab.id])
+  }, [sessionChatTab.agentLog.length, sessionChatTab.conversationId])
 
   async function loadEarlierAgentLogs(): Promise<void> {
     if (loadingEarlierLogs) return
     const chatTabId = sessionChatTab.id
+    const isCurrent = (): boolean =>
+      resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current) === chatTabId
     const oldestId = sessionChatTab.agentLog.reduce(
       (min, entry) => Math.min(min, entry.id),
       Number.POSITIVE_INFINITY
@@ -794,12 +794,12 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     setEarlierLogsError(null)
     try {
       const rows = await storageClient.listAgentLogs({
-        tabId: chatTabId,
+        tabId: sessionChatTab.conversationId,
         beforeLogId: Number.isFinite(oldestId) ? oldestId : undefined,
         limit: 40
       })
       if (rows.length === 0) {
-        setHasEarlierLogs(false)
+        if (isCurrent()) setHasEarlierLogs(false)
         return
       }
       const existingIds = new Set(sessionChatTab.agentLog.map((entry) => entry.id))
@@ -807,20 +807,15 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
         .map((row) => hydrateStoredAgentLog(row))
         .filter((entry) => !existingIds.has(entry.id))
       if (hydrated.length === 0) {
-        setHasEarlierLogs(false)
+        if (isCurrent()) setHasEarlierLogs(false)
         return
       }
       updateTab(chatTabId, (tab) => {
         const merged = prependEarlierAgentLogs(tab.agentLog, hydrated)
         return { ...tab, agentLog: merged }
       })
-      const total = await storageClient.countAgentLogs(chatTabId)
-      const nextLen =
-        tabsRef.current.find((tab) => tab.id === chatTabId)?.agentLog.length ??
-        sessionChatTab.agentLog.length + hydrated.length
-      setHasEarlierLogs(total > nextLen)
     } catch {
-      setEarlierLogsError(t.input.loadEarlierLogsFailed)
+      if (isCurrent()) setEarlierLogsError(t.input.loadEarlierLogsFailed)
     } finally {
       setLoadingEarlierLogs(false)
     }
@@ -859,6 +854,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
 
   // Single source of truth: any NEW connection-failure error entry transitions
   // the per-chat connection attempt into failed on the same card.
+  const sessionUsesPipe = sessionTerminals.some((tab) => tab.terminalMode === 'pipe')
   useEffect(() => {
     const chatTabId = sessionChatTab.id
     const markers = connectionFailureMarkers(t)
@@ -869,9 +865,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       if (entry.id <= processedUpTo) continue
       lastSeen = Math.max(lastSeen, entry.id)
       if (isConnectionFailureLog(entry.text, markers)) {
-        const pipeFallback =
-          /SSH requires PTY/i.test(entry.text) ||
-          sessionTerminals.some((tab) => tab.terminalMode === 'pipe')
+        const pipeFallback = /SSH requires PTY/i.test(entry.text) || sessionUsesPipe
         updateConnectionAttempt(chatTabId, (state) =>
           markConnectionFailed(state, {
             reason: entry.text,
@@ -885,7 +879,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     if (lastSeen > processedUpTo) {
       lastProcessedFailureEntryRef.current.set(chatTabId, lastSeen)
     }
-  }, [sessionChatTab.agentLog, sessionChatTab.id, sessionTerminals, t, updateConnectionAttempt])
+  }, [sessionChatTab.agentLog, sessionChatTab.id, sessionUsesPipe, t, updateConnectionAttempt])
   const {
     appendLog,
     updateLogEntryText,
@@ -1061,11 +1055,10 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     localTerminalLabel: t.connections.localTerminal,
     localTerminalDescription: t.connections.defaultTerminal
   })
-  const slashQueryCursor =
-    getSlashCommandQuery(sessionChatTab.agentInput, composerCaret) !== undefined
-      ? composerCaret
-      : sessionChatTab.agentInput.length
-  const slashCommandQuery = getSlashCommandQuery(sessionChatTab.agentInput, slashQueryCursor)
+  const draft = sessionChatTab.agentInput
+  const slashCommandQuery =
+    getSlashCommandQuery(draft, composerCaret) ??
+    (composerCaret !== draft.length ? getSlashCommandQuery(draft) : undefined)
   const slashCommandOptions = useMemo(() => {
     if (slashCommandQuery === undefined) return []
 
@@ -2158,7 +2151,13 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       const chatTabId = resolveSessionChatTabId(tabsRef.current, eventTabId)
       const visibleRunId =
         activeRunIdRef.current.get(chatTabId) ?? activeAgentRunRef.current.get(chatTabId)?.runId
-      if (event.runId && visibleRunId && event.runId !== visibleRunId) return
+      if (!tabsRef.current.some((tab) => tab.id === chatTabId)) return
+      if (
+        event.runId &&
+        event.runId !== visibleRunId &&
+        !(event.type === 'usage' && event.runId.startsWith('compact-'))
+      )
+        return
       if (event.type === 'usage') {
         const hasTokenDelta =
           event.input > 0 ||
@@ -2401,7 +2400,7 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     const loadingToast = toast.loading(t.input.slashCompact)
     try {
       const result = await agentClient.compact({
-        sessionKey: chatTabId,
+        sessionKey: tab?.conversationId ?? chatTabId,
         tabId: chatTabId,
         instructions,
         locale
@@ -2409,13 +2408,28 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       if (!result.ok) {
         const message = result.busy
           ? t.input.compactBusy
-          : result.error === 'No live session to compact.'
+          : result.error === 'No owned live session to compact.'
             ? t.input.compactNoSession
-            : result.error || t.input.compactFailed
+            : result.quality === 'failed'
+              ? `${t.input.compactVerificationFailed} · ${result.error ?? t.input.compactFailed}`
+              : result.error || t.input.compactFailed
         toast.error(message, { id: loadingToast })
         return
       }
-      toast.success(t.input.compactSucceeded, { id: loadingToast })
+      const estimate =
+        result.tokensBefore != null && result.estimatedTokensAfter != null
+          ? ` · ≈${result.tokensBefore.toLocaleString()} → ≈${result.estimatedTokensAfter.toLocaleString()} tokens`
+          : ''
+      if (result.quality === 'partial') {
+        toast.warning(`${t.input.compactPartial} (${result.missing ?? 0})${estimate}`, {
+          id: loadingToast
+        })
+      } else {
+        toast.success(
+          `${result.quality === 'passed' ? t.input.compactVerified : t.input.compactSucceeded}${estimate}`,
+          { id: loadingToast }
+        )
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error), { id: loadingToast })
     } finally {
@@ -3253,7 +3267,15 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
     }
   }
 
-  const { submitAgent, submitAgentMessage, runAgentConversation } = useAgentController({
+  const {
+    submitAgent,
+    submitAgentMessage,
+    runAgentConversation,
+    turns,
+    continueTurns,
+    removeTurn
+  } = useAgentController({
+    activeConversationId: sessionChatTab.conversationId,
     activeTabIdRef,
     tabsRef,
     startNewSession,
@@ -3358,14 +3380,27 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
 
   async function handleAgentInputPaste(event: ReactClipboardEvent<HTMLElement>): Promise<void> {
     const files = Array.from(event.clipboardData.files)
+    const textFile =
+      files.length === 0
+        ? largeComposerPasteFile(event.clipboardData.getData('text/plain'))
+        : undefined
+    if (textFile) files.push(textFile)
     if (files.length === 0) return
 
     event.preventDefault()
-    await handleAgentFiles(files)
+    await handleAgentFiles(files, textFile?.name)
   }
 
-  async function handleAgentFiles(files: File[]): Promise<void> {
+  function notifyAgentFilesPending(): void {
+    toast.info(locale === 'zh-CN' ? '正在添加附件，请稍候' : 'Adding an attachment. Please wait.')
+  }
+
+  async function handleAgentFiles(files: File[], displayName?: string): Promise<void> {
     const chatId = resolveSessionChatTabId(tabsRef.current, activeTabIdRef.current)
+    if (pendingAgentFilesRef.current.has(chatId)) {
+      notifyAgentFilesPending()
+      return
+    }
     if (
       files.length + (tabsRef.current.find((tab) => tab.id === chatId)?.pathRefs.length ?? 0) >
       8
@@ -3373,31 +3408,39 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
       toast.error(locale === 'zh-CN' ? '每次最多 8 个附件' : 'Maximum 8 attachments')
       return
     }
-    const references = await Promise.all(
-      files.map((file) =>
-        resolvePastedFileReference(file).catch((error) => {
-          toast.error(`${file.name}: ${String(error)}`)
-          return undefined
-        })
+    pendingAgentFilesRef.current.add(chatId)
+    try {
+      const references = await Promise.all(
+        files.map((file) =>
+          resolvePastedFileReference(file).catch((error) => {
+            toast.error(`${file.name}: ${String(error)}`)
+            return undefined
+          })
+        )
       )
-    )
-    const validReferences = references.filter((reference): reference is AgentPathReference =>
-      Boolean(reference)
-    )
-    if (validReferences.length === 0) return
+      const validReferences = references.filter((reference): reference is AgentPathReference =>
+        Boolean(reference)
+      )
+      if (validReferences.length === 0) return
 
-    updateTab(chatId, (tab) => {
-      let nextInput = tab.agentInput
-      let cursor = slashReplacementCursor(nextInput)
-      let pathRefs = tab.pathRefs
-      for (const reference of validReferences) {
-        nextInput = insertComposerRefTokenAt(nextInput, cursor, 'path', reference.id)
-        const token = formatComposerRefToken('path', reference.id)
-        cursor = nextInput.indexOf(token, Math.max(0, cursor - 1)) + token.length
-        pathRefs = addUniquePathRef(pathRefs, reference)
-      }
-      return applyComposerInput(tab, nextInput, { pathRefs })
-    })
+      updateTab(chatId, (tab) => {
+        let nextInput = tab.agentInput
+        let cursor = slashReplacementCursor(nextInput)
+        let pathRefs = tab.pathRefs
+        for (const reference of validReferences) {
+          nextInput = insertComposerRefTokenAt(nextInput, cursor, 'path', reference.id)
+          const token = formatComposerRefToken('path', reference.id)
+          cursor = nextInput.indexOf(token, Math.max(0, cursor - 1)) + token.length
+          pathRefs = addUniquePathRef(
+            pathRefs,
+            displayName ? { ...reference, name: displayName } : reference
+          )
+        }
+        return applyComposerInput(tab, nextInput, { pathRefs })
+      })
+    } finally {
+      pendingAgentFilesRef.current.delete(chatId)
+    }
   }
 
   function insertSlashCommand(command: SlashCommandOption): void {
@@ -4111,26 +4154,6 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
           }
         }}
       />
-      <header className="app-titlebar flex h-8 shrink-0 items-center">
-        <div className="app-titlebar-brand flex h-full shrink-0 items-center px-3">
-          <ProductLogo />
-        </div>
-        <div className="min-w-0 flex-1" />
-        <Button
-          size="xs"
-          variant="ghost"
-          disabled={closingConversationId === sessionChatTab.conversationId}
-          onClick={() => closeTab(sessionChatTab.id)}
-        >
-          {closingConversationId === sessionChatTab.conversationId
-            ? locale === 'zh-CN'
-              ? '正在结束…'
-              : 'Ending…'
-            : locale === 'zh-CN'
-              ? '结束对话'
-              : 'End conversation'}
-        </Button>
-      </header>
       {sheetOpen && (
         <Suspense fallback={null}>
           <SettingsSheet
@@ -4278,24 +4301,30 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
         <AppSidebar
           projectId={sessionChatTab.projectId}
           busy={sessionChatTab.agentBusy}
-          onAttachProject={(projectId) =>
-            updateTab(sessionChatTab.id, (tab) =>
-              tab.agentBusy || (tab.projectId && tab.projectId !== projectId)
-                ? tab
-                : { ...tab, projectId }
+          conversationId={sessionChatTab.conversationId}
+          onProjectAssociation={(state) => {
+            const tab = tabsRef.current.find(
+              (entry) =>
+                entry.conversationId === state.conversationId &&
+                resolveSessionChatTabId(tabsRef.current, entry.id) === entry.id
             )
-          }
-          onNewProjectChat={(projectId) =>
-            activateNewSession(
-              createTerminalTab({
-                title: locale === 'zh-CN' ? '新建对话' : 'New conversation',
-                projectId,
-                providerId: config.providerId,
-                model: config.model,
-                agentStyle: config.agentStyle
-              })
-            )
-          }
+            if (tab) updateTab(tab.id, (current) => ({ ...current, projectId: state.projectId }))
+            void refreshSessionHistory()
+          }}
+          onNewProjectChat={(projectId) => {
+            const tab = createTerminalTab({
+              title: locale === 'zh-CN' ? '新建对话' : 'New conversation',
+              providerId: config.providerId,
+              model: config.model,
+              agentStyle: config.agentStyle
+            })
+            void window.api.projects
+              .associate({ conversationId: tab.conversationId, action: 'attach', projectId })
+              .then((state) => activateNewSession({ ...tab, projectId: state.projectId }))
+              .catch((error: unknown) =>
+                appendLog({ kind: 'error', text: String(error) }, sessionChatTab.id)
+              )
+          }}
           t={t}
           locale={locale}
           sessions={sessionChatTabs}
@@ -4351,6 +4380,27 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
             </p>
           )}
           <ChatWorkspace
+            conversationActions={
+              <Button
+                size="xs"
+                variant="ghost"
+                title={
+                  locale === 'zh-CN'
+                    ? '保留聊天记录，停止 AI 回复与终端观察；终端和任务继续运行'
+                    : 'Keep chat history; stop AI replies and observation. Terminals and tasks keep running.'
+                }
+                disabled={closingConversationId === sessionChatTab.conversationId}
+                onClick={() => closeTab(sessionChatTab.id)}
+              >
+                {closingConversationId === sessionChatTab.conversationId
+                  ? locale === 'zh-CN'
+                    ? '正在归档…'
+                    : 'Archiving…'
+                  : locale === 'zh-CN'
+                    ? '归档对话'
+                    : 'Archive conversation'}
+              </Button>
+            }
             onProactiveSuggestionsPausedChange={(paused) =>
               updateTab(activeTabIdRef.current, (tab) => ({
                 ...tab,
@@ -4551,6 +4601,11 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
                 event.preventDefault()
                 return
               }
+              if (pendingAgentFilesRef.current.has(sessionChatTab.id)) {
+                event.preventDefault()
+                notifyAgentFilesPending()
+                return
+              }
               void submitAgent(event)
             }}
             onInsertSlashCommand={insertSlashCommand}
@@ -4574,6 +4629,13 @@ function App({ recoveryMode = 'none' }: { recoveryMode?: 'none' | 'pending' }): 
             onRemovePath={removePathRef}
             onPickPathReference={(kind) => void pickPathReference(kind)}
             onStopAgent={() => stopAgentRun()}
+            onAnalyzeTerminal={(input) =>
+              void submitAgentMessage(input, { terminalOperatorFinished: true })
+            }
+            onStopAndSend={() => void submitAgentMessage(undefined, { stopAndSend: true })}
+            turns={turns}
+            onContinueTurns={() => void continueTurns()}
+            onRemoveTurn={(id) => void removeTurn(id)}
             onRetryConnection={() => void retryActiveConnection()}
             onOpenConnections={showConnectionList}
           />

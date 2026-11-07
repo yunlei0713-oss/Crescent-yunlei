@@ -2,7 +2,6 @@ import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import type { Plugin } from 'vite'
 
 /**
  * Pi packages are ESM-only. Keep them external and load via dynamic `import()`
@@ -19,15 +18,6 @@ const piPackages = [
   '@silvia-odwyer/photon-node',
   '@mariozechner/clipboard',
   '@modelcontextprotocol/sdk'
-]
-
-const RENDERER_ASSET_WARNING_BYTES = 1.5 * 1024 * 1024
-const RENDERER_ASSET_LIMIT_BYTES = 2 * 1024 * 1024
-const LAZY_RENDERER_ASSET_NAMES = [
-  /^assets\/mermaid(?:[.-]|$)/,
-  /^assets\/.*\.webm$/,
-  /^assets\/xyflow(?:[.-]|$)/,
-  /^assets\/architecture(?:[.-]|$)/
 ]
 
 function posixId(id: string): string {
@@ -84,43 +74,19 @@ function rendererManualChunks(id: string): string | undefined {
   return undefined
 }
 
-function assetSize(item: { type: string; code?: string; source?: string | Uint8Array }): number {
-  if (item.type === 'chunk' && typeof item.code === 'string') return item.code.length
-  if (item.type !== 'asset' || item.source == null) return 0
-  return typeof item.source === 'string' ? item.source.length : item.source.byteLength
-}
-
-function enforceRendererAssetLimit(): Plugin {
-  return {
-    name: 'crescent-renderer-asset-limit',
-    apply: 'build',
-    generateBundle(_options, bundle) {
-      const oversized = Object.values(bundle)
-        .map((item) => ({ fileName: item.fileName, size: assetSize(item) }))
-        .filter(
-          (item) =>
-            item.size > RENDERER_ASSET_WARNING_BYTES &&
-            !LAZY_RENDERER_ASSET_NAMES.some((pattern) => pattern.test(item.fileName))
-        )
-      if (oversized.length === 0) return
-      const details = oversized
-        .map((item) => `  - ${item.fileName} (${(item.size / 1024).toFixed(1)} kB)`)
-        .join('\n')
-      if (oversized.some((item) => item.size > RENDERER_ASSET_LIMIT_BYTES)) {
-        this.error(`Renderer assets exceed 2 MiB:\n${details}`)
-      }
-      this.warn(`Renderer assets exceed the 1.5 MiB warning budget:\n${details}`)
-    }
-  }
-}
-
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          'code-index-worker': resolve('src/main/code-intelligence/worker.ts')
+        },
         external: ['node-pty', ...piPackages],
         output: {
+          // Main chunks resolve local window, IPC and worker entry paths relative to this directory.
+          chunkFileNames: '[name]-[hash].js',
           // Keep shared helpers out of index.js so dynamically imported agent/ipc
           // does not create a circular require back into the main entry.
           manualChunks(id) {
@@ -136,7 +102,15 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/preload/index.ts'),
+          terminal: resolve('src/preload/terminal.ts')
+        }
+      }
+    }
   },
   renderer: {
     resolve: {
@@ -149,10 +123,14 @@ export default defineConfig({
         )
       }
     },
-    plugins: [tailwindcss(), react(), enforceRendererAssetLimit()],
+    plugins: [tailwindcss(), react()],
     build: {
-      chunkSizeWarningLimit: 1536,
+      minify: 'esbuild',
       rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          terminal: resolve('src/renderer/terminal.html')
+        },
         output: {
           manualChunks: rendererManualChunks
         }

@@ -9,6 +9,13 @@ export function migrateConversations(db: DatabaseSync): void {
       project_id TEXT, title_locked INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL, archived_at TEXT
     )`)
+    if (
+      !db
+        .prepare('PRAGMA table_info(conversations)')
+        .all()
+        .some((row) => row.name === 'project_context_since')
+    )
+      db.exec('ALTER TABLE conversations ADD COLUMN project_context_since TEXT')
     for (const table of ['session_tabs', 'agent_logs', 'agent_runs', 'ops_history_records']) {
       const columns = db.prepare(`PRAGMA table_info(${table})`).all()
       if (!columns.some((row) => row.name === 'conversation_id'))

@@ -1,7 +1,10 @@
+import { discardHostedHistory } from '../agent/pi-host'
+import { historicalText } from '../sqlite/context-checkpoints'
+import { memoryService } from '../memory/service'
 import { rendererIpc } from '../ipc-security'
-import { type WebContents } from 'electron'
 
 import {
+  getDatabase,
   archiveConversation,
   activateConversation,
   resolveConversationId,
@@ -18,7 +21,6 @@ import {
   countAgentLogs,
   listOpsHistoryForConnection,
   listSessionHistory,
-  readSessionLogsForSummary,
   readSessionHistoryDetail,
   renameSessionHistory,
   saveAgentLog,
@@ -32,6 +34,7 @@ import {
 import { AgentBrain } from '../agent/brain'
 import { buildOpsFeedbackSummarizeSource, parseOpsFeedbackSummary } from '../agent/ops-history'
 import { readAgentConfig } from '../crescent-store'
+import type { WebContents } from 'electron'
 import { safeWebContentsSend } from '../safe-ipc-send'
 import { resolveOpsConnectionId } from '../../shared/local-connection'
 import type {
@@ -81,11 +84,13 @@ export function registerStorageIpc(): void {
 
   rendererIpc.handle(
     'storage:delete-agent-logs',
-    (event, input: { tabId?: string; logIds?: number[] }) => {
+    async (event, input: { tabId?: string; logIds?: number[] }) => {
       const tabId = input?.tabId?.trim() ?? ''
       const logIds = Array.isArray(input?.logIds) ? input.logIds : []
+      if (tabId && logIds.length) await discardHostedHistory(resolveConversationId(tabId))
       const removed = deleteAgentLogs(tabId, logIds)
       if (removed > 0 && tabId) scheduleSessionSummary(tabId, event.sender)
+      memoryService().syncHistory()
       return { ok: true, removed }
     }
   )
@@ -142,8 +147,16 @@ export function registerStorageIpc(): void {
     return readSessionHistoryDetail(tabId)
   })
 
-  rendererIpc.handle('storage:delete-session-history', (_, tabId: string) => {
-    return { ok: deleteSessionHistory(tabId ?? '') }
+  rendererIpc.handle('storage:delete-session-history', async (_, tabId: string) => {
+    if (typeof tabId !== 'string' || !tabId.trim()) return { ok: false }
+    const id = resolveConversationId(tabId)
+    await discardHostedHistory(id)
+    const timer = pendingSessionSummaryTimers.get(id)
+    if (timer) clearTimeout(timer)
+    pendingSessionSummaryTimers.delete(id)
+    const ok = deleteSessionHistory(id)
+    memoryService().syncHistory()
+    return { ok }
   })
 
   rendererIpc.handle(
@@ -298,47 +311,26 @@ function scheduleSessionSummary(tabId: string, webContents: WebContents): void {
 
   const timer = setTimeout(() => {
     pendingSessionSummaryTimers.delete(normalizedTabId)
-    void summarizeSessionHistory(normalizedTabId, webContents)
+    summarizeSessionHistory(normalizedTabId, webContents)
   }, 2500)
   pendingSessionSummaryTimers.set(normalizedTabId, timer)
 }
 
-async function summarizeSessionHistory(tabId: string, webContents: WebContents): Promise<void> {
-  const logs = readSessionLogsForSummary(tabId)
-    .filter(
-      (entry) => entry.kind === 'user' || entry.kind === 'assistant' || entry.kind === 'error'
-    )
-    .slice(-80)
-
-  if (logs.length === 0) return
-
-  const transcript = logs
-    .map((entry) => `${entry.kind}: ${entry.text}`)
-    .join('\n')
-    .slice(0, 12000)
-
+/** Sidebar metadata is local and deterministic. Learning has a separate, consented model path. */
+function summarizeSessionHistory(tabId: string, webContents: WebContents): void {
   try {
-    const completion = await new AgentBrain(readAgentConfig()).chat({
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Summarize this Crescent chat session. Return strict JSON only: {"title":"...","summary":"..."}. Title <= 40 chars. Summary <= 180 chars.'
-        },
-        { role: 'user', content: transcript }
-      ]
-    })
-    const parsed = parseSessionSummary(completion.choices[0]?.message.content ?? '')
-    if (!parsed) return
-
-    const updated = updateSessionHistorySummary({
-      tabId,
-      title: parsed.title,
-      summary: parsed.summary
-    })
+    const logs = listAgentLogs(tabId, { limit: 12 })
+    const latest = logs.findLast(
+      (log) => ['user', 'assistant', 'error'].includes(log.kind) && historicalText(log).trim()
+    )
+    if (!latest) return
+    const summary = historicalText(latest).replace(/\s+/g, ' ').trim().slice(0, 260)
+    const title = String(
+      getDatabase().prepare('SELECT title FROM conversations WHERE conversation_id=?').get(tabId)
+        ?.title ?? 'Conversation'
+    )
+    const updated = updateSessionHistorySummary({ tabId, title, summary })
     if (!updated.ok) return
-
     const event: StoredSessionSummaryUpdate = {
       tabId,
       title: updated.title,
@@ -347,29 +339,6 @@ async function summarizeSessionHistory(tabId: string, webContents: WebContents):
     }
     safeWebContentsSend(webContents, 'storage:session-summary-updated', event)
   } catch {
-    // History summaries are best-effort and should not interrupt chat or terminal work.
-  }
-}
-
-function parseSessionSummary(content: string): { title: string; summary: string } | undefined {
-  try {
-    const parsed = JSON.parse(content) as { title?: unknown; summary?: unknown }
-    const title = typeof parsed.title === 'string' ? parsed.title.trim() : ''
-    const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : ''
-    if (title && summary) return { title: title.slice(0, 80), summary: summary.slice(0, 260) }
-  } catch {
-    // fall through
-  }
-
-  const lines = content
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-  if (lines.length < 2) return undefined
-
-  return {
-    title: lines[0].slice(0, 80),
-    summary: lines.slice(1).join(' ').slice(0, 260)
+    // A removed history or unavailable metadata must not block chat.
   }
 }

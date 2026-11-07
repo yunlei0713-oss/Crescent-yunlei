@@ -5,7 +5,11 @@ import { Input } from './ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet'
 import { MarkdownContent } from './MarkdownContent'
 import type { Dictionary } from '@renderer/i18n'
-import type { LocalDocumentNode, LocalDocumentPage } from '../../../shared/local-documents'
+import {
+  PDF_PREVIEW_MAX_BYTES,
+  type LocalDocumentNode,
+  type LocalDocumentPage
+} from '../../../shared/local-documents'
 const LocalPdfPreview = lazy(() =>
   import('./LocalPdfPreview').then((module) => ({ default: module.LocalPdfPreview }))
 )
@@ -57,7 +61,7 @@ export function LocalDocumentsSheet({
       report(error)
     }
   }
-  async function read(nextOffset = offset, nextPath = path): Promise<void> {
+  async function read(nextOffset = offset, nextPath = path, cursor?: string): Promise<void> {
     if (active.current) void client.cancel(active.current)
     const requestId = crypto.randomUUID()
     active.current = requestId
@@ -68,7 +72,8 @@ export function LocalDocumentsSheet({
       const result = await client.read({
         path: nextPath,
         offset: nextOffset,
-        limit: 200,
+        cursor,
+        limit: /\.pdf$/i.test(nextPath) ? 1 : 200,
         query: query || undefined,
         requestId
       })
@@ -127,7 +132,7 @@ export function LocalDocumentsSheet({
                     setPath(node.path)
                     setOffset(1)
                     setPage(undefined)
-                    if (!/\.pdf$/i.test(node.path)) void read(1, node.path)
+                    void read(1, node.path)
                   }
                 }}
               >
@@ -162,7 +167,7 @@ export function LocalDocumentsSheet({
             </label>
           </div>
           <div className="flex gap-2">
-            <Button size="xs" disabled={!path || pdf} onClick={() => void read()}>
+            <Button size="xs" disabled={!path || busy} onClick={() => void read()}>
               读取 / 搜索
             </Button>
             <Button
@@ -184,7 +189,7 @@ export function LocalDocumentsSheet({
               Markdown 预览
             </label>
           </div>
-          {pdf && (
+          {pdf && (!page?.size || page.size <= PDF_PREVIEW_MAX_BYTES) && (
             <Suspense fallback={<p>加载本地 PDF 阅读器…</p>}>
               <LocalPdfPreview
                 key={`${path}:${offset}`}
@@ -197,9 +202,13 @@ export function LocalDocumentsSheet({
           {page && (
             <>
               <p>
-                {page.encoding} · {page.lines.length} 行 ·{' '}
-                {page.hasMore ? '有更多内容' : '本片结束'}
+                {page.encoding} ·{' '}
+                {page.encoding === 'pdf'
+                  ? `${page.totalPages ?? '?'} 页`
+                  : `${page.lines.length} 行`}{' '}
+                · {page.hasMore ? '有更多内容' : '本片结束'}
               </p>
+              {page.textLayer === 'absent' && <p>所读页面没有可提取的 PDF 文本层。</p>}
               {markdown && /\.(?:md|markdown)$/i.test(path) ? (
                 <MarkdownContent value={page.lines.map((line) => line.text).join('\n')} t={t} />
               ) : (
@@ -224,9 +233,9 @@ export function LocalDocumentsSheet({
                   variant="outline"
                   disabled={!page.hasMore}
                   onClick={() => {
-                    const next = (page.lines.at(-1)?.line ?? offset) + 1
+                    const next = page.nextCursor ? offset : (page.lines.at(-1)?.line ?? offset) + 1
                     setOffset(next)
-                    void read(next)
+                    void read(next, path, page.nextCursor)
                   }}
                 >
                   下一片
@@ -236,8 +245,8 @@ export function LocalDocumentsSheet({
           )}
           <p role="status">{busy ? '读取中…' : error}</p>
           <p className="text-muted-foreground">
-            DOCX/XLSX/PPTX 转换器与 Filesystem MCP 可在现有 MCP
-            管理器显式配置；不自动安装，不授予家目录，不调用云转码。OCR 需要另行确认。
+            支持读取 DOCX 正文；图片和扫描内容需要 OCR。XLSX/PPTX 转换器与 Filesystem MCP 可在现有
+            MCP 管理器显式配置，不自动安装或调用云转码。
           </p>
         </div>
       </SheetContent>

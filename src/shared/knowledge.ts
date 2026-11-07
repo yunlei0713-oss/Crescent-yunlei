@@ -6,7 +6,19 @@ export const MEMORY_CATEGORIES = [
   'preference'
 ] as const
 export type MemoryCategory = (typeof MEMORY_CATEGORIES)[number]
-export type MemoryStatus = 'candidate' | 'approved' | 'archived'
+export type MemoryStatus = 'candidate' | 'approved' | 'archived' | 'superseded'
+export type MemoryKind = 'legacy' | 'knowledge' | 'observation' | 'reflection'
+export interface MemoryEvidence {
+  conversationId: string
+  sourceTabId: string
+  logId: number
+  role: string
+  observedAt: string
+  scope: string
+  excerpt: string
+  redacted: boolean
+  observationId?: string
+}
 export interface MemoryItem {
   id: string
   title: string
@@ -18,10 +30,20 @@ export interface MemoryItem {
   scope: string
   createdAt: string
   updatedAt: string
+  kind?: MemoryKind
+  observedAt?: string
+  validFrom?: string
+  validTo?: string
+  uncertainty?: string
+  supersedesId?: string
+  evidenceCount?: number
+  supportIds?: string[]
 }
 export type MemoryInput = Pick<MemoryItem, 'title' | 'content' | 'category' | 'scope'> & {
   id?: string
   status?: MemoryStatus
+  supersedesId?: string
+  validTo?: string | null
 }
 export interface MemorySettings {
   recall: boolean
@@ -62,6 +84,21 @@ export interface MemorySnapshot {
   settings: MemorySettings
   autoLearnError?: string
 }
+export type CodeSkipReason =
+  | 'file-too-large'
+  | 'line-budget'
+  | 'unsupported'
+  | 'sensitive'
+  | 'symlink'
+  | 'parse-error'
+  | 'global-budget'
+  | 'ignored'
+  | 'unreadable'
+export interface CodeIndexSkip {
+  path: string
+  reason: CodeSkipReason
+  size?: number
+}
 export interface CodeIndexStatus {
   root: string
   files: number
@@ -71,6 +108,12 @@ export interface CodeIndexStatus {
   skipped: number
   errors: number
   limited: boolean
+  skipReasons?: Partial<Record<CodeSkipReason, number>>
+  symbolOnly?: number
+  reused?: number
+  parsed?: number
+  elapsedMs?: number
+  failed?: boolean
 }
 export interface CodeSymbol {
   path: string

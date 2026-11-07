@@ -1,4 +1,4 @@
-appId: com.crescent.app
+appId: com.moxun.app
 productName: 墨巡
 directories:
   buildResources: build
@@ -50,7 +50,7 @@ asarUnpack:
   - '**/pdfjs-dist/legacy/build/**'
   - '**/pdfjs-dist/{standard_fonts,cmaps}/**'
 win:
-  executableName: crescent
+  executableName: moxun
   icon: build/icon.ico
 nsis:
   artifactName: ${name}-${version}-${arch}-setup.${ext}

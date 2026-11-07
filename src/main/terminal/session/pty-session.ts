@@ -85,6 +85,7 @@ export function createPtySession(
     pid: pty.pid,
     cwd: input.cwd,
     shell: input.shell,
+    foregroundCommand: () => pty.process,
     write: (data) => {
       assertOperatorTerminalAccess()
       pty.write(data)
@@ -95,6 +96,8 @@ export function createPtySession(
       pty.write('\x03')
     },
     resize: (cols, rows) => pty.resize(cols, rows),
+    pauseOutput: () => pty.pause(),
+    resumeOutput: () => pty.resume(),
     clear: () => pty.clear(),
     kill: () => {
       assertOperatorTerminalAccess()

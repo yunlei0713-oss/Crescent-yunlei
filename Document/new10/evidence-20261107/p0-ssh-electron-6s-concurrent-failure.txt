@@ -1,0 +1,32 @@
+✖ Electron Pi requests, waits for, and queries one reviewed command in the visible SSH PTY (27760.370843ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27940.149114
+
+✖ failing tests:
+
+test at scripts/verify-managed-ssh-electron.cjs:23:3
+✖ Electron Pi requests, waits for, and queries one reviewed command in the visible SSH PTY (27760.370843ms)
+  AssertionError [ERR_ASSERTION]: Error: Timed out waiting for probe result
+      at until (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-ssh-electron.cjs:177:11)
+      at async runElectronFixture (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-ssh-electron.cjs:243:5)
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-ssh-electron.cjs:62:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

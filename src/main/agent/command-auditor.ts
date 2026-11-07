@@ -301,7 +301,7 @@ export function applyLocalCommandPolicy(
   const recommendation =
     language === 'zh-CN'
       ? '先完成巡检并汇总结论，然后让用户确认客户端机器上的目标目录；确认后先 open_subterminal(mode=local)，再在本地子终端写入。不要默认写到 /、/root、/tmp 或当前远程终端目录。'
-      : 'Finish the inspection and summarize findings, then ask the user to confirm a target directory on the Crescent client machine; after confirmation, call open_subterminal(mode=local) and write from that local subterminal. Do not default to /, /root, /tmp, or the current remote terminal directory.'
+      : 'Finish the inspection and summarize findings, then ask the user to confirm a target directory on the MoXun client machine; after confirmation, call open_subterminal(mode=local) and write from that local subterminal. Do not default to /, /root, /tmp, or the current remote terminal directory.'
 
   return {
     ...result,

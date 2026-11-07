@@ -19,7 +19,7 @@ Do not patch a single UI or prompt symptom in isolation. Decisions must fit Cres
 
 - Renderer: no Node, no filesystem. Main owns OS/DB/secrets. Preload is the only bridge.
 - Keep `contextIsolation: true`, `nodeIntegration: false`. Whitelist IPC in preload; validate arguments in main.
-- Renderer never writes `~/.crescent/wiki` or skill files. Persist SOP/Skill only through main (`generate-capture`, `wiki`, `skills`) after operator confirm.
+- Renderer never writes `~/.moxun/wiki` or skill files. Persist SOP/Skill only through main (`generate-capture`, `wiki`, `skills`) after operator confirm.
 
 ## Capture identity
 

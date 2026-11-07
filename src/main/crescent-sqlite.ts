@@ -1,3 +1,11 @@
+import { migrateMemoryCleanupQueue } from './memory/schema'
+import { migrateHistorySearch } from './sqlite/history-search'
+import { migrateManagedCommandAudit } from './sqlite/managed-command-audit'
+import {
+  migrateCheckpoints,
+  recoverCheckpoints,
+  historyRevision
+} from './sqlite/context-checkpoints'
 import { migrateConversations, conversationIdFor, ensureConversation } from './sqlite/conversations'
 import {
   readRow,
@@ -42,6 +50,7 @@ function parseStoredAgentStyle(value: string | null | undefined): AgentStyle | u
 
 export function initializeCrescentDatabase(): void {
   const db = getDatabase()
+  migrateManagedCommandAudit(db)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS session_tabs (
@@ -165,6 +174,9 @@ export function initializeCrescentDatabase(): void {
       ON ops_history_records (connection_id, updated_at);
   `)
   migrateConversations(db)
+  migrateCheckpoints(db)
+  migrateHistorySearch(db)
+  migrateMemoryCleanupQueue(db)
 }
 
 /** Main-only metadata read: restore execution intent before any PTY can be used. No logs/credentials. */
@@ -199,6 +211,7 @@ export function readStoredExecutionIntent(tabId: string):
 }
 
 export function saveSessionTabs(tabs: StoredSessionTab[]): void {
+  if (!tabs.length) return
   const db = getDatabase()
   const now = new Date().toISOString()
   const statement = db.prepare(`
@@ -220,39 +233,40 @@ export function saveSessionTabs(tabs: StoredSessionTab[]): void {
       handoff_blocked = excluded.handoff_blocked,
       expected_target = excluded.expected_target,
       connection_origin = excluded.connection_origin,
-      project_id = excluded.project_id,
+      project_id = (SELECT project_id FROM conversations WHERE conversation_id=excluded.conversation_id),
       conversation_id = excluded.conversation_id,
       updated_at = excluded.updated_at
   `)
 
-  for (const tab of tabs) {
-    statement.run(
-      tab.tabId,
-      tab.title,
-      tab.connectionId ?? null,
-      tab.connectionName ?? null,
-      tab.isSsh ? 1 : 0,
-      tab.terminalCwd ?? null,
-      tab.terminalMode ?? null,
-      tab.agentStyle ?? null,
-      normalizeExecutionMode(tab.executionMode),
-      tab.handoffBlocked ? 1 : 0,
-      tab.expectedTarget ?? null,
-      tab.connectionOrigin ?? null,
-      now,
-      typeof tab.projectId === 'string' ? tab.projectId.slice(0, 100) : null,
-      tab.conversationId ?? tab.tabId
-    )
-    const id = ensureConversation(
-      db,
-      tab.conversationId ?? tab.tabId,
-      tab.conversationTitle ?? tab.title
-    )
-    db.prepare(
-      `UPDATE conversations SET title=CASE WHEN title_locked=1 THEN title ELSE ? END,
-      project_id=?,updated_at=? WHERE conversation_id=?`
-    ).run(tab.conversationTitle ?? tab.title, tab.projectId ?? null, now, id)
-  }
+  const project = db.prepare('SELECT project_id FROM conversations WHERE conversation_id=?')
+  const updateConversation = db.prepare(
+    `UPDATE conversations SET title=CASE WHEN title_locked=1 THEN title ELSE ? END,
+      updated_at=? WHERE conversation_id=?`
+  )
+  runInTransaction(db, () => {
+    for (const tab of tabs) {
+      const id = tab.conversationId ?? tab.tabId
+      const title = tab.conversationTitle ?? tab.title
+      statement.run(
+        tab.tabId,
+        tab.title,
+        tab.connectionId ?? null,
+        tab.connectionName ?? null,
+        tab.isSsh ? 1 : 0,
+        tab.terminalCwd ?? null,
+        tab.terminalMode ?? null,
+        tab.agentStyle ?? null,
+        normalizeExecutionMode(tab.executionMode),
+        tab.handoffBlocked ? 1 : 0,
+        tab.expectedTarget ?? null,
+        tab.connectionOrigin ?? null,
+        now,
+        project.get(id)?.project_id ?? null,
+        id
+      )
+      updateConversation.run(title, now, ensureConversation(db, id, title))
+    }
+  })
 }
 
 export function saveAgentLog(entry: StoredAgentLogEntry): void {
@@ -916,13 +930,8 @@ export function countAgentLogs(tabId: string): number {
 
 /** Revision metadata for edits anywhere in a conversation; no history text crosses IPC. */
 export function sessionKnowledgeRevision(tabId: string): string {
-  return JSON.stringify(
-    getDatabase()
-      .prepare(
-        'SELECT COUNT(*) AS count, MAX(log_id) AS lastId, MAX(updated_at) AS updatedAt, SUM(length(text)) AS characters FROM agent_logs WHERE conversation_id=?'
-      )
-      .get(conversationIdFor(getDatabase(), tabId))
-  )
+  const db = getDatabase()
+  return historyRevision(db, conversationIdFor(db, tabId))
 }
 
 export function deleteSessionHistory(tabId: string): boolean {
@@ -1245,6 +1254,7 @@ export function getDatabase(): DatabaseSync {
   database = new sqlite.DatabaseSync(getCrescentDatabasePath())
   try {
     initializeCrescentDatabase()
+    recoverCheckpoints(database)
   } catch (error) {
     database.close()
     database = undefined

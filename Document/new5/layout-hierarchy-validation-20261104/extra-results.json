@@ -1,0 +1,36 @@
+[
+  {
+    "name": "collapsed-light",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": []
+  },
+  {
+    "name": "fallback-light",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  },
+  {
+    "name": "collapsed-dark",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": []
+  },
+  {
+    "name": "fallback-dark",
+    "width": 560,
+    "scrollWidth": 560,
+    "dialogs": [
+      {
+        "width": 559,
+        "scrollWidth": 559
+      }
+    ]
+  }
+]

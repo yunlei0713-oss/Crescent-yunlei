@@ -1,0 +1,33 @@
+
+> moxun@1.0.12 test
+> node scripts/check-security-boundaries.cjs && node --test scripts/verify-managed-terminal.cjs
+
+Security boundary policy: 577 checks passed.
+Vitest suites are local-only. CI also runs the managed command protocol tests.
+✔ matches session/generation, command, nonce, exit status, and next prompt (11.186437ms)
+✔ rejection, invalid grammar, visibility change, and expiry send no bytes (4.767771ms)
+✔ start-marker timeout and user takeover keep ambiguous commands locked (2.749088ms)
+✔ soft timeout leaves the running command locked and can accept a later result (1.597503ms)
+✔ wait and query follow the original ID after soft timeout (1.92943ms)
+✔ aborting a wait does not alter the original command or send bytes (1.1592ms)
+✔ cancel is idempotent and requires matching completion and prompt evidence (1.035663ms)
+✔ an unavailable journal prevents dispatch (0.639321ms)
+✖ SSH probe requires an exact nonce, shell identity and a subsequent ready prompt (0.644513ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 260.766871
+
+✖ failing tests:
+
+test at scripts/verify-managed-terminal.cjs:278:1
+✖ SSH probe requires an exact nonce, shell identity and a subsequent ready prompt (0.644513ms)
+  TypeError: SshShellProbe is not a constructor
+      at TestContext.<anonymous> (/Users/xusong.yu/Desktop/moxun-test/scripts/verify-managed-terminal.cjs:280:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)

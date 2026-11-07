@@ -1,0 +1,741 @@
+
+$ git status --short --branch
+## test...origin/test
+ M .cursor/rules/architecture-first.mdc
+ M Document/ARCHITECTURE.md
+ M Document/DEVELOPMENT.md
+ M Document/EXTERNAL_TERMINALS.md
+ M Document/INDEX.md
+ M Document/RELEASE_OPERATIONS.md
+ M Document/SECURITY_MODEL.md
+ M Document/TESTING.md
+ M Document/UI_DESIGN_SYSTEM.md
+ M Document/new/brand/README.md
+ D Document/new/brand/archive/crescent-legacy/build/icon.icns
+ D Document/new/brand/archive/crescent-legacy/build/icon.ico
+ D Document/new/brand/archive/crescent-legacy/build/icon.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_128x128@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_16x16@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_256x256@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_32x32@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/MoXun.iconset/icon_512x512@2x.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-app.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-circuit.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-logo.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/crescent-mark.svg
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-1024.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/icon-64.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-1024.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-128.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-16.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-256.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-32.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-512.png
+ D Document/new/brand/archive/crescent-legacy/build/icons/preview/macos-icon-64.png
+ D Document/new/brand/archive/crescent-legacy/resources/icon.png
+ D Document/new/brand/archive/crescent-legacy/scripts/generate-icons.cjs
+ D Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-logo.png
+ D Document/new/brand/archive/crescent-legacy/src/renderer/src/assets/crescent-mark.png
+ D Document/new/brand/archive/crescent-legacy/website/docs/public/favicon.ico
+ D Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-logo.png
+ D Document/new/brand/archive/retired-compatibility-paths/src/renderer/src/assets/crescent-mark.png
+ M Document/new/brand/brand-guide.md
+ M electron-builder.yml
+ M electron.vite.config.ts
+ M package-lock.json
+ M package.json
+ M scripts/build-macos-local.cjs
+ M scripts/check-security-boundaries.cjs
+ M scripts/generate-icons.cjs
+ M scripts/patch-electron-dock-icon.cjs
+ M scripts/patch-macos-app-icon.cjs
+ M scripts/smoke-packaging.cjs
+A  scripts/verify-managed-ssh-electron.cjs
+A  scripts/verify-managed-ssh.cjs
+A  scripts/verify-managed-terminal.cjs
+ M src/main/agent/command-auditor.ts
+ M src/main/agent/generate-skill.ts
+ M src/main/agent/generate-sop.ts
+ M src/main/agent/guided-ops.ts
+ M src/main/agent/instruction-files.ts
+ M src/main/agent/ipc.ts
+ M src/main/agent/model-provider-config.ts
+ M src/main/agent/multimodal.ts
+ M src/main/agent/pi-host.ts
+ M src/main/agent/pi-knowledge.ts
+ M src/main/agent/pi-local-files.ts
+ M src/main/agent/pi-model-runtime.ts
+ M src/main/agent/pi-terminal-bash.ts
+ M src/main/agent/runtime/pi/runtime.ts
+ M src/main/agent/runtime/types.ts
+ M src/main/agent/skills.ts
+ M src/main/code-intelligence/parser.ts
+ M src/main/code-intelligence/service.ts
+ M src/main/crescent-paths.ts
+ M src/main/crescent-sqlite.ts
+ M src/main/crescent-store.ts
+ M src/main/index.ts
+ M src/main/ipc-security.ts
+ M src/main/knowledge-ipc.ts
+ M src/main/local-document-errors.ts
+ M src/main/local-document-ipc.ts
+ M src/main/local-document-reader.ts
+ M src/main/logging.ts
+ M src/main/memory/auto-learning.ts
+ M src/main/memory/extraction.ts
+ M src/main/memory/service.ts
+ M src/main/menu.ts
+ M src/main/projects.ts
+ M src/main/security/agent-capability-policy.ts
+ M src/main/security/security-audit.ts
+ M src/main/sqlite/conversations.ts
+ M src/main/storage/ipc.ts
+ M src/main/terminal/execution-state.ts
+ M src/main/terminal/ipc.ts
+ M src/main/terminal/observer/evidence-notifications.ts
+ M src/main/terminal/observer/observation-grants.ts
+ M src/main/terminal/observer/registry.ts
+ M src/main/terminal/observer/terminal-observer.ts
+ M src/main/terminal/session/pty-session.ts
+ M src/main/terminal/session/types.ts
+ M src/main/terminal/terminal-text-stream.ts
+ M src/preload/modules/agent.ts
+ M src/preload/modules/documents.ts
+ M src/preload/modules/knowledge.ts
+ M src/preload/modules/projects.ts
+ M src/preload/modules/terminal.ts
+ M src/renderer/src/App.tsx
+ M src/renderer/src/assets/chat-workspace.css
+ M src/renderer/src/assets/main.css
+ M src/renderer/src/components/AgentLogList.tsx
+ M src/renderer/src/components/AgentLogMessage.tsx
+ M src/renderer/src/components/AgentRunTimeline.tsx
+ M src/renderer/src/components/AppModals.tsx
+ M src/renderer/src/components/AppSidebar.tsx
+ M src/renderer/src/components/ChatWorkspace.tsx
+ M src/renderer/src/components/CodeIntelligenceSettings.tsx
+ M src/renderer/src/components/ComposerAttachments.tsx
+ M src/renderer/src/components/ComposerEditor.tsx
+ M src/renderer/src/components/ConnectionList.tsx
+ M src/renderer/src/components/ConversationNavigator.tsx
+ M src/renderer/src/components/ExternalTerminalControls.tsx
+ M src/renderer/src/components/GuidedOpsHistory.tsx
+ M src/renderer/src/components/GuidedOpsPanel.tsx
+ M src/renderer/src/components/LocalDocumentsSheet.tsx
+ M src/renderer/src/components/LocalPdfPreview.tsx
+ M src/renderer/src/components/MemoryCenter.tsx
+ M src/renderer/src/components/ProjectSidebar.tsx
+ M src/renderer/src/components/SettingsSheet.tsx
+ M src/renderer/src/components/SharedTerminalActions.tsx
+ M src/renderer/src/components/SkillManager.tsx
+ M src/renderer/src/components/WikiSheet.tsx
+ M src/renderer/src/components/timeline/RunDiagnostics.tsx
+ M src/renderer/src/components/ui/sheet.tsx
+ M src/renderer/src/hooks/useAgentController.ts
+ M src/renderer/src/hooks/useAgentRuns.ts
+ M src/renderer/src/hooks/useMemoryCenter.ts
+ M src/renderer/src/hooks/useSkillsController.ts
+ M src/renderer/src/hooks/useTerminalObservation.ts
+ M src/renderer/src/i18n/en.ts
+ M src/renderer/src/i18n/zh-CN.ts
+ M src/renderer/src/lib/agent-message-refs.ts
+ M src/renderer/src/lib/app-controller-support.ts
+ M src/renderer/src/lib/slash-commands.ts
+ M src/shared/agent-prompt-discipline.ts
+ M src/shared/agent-run-prompt.ts
+ M src/shared/agent-tool-catalog.ts
+ M src/shared/agent-types.ts
+ M src/shared/knowledge.ts
+ M src/shared/local-documents.ts
+ M src/shared/projects.ts
+ M src/shared/terminal-observation-types.ts
+?? Document/new10/
+?? Document/new4/MOXUN_BRAND_AND_TERMINAL_ACTIONS_FIX_REPORT_20261104.md
+?? Document/new4/issue-actions-validation-20261104/
+?? Document/new5/
+?? Document/new6/
+?? Document/new7/
+?? Document/new8/
+?? Document/new9/
+?? resources/licenses/
+?? scripts/smoke-macos-app.cjs
+?? src/main/agent/compaction-checkpoint.ts
+?? src/main/agent/context-assembly.ts
+?? src/main/agent/pi-managed-terminal-tool.ts
+?? src/main/agent/turn-queue-ipc.ts
+?? src/main/agent/turn-queue.ts
+?? src/main/code-intelligence/language.ts
+?? src/main/code-intelligence/parser-protocol.ts
+?? src/main/code-intelligence/utility-parser.ts
+?? src/main/code-intelligence/worker.ts
+?? src/main/document-cursor.ts
+?? src/main/local-docx-reader.ts
+?? src/main/local-pdf-reader.ts
+?? src/main/local-text-reader.ts
+?? src/main/macos-application-icon.ts
+?? src/main/memory/context-jobs.ts
+?? src/main/memory/evidence.ts
+?? src/main/memory/schema.ts
+?? src/main/moxun-data-migration.ts
+?? src/main/sqlite/context-checkpoints.ts
+?? src/main/sqlite/history-search.ts
+?? src/main/sqlite/managed-command-audit.ts
+?? src/main/sqlite/project-association.ts
+?? src/main/terminal/managed/
+?? src/main/terminal/observer/command-observation.ts
+?? src/preload/terminal.ts
+?? src/renderer/src/components/AgentTurnQueuePanel.tsx
+?? src/renderer/src/components/ConversationRecords.tsx
+?? src/renderer/src/components/MemoryEvidenceList.tsx
+?? src/renderer/src/components/TerminalSessionMenu.tsx
+?? src/renderer/src/lib/guided-ops-labels.ts
+?? src/renderer/src/terminal/
+?? src/renderer/terminal.html
+?? src/shared/agent-turn-queue.ts
+?? src/shared/managed-terminal.ts
+exit=0
+
+$ git diff --stat
+ .cursor/rules/architecture-first.mdc               |   2 +-
+ Document/ARCHITECTURE.md                           |  14 +-
+ Document/DEVELOPMENT.md                            |  18 +-
+ Document/EXTERNAL_TERMINALS.md                     |   8 +-
+ Document/INDEX.md                                  |   3 +
+ Document/RELEASE_OPERATIONS.md                     |  10 +
+ Document/SECURITY_MODEL.md                         |  16 +-
+ Document/TESTING.md                                |  96 ++--
+ Document/UI_DESIGN_SYSTEM.md                       |  13 +-
+ Document/new/brand/README.md                       |   2 +-
+ .../brand/archive/crescent-legacy/build/icon.icns  | Bin 102683 -> 0 bytes
+ .../brand/archive/crescent-legacy/build/icon.ico   | Bin 40599 -> 0 bytes
+ .../brand/archive/crescent-legacy/build/icon.png   | Bin 200525 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_128x128.png     | Bin 20574 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_128x128@2x.png  | Bin 65605 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_16x16.png       | Bin 788 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_16x16@2x.png    | Bin 2272 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_256x256.png     | Bin 65605 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_256x256@2x.png  | Bin 184998 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_32x32.png       | Bin 2272 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_32x32@2x.png    | Bin 6707 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_512x512.png     | Bin 184998 -> 0 bytes
+ .../build/icons/MoXun.iconset/icon_512x512@2x.png  | Bin 678608 -> 0 bytes
+ .../crescent-legacy/build/icons/crescent-app.svg   |  58 ---
+ .../build/icons/crescent-circuit.svg               |  51 --
+ .../crescent-legacy/build/icons/crescent-logo.png  | Bin 354080 -> 0 bytes
+ .../crescent-legacy/build/icons/crescent-mark.svg  |  23 -
+ .../build/icons/preview/icon-1024.png              | Bin 220518 -> 0 bytes
+ .../build/icons/preview/icon-128.png               | Bin 8156 -> 0 bytes
+ .../build/icons/preview/icon-16.png                | Bin 533 -> 0 bytes
+ .../build/icons/preview/icon-256.png               | Bin 22280 -> 0 bytes
+ .../build/icons/preview/icon-32.png                | Bin 1223 -> 0 bytes
+ .../build/icons/preview/icon-512.png               | Bin 69685 -> 0 bytes
+ .../build/icons/preview/icon-64.png                | Bin 2998 -> 0 bytes
+ .../build/icons/preview/macos-icon-1024.png        | Bin 542127 -> 0 bytes
+ .../build/icons/preview/macos-icon-128.png         | Bin 16702 -> 0 bytes
+ .../build/icons/preview/macos-icon-16.png          | Bin 588 -> 0 bytes
+ .../build/icons/preview/macos-icon-256.png         | Bin 53639 -> 0 bytes
+ .../build/icons/preview/macos-icon-32.png          | Bin 1861 -> 0 bytes
+ .../build/icons/preview/macos-icon-512.png         | Bin 174287 -> 0 bytes
+ .../build/icons/preview/macos-icon-64.png          | Bin 5662 -> 0 bytes
+ .../archive/crescent-legacy/resources/icon.png     | Bin 200525 -> 0 bytes
+ .../crescent-legacy/scripts/generate-icons.cjs     | 225 ---------
+ .../src/renderer/src/assets/crescent-logo.png      | Bin 81834 -> 0 bytes
+ .../src/renderer/src/assets/crescent-mark.png      | Bin 25383 -> 0 bytes
+ .../website/docs/public/favicon.ico                | Bin 40599 -> 0 bytes
+ .../src/renderer/src/assets/crescent-logo.png      | Bin 184998 -> 0 bytes
+ .../src/renderer/src/assets/crescent-mark.png      | Bin 20574 -> 0 bytes
+ Document/new/brand/brand-guide.md                  |   4 +-
+ electron-builder.yml                               |   4 +-
+ electron.vite.config.ts                            |  64 +--
+ package-lock.json                                  | 129 ++++-
+ package.json                                       |  17 +-
+ scripts/build-macos-local.cjs                      |  23 +-
+ scripts/check-security-boundaries.cjs              |  42 +-
+ scripts/generate-icons.cjs                         |   8 +-
+ scripts/patch-electron-dock-icon.cjs               |   2 +-
+ scripts/patch-macos-app-icon.cjs                   |  21 +-
+ scripts/smoke-packaging.cjs                        | 145 ++----
+ src/main/agent/command-auditor.ts                  |   2 +-
+ src/main/agent/generate-skill.ts                   |   2 +-
+ src/main/agent/generate-sop.ts                     |   2 +-
+ src/main/agent/guided-ops.ts                       |   6 +-
+ src/main/agent/instruction-files.ts                |  29 +-
+ src/main/agent/ipc.ts                              | 339 ++++++++-----
+ src/main/agent/model-provider-config.ts            |   2 +-
+ src/main/agent/multimodal.ts                       | 128 ++---
+ src/main/agent/pi-host.ts                          | 357 ++++++++++----
+ src/main/agent/pi-knowledge.ts                     |  98 +++-
+ src/main/agent/pi-local-files.ts                   |  45 +-
+ src/main/agent/pi-model-runtime.ts                 |   3 +-
+ src/main/agent/pi-terminal-bash.ts                 |   2 +
+ src/main/agent/runtime/pi/runtime.ts               |   4 +-
+ src/main/agent/runtime/types.ts                    |  15 +-
+ src/main/agent/skills.ts                           |  29 +-
+ src/main/code-intelligence/parser.ts               |  78 +--
+ src/main/code-intelligence/service.ts              | 467 +++++++++++++-----
+ src/main/crescent-paths.ts                         |  15 +-
+ src/main/crescent-sqlite.ts                        |  82 +--
+ src/main/crescent-store.ts                         |   7 +-
+ src/main/index.ts                                  |  62 ++-
+ src/main/ipc-security.ts                           |  35 +-
+ src/main/knowledge-ipc.ts                          |  40 +-
+ src/main/local-document-errors.ts                  |   4 +-
+ src/main/local-document-ipc.ts                     |  85 +++-
+ src/main/local-document-reader.ts                  | 255 ++++++----
+ src/main/logging.ts                                |   8 +-
+ src/main/memory/auto-learning.ts                   |   3 +-
+ src/main/memory/extraction.ts                      | 326 ++++++++----
+ src/main/memory/service.ts                         | 549 +++++++++++++++++----
+ src/main/menu.ts                                   |  12 +-
+ src/main/projects.ts                               | 305 ++++++++++--
+ src/main/security/agent-capability-policy.ts       |   7 +
+ src/main/security/security-audit.ts                |   1 +
+ src/main/sqlite/conversations.ts                   |   7 +
+ src/main/storage/ipc.ts                            |  97 ++--
+ src/main/terminal/execution-state.ts               |  16 +-
+ src/main/terminal/ipc.ts                           | 134 +++--
+ .../terminal/observer/evidence-notifications.ts    |  78 ++-
+ src/main/terminal/observer/observation-grants.ts   |  17 +-
+ src/main/terminal/observer/registry.ts             |  32 +-
+ src/main/terminal/observer/terminal-observer.ts    | 248 ++++++++--
+ src/main/terminal/session/pty-session.ts           |   3 +
+ src/main/terminal/session/types.ts                 |   3 +
+ src/main/terminal/terminal-text-stream.ts          |  20 +-
+ src/preload/modules/agent.ts                       |  21 +
+ src/preload/modules/documents.ts                   |  19 +-
+ src/preload/modules/knowledge.ts                   |  10 +
+ src/preload/modules/projects.ts                    |  10 +-
+ src/preload/modules/terminal.ts                    |   4 +
+ src/renderer/src/App.tsx                           | 270 ++++++----
+ src/renderer/src/assets/chat-workspace.css         |   4 +
+ src/renderer/src/assets/main.css                   |   4 +-
+ src/renderer/src/components/AgentLogList.tsx       |   9 +-
+ src/renderer/src/components/AgentLogMessage.tsx    |   4 +-
+ src/renderer/src/components/AgentRunTimeline.tsx   |   4 +-
+ src/renderer/src/components/AppModals.tsx          |  18 +-
+ src/renderer/src/components/AppSidebar.tsx         |  45 +-
+ src/renderer/src/components/ChatWorkspace.tsx      | 107 ++--
+ .../src/components/CodeIntelligenceSettings.tsx    |  74 ++-
+ .../src/components/ComposerAttachments.tsx         |  18 +-
+ src/renderer/src/components/ComposerEditor.tsx     |  26 +-
+ src/renderer/src/components/ConnectionList.tsx     |   2 +-
+ .../src/components/ConversationNavigator.tsx       |  23 +-
+ .../src/components/ExternalTerminalControls.tsx    |  23 +-
+ src/renderer/src/components/GuidedOpsHistory.tsx   |   3 +-
+ src/renderer/src/components/GuidedOpsPanel.tsx     | 162 +++---
+ .../src/components/LocalDocumentsSheet.tsx         |  33 +-
+ src/renderer/src/components/LocalPdfPreview.tsx    |  88 +++-
+ src/renderer/src/components/MemoryCenter.tsx       | 234 +++++++--
+ src/renderer/src/components/ProjectSidebar.tsx     | 186 +++++--
+ src/renderer/src/components/SettingsSheet.tsx      |  36 +-
+ .../src/components/SharedTerminalActions.tsx       |  23 +-
+ src/renderer/src/components/SkillManager.tsx       |  21 +-
+ src/renderer/src/components/WikiSheet.tsx          |   4 +-
+ .../src/components/timeline/RunDiagnostics.tsx     |  45 +-
+ src/renderer/src/components/ui/sheet.tsx           |   6 +-
+ src/renderer/src/hooks/useAgentController.ts       | 348 ++++++++++---
+ src/renderer/src/hooks/useAgentRuns.ts             |  12 +-
+ src/renderer/src/hooks/useMemoryCenter.ts          |  22 +-
+ src/renderer/src/hooks/useSkillsController.ts      |   2 +-
+ src/renderer/src/hooks/useTerminalObservation.ts   |  19 +-
+ src/renderer/src/i18n/en.ts                        |  21 +-
+ src/renderer/src/i18n/zh-CN.ts                     |  21 +-
+ src/renderer/src/lib/agent-message-refs.ts         |   8 +-
+ src/renderer/src/lib/app-controller-support.ts     |  24 +-
+ src/renderer/src/lib/slash-commands.ts             |   2 +-
+ src/shared/agent-prompt-discipline.ts              |   9 +-
+ src/shared/agent-run-prompt.ts                     |   4 +-
+ src/shared/agent-tool-catalog.ts                   |  31 +-
+ src/shared/agent-types.ts                          |   9 +-
+ src/shared/knowledge.ts                            |  45 +-
+ src/shared/local-documents.ts                      |  47 +-
+ src/shared/projects.ts                             |  15 +
+ src/shared/terminal-observation-types.ts           |  19 +-
+ 155 files changed, 4988 insertions(+), 2263 deletions(-)
+exit=0
+
+$ git diff --check
+exit=0
+
+$ git diff --cached --stat
+ scripts/verify-managed-ssh-electron.cjs | 297 ++++++++++++++++++++++
+ scripts/verify-managed-ssh.cjs          | 229 +++++++++++++++++
+ scripts/verify-managed-terminal.cjs     | 436 ++++++++++++++++++++++++++++++++
+ 3 files changed, 962 insertions(+)
+exit=0
+
+$ git diff --cached --check
+exit=0
+
+$ git ls-files --stage scripts/verify-managed-terminal.cjs scripts/verify-managed-ssh.cjs scripts/verify-managed-ssh-electron.cjs
+100644 3be65b295dc1350081bf831a734a7d0fc6b678a9 0	scripts/verify-managed-ssh-electron.cjs
+100644 8b80056dee88c45197423cf30958427465899732 0	scripts/verify-managed-ssh.cjs
+100644 3461bb5974ac121b0380d5e71a782952ae76dee3 0	scripts/verify-managed-terminal.cjs
+exit=0
+
+$ git ls-files --others --exclude-standard
+Document/new10/BASELINE_REVIEW_20261107.md
+Document/new10/CODEX_EXECUTION_PROMPT.md
+Document/new10/CODEX_EXECUTION_PROMPT_V2.md
+Document/new10/MOXUN_FOUR_PHASE_REVIEW_REPAIR_PLAN_20261107.md
+Document/new10/MOXUN_POST_REVIEW_REMEDIATION_PLAN_20261107.md
+Document/new10/PHASE_A_SSH_AGENT_AND_COMMAND_LIFECYCLE_REPORT.md
+Document/new10/README.md
+Document/new10/evidence-20261107/baseline-audit-all.json
+Document/new10/evidence-20261107/baseline-audit-production.json
+Document/new10/evidence-20261107/baseline-ci.txt
+Document/new10/evidence-20261107/baseline-desktop.txt
+Document/new10/evidence-20261107/baseline-hashes.json
+Document/new10/evidence-20261107/baseline-index.json
+Document/new10/evidence-20261107/baseline-performance.txt
+Document/new10/evidence-20261107/baseline-pty.json
+Document/new10/evidence-20261107/baseline-unit.txt
+Document/new10/evidence-20261107/desktop-exclude-probe.json
+Document/new10/evidence-20261107/desktop-test-list.json
+Document/new10/evidence-20261107/environment.txt
+Document/new10/evidence-20261107/git-baseline.txt
+Document/new10/evidence-20261107/p0-ci.txt
+Document/new10/evidence-20261107/p0-desktop-regression.txt
+Document/new10/evidence-20261107/p0-desktop.txt
+Document/new10/evidence-20261107/p0-git-final.txt
+Document/new10/evidence-20261107/p0-index.json
+Document/new10/evidence-20261107/p0-original-paths-changed.txt
+Document/new10/evidence-20261107/p0-pi.json
+Document/new10/evidence-20261107/p0-protocol.txt
+Document/new10/evidence-20261107/p0-pty.json
+Document/new10/evidence-20261107/p0-red.txt
+Document/new10/evidence-20261107/p0-ssh-electron-120s-fixture-failure.txt
+Document/new10/evidence-20261107/p0-ssh-electron-120s.txt
+Document/new10/evidence-20261107/p0-ssh-electron-30s-concurrent-failure.txt
+Document/new10/evidence-20261107/p0-ssh-electron-30s.txt
+Document/new10/evidence-20261107/p0-ssh-electron-6s-concurrent-failure.txt
+Document/new10/evidence-20261107/p0-ssh-electron-6s.txt
+Document/new10/evidence-20261107/p0-ssh-electron.txt
+Document/new10/evidence-20261107/p0-ssh-fixture.txt
+Document/new10/evidence-20261107/p0-ssh-red.txt
+Document/new10/evidence-20261107/p0-typecheck.txt
+Document/new10/evidence-20261107/p0-unit.txt
+Document/new4/MOXUN_BRAND_AND_TERMINAL_ACTIONS_FIX_REPORT_20261104.md
+Document/new4/issue-actions-validation-20261104/menu-en-false.png
+Document/new4/issue-actions-validation-20261104/menu-en-true.png
+Document/new4/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new4/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-GP4UvJ/launch.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-GP4UvJ/running.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-j7c1yo/launch.png
+Document/new4/issue-actions-validation-20261104/native/moxun-dock-acceptance-j7c1yo/running.png
+Document/new4/issue-actions-validation-20261104/removed-legacy-assets.json
+Document/new4/issue-actions-validation-20261104/results.json
+Document/new4/issue-actions-validation-20261104/source-icons-audit.json
+Document/new5/CODEX_UI_UX_OPTIMIZATION_PROMPT.md
+Document/new5/MOXUN_LAYOUT_HIERARCHY_REPORT_20261104.md
+Document/new5/MOXUN_UI_UX_OPTIMIZATION_REPORT_20261104.md
+Document/new5/layout-hierarchy-validation-20261104/acceptance-summary.json
+Document/new5/layout-hierarchy-validation-20261104/after-audit.json
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-chat-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-details-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-mcp-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-settings-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-skills-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-tools-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/after-wiki-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/baseline-status.txt
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-false-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/chat-true-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/failure.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-false-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-1440.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-560.png
+Document/new5/layout-hierarchy-validation-20261104/component/records-true-800.png
+Document/new5/layout-hierarchy-validation-20261104/component/results.json
+Document/new5/layout-hierarchy-validation-20261104/electron-audit-runner.cjs.txt
+Document/new5/layout-hierarchy-validation-20261104/electron-extra-runner.cjs.txt
+Document/new5/layout-hierarchy-validation-20261104/extra-collapsed-dark.png
+Document/new5/layout-hierarchy-validation-20261104/extra-collapsed-light.png
+Document/new5/layout-hierarchy-validation-20261104/extra-failure.png
+Document/new5/layout-hierarchy-validation-20261104/extra-fallback-dark.png
+Document/new5/layout-hierarchy-validation-20261104/extra-fallback-light.png
+Document/new5/layout-hierarchy-validation-20261104/extra-results.json
+Document/new5/layout-hierarchy-validation-20261104/final-status.txt
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/compact-conversation.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/failure.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-1440.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-560.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-800.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/results.json
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-dark.png
+Document/new5/layout-hierarchy-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-light.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/failure.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-en-false.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-en-true.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new5/layout-hierarchy-validation-20261104/regression/issue-actions-validation-20261104/results.json
+Document/new5/layout-hierarchy-validation-20261104/review-dark-1440.png
+Document/new5/layout-hierarchy-validation-20261104/review-dark-560.png
+Document/new5/layout-hierarchy-validation-20261104/review-dark-800.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-1440.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-560.png
+Document/new5/layout-hierarchy-validation-20261104/review-light-800.png
+Document/new5/layout-hierarchy-validation-20261104/skill-search.txt
+Document/new5/ui-ux-validation-20261104/README.md
+Document/new5/ui-ux-validation-20261104/acceptance-summary.json
+Document/new5/ui-ux-validation-20261104/after-audit.json
+Document/new5/ui-ux-validation-20261104/after-chat-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-chat-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-chat-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-560.png
+Document/new5/ui-ux-validation-20261104/after-chat-light-800.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-details-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-details-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-details-light-560.png
+Document/new5/ui-ux-validation-20261104/after-details-light-800.png
+Document/new5/ui-ux-validation-20261104/after-failure.png
+Document/new5/ui-ux-validation-20261104/after-first-batch-audit.json
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-mcp-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-560.png
+Document/new5/ui-ux-validation-20261104/after-mcp-light-800.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-settings-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-560.png
+Document/new5/ui-ux-validation-20261104/after-settings-light-800.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-skills-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-560.png
+Document/new5/ui-ux-validation-20261104/after-skills-light-800.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-tools-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-560.png
+Document/new5/ui-ux-validation-20261104/after-tools-light-800.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-1440.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-560.png
+Document/new5/ui-ux-validation-20261104/after-wiki-dark-800.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-1440.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-560.png
+Document/new5/ui-ux-validation-20261104/after-wiki-light-800.png
+Document/new5/ui-ux-validation-20261104/baseline-status.txt
+Document/new5/ui-ux-validation-20261104/before-audit.json
+Document/new5/ui-ux-validation-20261104/before-chat-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-chat-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-chat-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-560.png
+Document/new5/ui-ux-validation-20261104/before-chat-light-800.png
+Document/new5/ui-ux-validation-20261104/before-contact-dark.json
+Document/new5/ui-ux-validation-20261104/before-contact-dark.png
+Document/new5/ui-ux-validation-20261104/before-contact-light.json
+Document/new5/ui-ux-validation-20261104/before-contact-light.png
+Document/new5/ui-ux-validation-20261104/before-failure.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-mcp-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-560.png
+Document/new5/ui-ux-validation-20261104/before-mcp-light-800.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-settings-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-560.png
+Document/new5/ui-ux-validation-20261104/before-settings-light-800.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-skills-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-560.png
+Document/new5/ui-ux-validation-20261104/before-skills-light-800.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-1440.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-560.png
+Document/new5/ui-ux-validation-20261104/before-wiki-dark-800.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-1440.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-560.png
+Document/new5/ui-ux-validation-20261104/before-wiki-light-800.png
+Document/new5/ui-ux-validation-20261104/electron-audit-runner.cjs.txt
+Document/new5/ui-ux-validation-20261104/electron-extra-runner.cjs.txt
+Document/new5/ui-ux-validation-20261104/extra-en-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-en-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-en-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-en-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-en-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-initial/extra-zh-CN-light-skills.png
+Document/new5/ui-ux-validation-20261104/extra-results.json
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-documents.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-memory.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-dark-skills.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-documents.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-memory.png
+Document/new5/ui-ux-validation-20261104/extra-zh-CN-light-skills.png
+Document/new5/ui-ux-validation-20261104/final-status.txt
+Document/new5/ui-ux-validation-20261104/implementation.diff
+Document/new5/ui-ux-validation-20261104/overflow-before-fix.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/compact-conversation.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/inline-wrap-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-1440.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-560.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/layout-800.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/message-hover-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/navigator-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/results.json
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-dark.png
+Document/new5/ui-ux-validation-20261104/regression/chat-detail-polish-validation-20261103/wave-ink-wash-light.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-en-false.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-en-true.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-false.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/menu-zh-CN-true.png
+Document/new5/ui-ux-validation-20261104/regression/issue-actions-validation-20261104/results.json
+Document/new5/ui-ux-validation-20261104/review-dark-1440.json
+Document/new5/ui-ux-validation-20261104/review-dark-1440.png
+Document/new5/ui-ux-validation-20261104/review-dark-560.json
+Document/new5/ui-ux-validation-20261104/review-dark-560.png
+Document/new5/ui-ux-validation-20261104/review-dark-800.json
+Document/new5/ui-ux-validation-20261104/review-dark-800.png
+Document/new5/ui-ux-validation-20261104/review-light-1440.json
+Document/new5/ui-ux-validation-20261104/review-light-1440.png
+Document/new5/ui-ux-validation-20261104/review-light-560.json
+Document/new5/ui-ux-validation-20261104/review-light-560.png
+Document/new5/ui-ux-validation-20261104/review-light-800.json
+Document/new5/ui-ux-validation-20261104/review-light-800.png
+Document/new5/ui-ux-validation-20261104/skill-searches.txt
+Document/new5/ui-ux-validation-20261104/token-contrast.json
+Document/new6/MOXUN_CONTEXT_COMPACTION_AND_MEMORY_ENHANCEMENT_PLAN_20261105.md
+Document/new6/MOXUN_CONTEXT_COMPACTION_AND_MEMORY_IMPLEMENTATION_REPORT_20261106.md
+Document/new6/MOXUN_CONTEXT_P0_AUDIT_20261105.md
+Document/new7/CODEX_HANDOFF_PROMPT.md
+Document/new7/MOXUN_NEW7_IMPLEMENTATION_REPORT_20261107.md
+Document/new7/MOXUN_NEW7_P0_AUDIT_20261107.md
+Document/new7/MOXUN_TERMINAL_TURN_QUEUE_PROJECT_LINK_AND_LARGE_FILE_READING_PLAN_20261106.md
+Document/new8/MOXUN_PROJECT_REVIEW_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_AGENT_EXECUTION_AND_PERFORMANCE_PLAN_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE1_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE2_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE3_REPORT_20261107.md
+Document/new9/MOXUN_RELIABLE_TERMINAL_PHASE4_REPORT_20261107.md
+resources/licenses/xterm/addon-fit-and-unicode11.txt
+resources/licenses/xterm/addon-search.txt
+resources/licenses/xterm/xterm.txt
+scripts/smoke-macos-app.cjs
+src/main/agent/compaction-checkpoint.ts
+src/main/agent/context-assembly.ts
+src/main/agent/pi-managed-terminal-tool.ts
+src/main/agent/turn-queue-ipc.ts
+src/main/agent/turn-queue.ts
+src/main/code-intelligence/language.ts
+src/main/code-intelligence/parser-protocol.ts
+src/main/code-intelligence/utility-parser.ts
+src/main/code-intelligence/worker.ts
+src/main/document-cursor.ts
+src/main/local-docx-reader.ts
+src/main/local-pdf-reader.ts
+src/main/local-text-reader.ts
+src/main/macos-application-icon.ts
+src/main/memory/context-jobs.ts
+src/main/memory/evidence.ts
+src/main/memory/schema.ts
+src/main/moxun-data-migration.ts
+src/main/sqlite/context-checkpoints.ts
+src/main/sqlite/history-search.ts
+src/main/sqlite/managed-command-audit.ts
+src/main/sqlite/project-association.ts
+src/main/terminal/managed/command-executor.ts
+src/main/terminal/managed/ipc.ts
+src/main/terminal/managed/output-buffer.ts
+src/main/terminal/managed/session-manager.ts
+src/main/terminal/managed/shell-adapter.ts
+src/main/terminal/managed/window.ts
+src/main/terminal/observer/command-observation.ts
+src/preload/terminal.ts
+src/renderer/src/components/AgentTurnQueuePanel.tsx
+src/renderer/src/components/ConversationRecords.tsx
+src/renderer/src/components/MemoryEvidenceList.tsx
+src/renderer/src/components/TerminalSessionMenu.tsx
+src/renderer/src/lib/guided-ops-labels.ts
+src/renderer/src/terminal/main.ts
+src/renderer/src/terminal/terminal.css
+src/renderer/terminal.html
+src/shared/agent-turn-queue.ts
+src/shared/managed-terminal.ts
+exit=0

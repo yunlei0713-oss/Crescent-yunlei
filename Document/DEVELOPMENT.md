@@ -12,12 +12,18 @@
 
 ## macOS 图标与开发启动
 
-- 正式母版只用 `Document/new/brand/source/moxun-mountain-river-master.png`。`npm run icons` 生成 UI PNG、网站 ICO 及 Mac ICNS/iconset；旧月牙素材只保留在 `Document/new/brand/archive/`，不得从归档恢复到构建目录。
+- 正式母版只用 `Document/new/brand/source/moxun-mountain-river-master.png`。`npm run icons` 生成 UI PNG、网站 ICO 及 Mac ICNS/iconset；旧 Crescent 月牙图标、旧兼容资源和生成脚本已移除，生成过程不再建立旧图标备份。
 - macOS ICNS 山水图铺满方形画布，不额外添加透明安全边、灰色底板、圆角或阴影。macOS 26 会自动将图标适配到标准 Dock 外框；为直角图额外留边会触发系统二次缩小，形成“灰色底板里的小图”。以系统实际渲染而非源 PNG 尺寸验收；更早的 macOS 版本仍需独立人工验收，不声明自动外框行为相同。
 - `npm start` 是已构建产物的预览，不会编译源码；源码改动先运行 `npm run build`，或直接使用 `npm run dev`。
-- `prestart`、`predev` 和 `postinstall` 在 Electron 启动前生成并写入原生开发 bundle 图标。原生名称为“墨巡”，开发 bundle id 为 `com.crescent.moxun.dev`，图标文件名包含内容摘要，避免复用旧 Crescent 图标缓存。Main 不再运行时切换 Dock PNG，启动、运行与最小化徽标统一使用 bundle ICNS。
-- 正式包继续使用 `com.crescent.app`，原数据目录不变。`build:mac`、`build:mac:local` 和 `build:unpack` 都先生成图标；`afterPack` 在签名前将原生 `CFBundleIconFile` 改为带内容摘要的山水 ICNS，同时替换原引用文件，避免最小化徽标沿用旧文件名缓存。历史 `dist/` 安装包不会被自动覆盖或删除，必须重新打包才有新图标。
+- `prestart`、`predev` 和 `postinstall` 在 Electron 启动前生成并写入原生开发 bundle 图标。原生名称为“墨巡”，开发 bundle id 为 `com.moxun.dev`，图标文件名包含内容摘要，避免复用旧 Crescent 图标缓存。Main 不再用未裁切的 PNG 覆盖运行时 Dock 图标；启动、运行和窗口徽标统一使用原生 bundle ICNS 及 macOS 的外框。正式应用启动时仅刷新当前运行 bundle 的 Launch Services 注册，确保原生窗口图标解析指向本次墨巡安装；独立标识使其与旧应用隔离。
+- 正式包使用独立的 `com.moxun.app`，开发版使用 `com.moxun.dev`；首次启动将原数据搬至墨巡目录。`build:mac`、`build:mac:local` 和 `build:unpack` 都先生成图标；`afterPack` 在签名前将原生 `CFBundleIconFile` 改为带内容摘要的山水 ICNS，同时替换默认、历史生成别名和原引用文件，并清理旧 asset-catalog 图标名，避免窗口徽标沿用旧文件名缓存。历史 `dist/` 安装包不会被自动覆盖或删除，必须重新打包才有新图标。
 - 已运行的旧进程需要完全退出后重启。若 Dock 固定的是旧安装包，应移除该旧快捷入口、重新固定新应用；不要通过清空系统缓存、重启 Dock 或删除用户数据代替资源修复。
+
+## 数据目录搬迁
+
+- 默认业务数据为 `~/.moxun`，Chromium 和应用界面配置为 `~/Library/Application Support/MoXun`。首次启动、尚无新数据时，Main 在打开数据库和浏览器配置前使用同卷目录重命名搬迁旧数据；已有配置、数据库、用户文件和密文保持原字节。
+- 安装前完全退出旧版。检测到旧数据库或浏览器存储仍被使用时，停止搬迁，等待退出后重试。已存在的非空目标目录不覆盖，不自动合并。显式指定 `MOXUN_DATA_DIR` 或 `MOXUN_USER_DATA_DIR` 时不搬迁对应的默认目录。
+- 旧目录搬走后，属于该目录的工作区、Wiki、Skill 和项目路径会解析到新目录。新 bundle id 的 macOS 自动化授权按系统提示重新授予。
 
 ## 标准打包入口
 
@@ -37,7 +43,7 @@ dist/local-macos/x64/moxun-<version>-x64-mac.zip
 
 `build:unpack` 固定为 Mac Intel 应用目录构建，并先运行完整本地门禁。`npm run build:mac` 是需要预先配置签名身份与公证凭据的打包入口，固定 `--x64 --publish never`。它也先运行 `npm run verify:local`，通过完整门禁后才打包。签名和公证需要联网且需另行安排；不会因打包而自动发布。
 
-本地入口剔除继承的 Apple/签名凭据、禁用 signing / notarization / hardened runtime，并显式使用 `--publish never`。本地包供开发验证，不能据此宣称发行签名、公证或 Gatekeeper 验收成功。可用 `CRESCENT_LOCAL_BUILD_DIR` 指定 `dist/` 内的独立输出根目录，其下只有 `x64/`。正式 appId `com.crescent.app`、内部 npm 包标识和用户数据目录不因安装包更名而改变。
+本地入口剔除继承的 Apple/签名凭据、禁用 signing / notarization / hardened runtime，并显式使用 `--publish never`。本地包供开发验证，不能据此宣称发行签名、公证或 Gatekeeper 验收成功。可用 `CRESCENT_LOCAL_BUILD_DIR` 指定 `dist/` 内的独立输出根目录，其下只有 `x64/`。正式 appId 固定为 `com.moxun.app`，Helper 子进程均使用其子标识；用户数据目录使用墨巡命名，不参与应用身份解析。
 
 ## Intel 原生依赖约束
 
@@ -57,13 +63,13 @@ node-pty 和 Pi 必须保留 x64 native prebuilds；依赖自带的其他平台 
 CRESCENT_OFFLINE_BUILD=1 npm run build:mac:local
 ```
 
-离线入口检查 x64 Electron、DMG 工具和 native 缓存；缺少资源直接失败，不再要求 arm64 缓存。esbuild tarball 以 lockfile SRI 校验，离线时不回退网络下载。使用已经安装好的依赖与本地资源；离线机不能以缺依赖的 `npm ci` 代替缓存准备。依赖或 Electron 版本升级后必须重新预热缓存。
+离线入口以已安装 Electron 的 checksums.json 校验 x64 ZIP，并将已验证缓存显式传给 electron-builder，避免下载器另行请求 SHASUMS；同时检查 DMG 工具和 native 缓存。缺少资源直接失败，不再要求 arm64 缓存。esbuild tarball 以 lockfile SRI 校验，离线时不回退网络下载。使用已经安装好的依赖与本地资源；离线机不能以缺依赖的 `npm ci` 代替缓存准备。依赖或 Electron 版本升级后必须重新预热缓存。
 
 ## 产物验收
 
 1. 确认只交付一套 Intel `.app` / DMG / ZIP，应用名为“墨巡”、安装包前缀为 `moxun`，主程序和 esbuild 仅含 x64，node-pty / Pi x64 native prebuilds 齐全。
 2. 执行 `hdiutil verify <dmg>` 与 `unzip -tq <zip>`，记录 DMG/ZIP 的 SHA-256；确认包内 Pi/MCP 可以从 unpacked 路径加载、PDF lazy chunk 和本地 worker 存在。
-3. 从实际打包应用用隔离的 `CRESCENT_DATA_DIR` / `CRESCENT_USER_DATA_DIR` 验证 Pi runtime、人工原生 PTY、Agent 执行拒绝、文件审批与多模态流程；禁止使用生产连接和真实敏感日志做夹具。
+3. 从实际打包应用用隔离的 `MOXUN_DATA_DIR` / `MOXUN_USER_DATA_DIR` 验证 Pi runtime、人工原生 PTY、Agent 执行拒绝、文件审批与多模态流程；禁止使用生产连接和真实敏感日志做夹具。
 4. 在 Intel Mac 上记录实际运行；不宣称 Apple Silicon 原生支持或 Rosetta 验收。正式分发另需签名、公证与 Gatekeeper 验证。
 
 2026-10-10 的 A～H 专项修复和验收记录已移入桌面 test，原名 `Crescent_v1.0.11_专项改造验收记录_20261010.md`，见 [归档映射](archive/README.md)。历史执行验收不是当前 Agent 执行授权，也不是本轮重新验收结果。

@@ -9,7 +9,12 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
     'dependency_trace',
     'impact_analysis',
     'memory_search',
-    'observe_terminal'
+    'history_search',
+    'observe_terminal',
+    'wait_terminal_command',
+    'get_terminal_command_result',
+    'get_terminal_session_status',
+    'list_active_terminal_commands'
   ].map(
     (name): ToolCatalogEntry => ({
       name,
@@ -34,6 +39,30 @@ export const BUILT_IN_TOOL_CATALOG: ToolCatalogEntry[] = [
     requiresApproval: false,
     external: false,
     stateChanging: false
+  },
+  {
+    name: 'request_terminal_command',
+    method: 'post',
+    path: 'pi://moxun/request_terminal_command',
+    description:
+      'Request one native approval for a supported command in the current visible collaboration terminal.',
+    source: 'built-in',
+    risk: 'low',
+    requiresApproval: true,
+    external: false,
+    stateChanging: false
+  },
+  {
+    name: 'cancel_terminal_command',
+    method: 'post',
+    path: 'pi://moxun/cancel_terminal_command',
+    description:
+      'Cancel a pending request or request operator-confirmed interruption in the visible terminal.',
+    source: 'built-in',
+    risk: 'low',
+    requiresApproval: true,
+    external: false,
+    stateChanging: true
   },
   {
     name: 'request_file_change',

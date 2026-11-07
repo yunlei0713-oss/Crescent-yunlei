@@ -33,13 +33,17 @@ export function ComposerAttachments({
               ? '纯文本 · 未启用图片输入'
               : 'Text only · image input disabled'}
           {' · '}
-          {zh ? '文本 / PDF 文本提取' : 'Text / PDF text extraction'}
-          {' · '}
-          {ATTACHMENT_LIMITS.fileBytes / 1024 / 1024} MiB/{zh ? '文件' : 'file'} ·{' '}
-          {ATTACHMENT_LIMITS.files} {zh ? '个文件' : 'files'} · {zh ? '合计' : 'total'}{' '}
-          {ATTACHMENT_LIMITS.totalBytes / 1024 / 1024} MiB
-          {' · '}PDF ≤ {ATTACHMENT_LIMITS.pdfBytes / 1024 / 1024} MiB / {ATTACHMENT_LIMITS.pdfPages}{' '}
-          {zh ? '页' : 'pages'}
+          {ATTACHMENT_LIMITS.files} {zh ? '个文件 / 回合' : 'files per turn'}
+          <p>
+            {zh ? '图片及粘贴上传' : 'Image and pasted uploads'} ·{' '}
+            {ATTACHMENT_LIMITS.fileBytes / 1024 / 1024} MiB/{zh ? '文件' : 'file'} ·{' '}
+            {zh ? '合计' : 'total'} {ATTACHMENT_LIMITS.totalBytes / 1024 / 1024} MiB
+          </p>
+          <p>
+            {zh
+              ? '通过文件选择器添加大型文本、PDF、DOCX。墨巡保留本地引用，Agent 按需分页读取。'
+              : 'Use the file picker for large text, PDF and DOCX documents. MoXun keeps local references for paged reading.'}
+          </p>
         </div>
       </details>
       {mismatch && (
